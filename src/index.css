@@ -392,6 +392,23 @@ section {
   opacity: 0.84;
 }
 
+.roadmap-item {
+  cursor: default;
+}
+
+.roadmap-item:hover {
+  transform: none !important;
+}
+
+.builder-upload-form {
+  width: 100%;
+}
+
+.builder-upload-input {
+  min-width: 0;
+  width: 100%;
+}
+
 .legend-dot {
   width: 10px;
   height: 10px;
@@ -581,6 +598,16 @@ section {
     max-height: 300px;
   }
 
+  .builder-upload-form {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .builder-upload-submit {
+    width: 100%;
+    min-width: 0 !important;
+  }
+
   .program-visual-track {
     font-size: 11px;
   }
@@ -624,11 +651,22 @@ section {
   .header-auth-actions {
     width: 100%;
     justify-content: flex-end;
+    gap: 8px !important;
+  }
+
+  .header-auth-actions .btn {
+    padding: 10px 12px !important;
+    font-size: 11px !important;
   }
 
   .map-card {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .map-svg {
+    max-width: 320px;
+    margin: 0 auto;
   }
 
   .map-label-top {
@@ -646,5 +684,20 @@ section {
 
   .showcase-list {
     max-height: 240px;
+  }
+
+  .showcase-loading {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 360px) {
+  .header-link {
+    font-size: 15px;
+  }
+
+  .map-svg {
+    max-width: 280px;
   }
 }

@@ -87,14 +87,31 @@ const BUNDLED_HOVER_DISTRICTS = new Set(['klang', 'kapar', 'petaling_jaya']);
 const DEFAULT_MAP_FILL = '#f5d000';
 const DEPLOY_COMMAND = '$ vibe deploy --target live';
 const HEADER_LINKS = [
+    { label: 'Coming Soon', page: 'coming-soon' },
     { label: 'How it works', page: 'how-it-works' },
     { label: 'Map', sectionId: 'map' }
 ];
 const DISTRICT_OPTIONS = Array.from(new Set(Object.values(DISTRICT_INFO).map((entry) => entry.name))).sort();
+const SPRINT_MODULE_STEPS = [
+    'Threads Kickoff',
+    'Day 1 Live Build (2h)',
+    'Build & Improve (Day 2-6)',
+    'Day 7 Review + Troubleshoot',
+    'Showcase Submission'
+];
+const OWNER_EMAIL = (import.meta.env.VITE_OWNER_EMAIL || 'zarulijam@gmail.com').trim().toLowerCase();
 const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || 'zarulijam@gmail.com')
     .split(',')
     .map((email) => email.trim().toLowerCase())
     .filter(Boolean);
+
+function resolveRoleByEmail(emailValue) {
+    const email = (emailValue || '').toLowerCase().trim();
+    if (!email) return 'builder';
+    if (email === OWNER_EMAIL) return 'owner';
+    if (ADMIN_EMAILS.includes(email)) return 'admin';
+    return 'builder';
+}
 
 function normalizeDistrict(value) {
     return (value || '').toString().toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -419,16 +436,15 @@ const App = () => {
         if (submissionData) setSubmissions(submissionData);
     };
 
-    const upsertProfile = async (userId, payload) => {
+    const upsertProfile = async (userId, payload, forcedRole = null) => {
         const profilePayload = {
             id: userId,
             full_name: payload.username,
             district: payload.district,
+            role: forcedRole || 'builder',
             idea_title: payload.ideaTitle,
             problem_statement: payload.problemStatement,
             threads_handle: payload.threadsHandle,
-            about_yourself: payload.aboutYourself,
-            program_goal: payload.programGoal,
             onboarding_completed: true,
             updated_at: new Date().toISOString()
         };
@@ -437,7 +453,9 @@ const App = () => {
         let { error } = await supabase.from('profiles').upsert({
             ...profilePayload,
             whatsapp_contact: payload.whatsappContact,
-            discord_tag: payload.discordTag
+            discord_tag: payload.discordTag,
+            about_yourself: payload.aboutYourself,
+            program_goal: payload.programGoal
         }, { onConflict: 'id' });
 
         if (error) {
@@ -462,11 +480,41 @@ const App = () => {
             console.warn('Profile lookup failed. Falling back to auth metadata.', error.message);
         }
 
+        // If profile row does not exist yet (e.g., email confirmed before first full session),
+        // backfill from auth metadata so user data is visible in public.profiles.
+        if (!profile) {
+            const meta = user.user_metadata || {};
+            const fallbackPayload = {
+                username: meta.full_name || user.email.split('@')[0],
+                district: meta.district || '',
+                ideaTitle: meta.idea_title || '',
+                problemStatement: meta.problem_statement || '',
+                threadsHandle: meta.threads_handle || '',
+                whatsappContact: meta.whatsapp_contact || '',
+                discordTag: meta.discord_tag || '',
+                aboutYourself: meta.about_yourself || '',
+                programGoal: meta.program_goal || ''
+            };
+
+            try {
+                if (fallbackPayload.username) {
+                    await upsertProfile(userId, fallbackPayload, resolveRoleByEmail(user.email));
+                    profile = {
+                        full_name: fallbackPayload.username,
+                        district: fallbackPayload.district,
+                        role: resolveRoleByEmail(user.email)
+                    };
+                }
+            } catch (profileError) {
+                console.warn('Profile backfill skipped:', profileError.message);
+            }
+        }
+
         const metadataName = user.user_metadata?.full_name || user.email.split('@')[0];
         const email = (user.email || '').toLowerCase();
-        const isAdminByEmail = ADMIN_EMAILS.includes(email);
+        const roleByEmail = resolveRoleByEmail(email);
         const roleFromProfile = profile?.role;
-        const resolvedRole = isAdminByEmail ? 'admin' : (roleFromProfile || 'builder');
+        const resolvedRole = roleByEmail !== 'builder' ? roleByEmail : (roleFromProfile || 'builder');
 
         setCurrentUser({
             id: user.id,
@@ -598,7 +646,7 @@ const App = () => {
                 // If email confirmation is disabled, a session can be created immediately.
                 if (data?.user && data?.session) {
                     try {
-                        await upsertProfile(data.user.id, onboardingForm);
+                        await upsertProfile(data.user.id, onboardingForm, resolveRoleByEmail(data.user?.email));
                     } catch (profileError) {
                         console.warn('Profile save skipped:', profileError.message);
                     }
@@ -631,8 +679,8 @@ const App = () => {
 
     const handleAdminAddClass = async (e) => {
         e.preventDefault();
-        if (currentUser?.type !== 'admin') {
-            alert('Only admin can create classes.');
+        if (currentUser?.type !== 'admin' && currentUser?.type !== 'owner') {
+            alert('Only owner/admin can create classes.');
             return;
         }
         const { error } = await supabase.from('cohort_classes').insert([{ ...newClass, status: 'Upcoming', type: 'Standard' }]);
@@ -863,7 +911,7 @@ const App = () => {
                 <div style={{ gridColumn: 'span 4' }}>
                     <div className="neo-card" style={{ border: '3px solid black', boxShadow: '8px 8px 0px black' }}>
                         <h3 style={{ fontSize: '22px', marginBottom: '24px' }}>7-Day Sprint</h3>
-                        {['Idea & Logic', 'UI & Vibes', 'Logic Stitching', 'Mobile Prep', 'Testing', 'Publish', 'Launch World'].map((step, i) => (
+                        {SPRINT_MODULE_STEPS.map((step, i) => (
                             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', opacity: activeOnboardingStep >= i ? 1 : 0.4 }}>
                                 <div style={{ width: '28px', height: '28px', background: activeOnboardingStep >= i ? 'var(--selangor-red)' : '#eee', borderRadius: '4px', border: '1.5px solid black', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</div>
                                 <div style={{ fontWeight: '800' }}>{step}</div>
@@ -878,10 +926,10 @@ const App = () => {
                     </div>
                     <div className="neo-card" style={{ border: '3px solid black', boxShadow: '8px 8px 0px black' }}>
                         <h3 style={{ fontSize: '24px', marginBottom: '24px' }}>Submit Progress</h3>
-                        <form onSubmit={handleBuilderUpload} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 120px', gap: '16px' }}>
-                            <input placeholder="Project Name" required value={newUpload.project} onChange={(e) => setNewUpload({ ...newUpload, project: e.target.value })} style={{ padding: '14px', border: '2px solid black', borderRadius: '8px' }} />
-                            <input placeholder="URL / Link" required value={newUpload.link} onChange={(e) => setNewUpload({ ...newUpload, link: e.target.value })} style={{ padding: '14px', border: '2px solid black', borderRadius: '8px' }} />
-                            <button className="btn btn-red" type="submit" style={{ boxShadow: 'none' }}><Upload size={20} /></button>
+                        <form className="builder-upload-form" onSubmit={handleBuilderUpload} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr) auto', gap: '16px' }}>
+                            <input className="builder-upload-input" placeholder="Project Name" required value={newUpload.project} onChange={(e) => setNewUpload({ ...newUpload, project: e.target.value })} style={{ padding: '14px', border: '2px solid black', borderRadius: '8px' }} />
+                            <input className="builder-upload-input" placeholder="URL / Link" required value={newUpload.link} onChange={(e) => setNewUpload({ ...newUpload, link: e.target.value })} style={{ padding: '14px', border: '2px solid black', borderRadius: '8px' }} />
+                            <button className="btn btn-red builder-upload-submit" type="submit" style={{ boxShadow: 'none', minWidth: '120px' }}><Upload size={20} /></button>
                         </form>
                     </div>
                 </div>
@@ -1105,6 +1153,42 @@ const App = () => {
         </section>
     );
 
+    const roadmapItems = [
+        { id: 'forum', title: 'Builder Forum', detail: 'A focused community forum for builders to ask questions, share progress, and get peer feedback.' },
+        { id: 'pwa', title: 'PWA Implementation', detail: 'Installable app experience, faster load, and mobile-friendly offline access.' },
+        { id: 'idea', title: 'AI / Local Intelligence Idea Generator', detail: 'Generate grounded product ideas based on local problems, district context, and real builder needs.' },
+        { id: 'more', title: 'More Features', detail: 'Additional tools for collaboration, submission review, and stronger builder discovery.' }
+    ];
+
+    const ComingSoonPage = () => (
+        <section id="coming-soon-page" style={{ borderTop: '3px solid black', paddingTop: '100px', paddingBottom: '80px' }}>
+            <div className="container">
+                <div className="neo-card" style={{ border: '3px solid black', boxShadow: '12px 12px 0px black' }}>
+                    <div className="pill pill-red" style={{ marginBottom: '20px' }}>ROADMAP</div>
+                    <h2 style={{ fontSize: 'clamp(30px, 6vw, 46px)', marginBottom: '10px' }}>Coming Soon</h2>
+                    <p style={{ maxWidth: '760px', opacity: 0.8, marginBottom: '16px' }}>
+                        Next updates for VibeSelangor are listed below. Click each item to view details.
+                    </p>
+                    <p style={{ maxWidth: '760px', opacity: 0.8, marginBottom: '18px' }}>
+                        Have feedback or criticism? Share it on my Threads so we can improve this platform together.
+                    </p>
+                    <div className="program-timeline">
+                        {roadmapItems.map((item) => (
+                            <div key={item.id} className="program-step roadmap-item" style={{ textAlign: 'left', background: '#fff' }}>
+                                <div className="program-step-head">{item.title}</div>
+                                <p>{item.detail}</p>
+                            </div>
+                        ))}
+                    </div>
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                        <a className="btn btn-outline" href="https://www.threads.com/@_zarulijam" target="_blank" rel="noreferrer">Give Feedback</a>
+                        <button className="btn btn-red" onClick={() => setPublicPage('home')}>Back to Home</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
+
     return (
         <div className="vibe-selangor">
             {isAuthModalOpen && renderAuthModal()}
@@ -1119,8 +1203,8 @@ const App = () => {
                             {!currentUser && HEADER_LINKS.map((item) => (
                                 <a
                                     className="header-link"
-                                    key={item.sectionId}
-                                    href={item.page ? '#how-it-works-page' : `#${item.sectionId}`}
+                                    key={item.page || item.sectionId}
+                                    href={item.page ? `#${item.page}-page` : `#${item.sectionId}`}
                                     style={{ color: 'black' }}
                                     onClick={(event) => handleHeaderNavClick(event, item)}
                                 >
@@ -1168,7 +1252,8 @@ const App = () => {
 
             {!currentUser && publicPage === 'home' && <LandingPage />}
             {!currentUser && publicPage === 'how-it-works' && <ProgramDetailsPage />}
-            {currentUser?.type === 'admin' && <AdminDashboard />}
+            {!currentUser && publicPage === 'coming-soon' && <ComingSoonPage />}
+            {(currentUser?.type === 'admin' || currentUser?.type === 'owner') && <AdminDashboard />}
             {currentUser?.type === 'builder' && <BuilderDashboard />}
 
             <footer style={{ padding: '34px 0', borderTop: '3px solid black', background: 'linear-gradient(180deg, #fff 0%, #fff8dc 100%)' }}>
