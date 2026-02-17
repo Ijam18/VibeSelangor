@@ -461,7 +461,7 @@ const App = () => {
 
     const loadMapGeometry = async () => {
         try {
-            const response = await fetch('/selangor-parlimen.svg');
+            const response = await fetch(`${import.meta.env.BASE_URL}selangor-parlimen.svg`);
             const svgText = await response.text();
             const parser = new DOMParser();
             const doc = parser.parseFromString(svgText, 'image/svg+xml');
