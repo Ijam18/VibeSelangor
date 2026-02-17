@@ -85,6 +85,7 @@ const MANUAL_REGION_DISTRICT = {
 
 const BUNDLED_HOVER_DISTRICTS = new Set(['klang', 'kapar', 'petaling_jaya']);
 const DEFAULT_MAP_FILL = '#f5d000';
+const TERMINAL_CONTEXT = 'malaysia:~/Selangor';
 const DEPLOY_COMMAND = '$ vibe deploy --target live';
 const HEADER_LINKS = [
     { label: 'Coming Soon', page: 'coming-soon' },
@@ -939,7 +940,7 @@ const App = () => {
 
     const LandingPage = () => (
         <>
-            <section id="how-it-works" className="hero" style={{ paddingTop: '120px', paddingBottom: '140px' }}>
+            <section id="how-it-works" className="hero" style={{ paddingTop: '88px', paddingBottom: '96px' }}>
                 <div className="container grid-12">
                     <div style={{ gridColumn: 'span 7' }}>
                         <div className="pill pill-red" style={{ marginBottom: '32px' }}>SELANGOR BUILDER SPRINT 2026</div>
@@ -950,7 +951,7 @@ const App = () => {
                         <div className="neo-card no-jitter" style={{ border: '3px solid black', boxShadow: '12px 12px 0px black' }}>
                             <span className="pill" style={{ background: 'black', color: 'white', cursor: 'pointer' }} onClick={() => setIsAuthModalOpen(true)}>PORTAL_ACCESS</span>
                             <div className="terminal-shell" style={{ background: '#000', borderRadius: '12px', padding: '32px', marginTop: '24px' }}>
-                                <div className="terminal-prompt" style={{ color: 'var(--selangor-red)', fontFamily: 'monospace', fontSize: '32px', lineHeight: 1 }}>&gt;_</div>
+                                <div className="terminal-prompt" style={{ color: 'var(--selangor-red)', fontFamily: 'monospace', fontSize: '24px', lineHeight: 1 }}>{TERMINAL_CONTEXT}</div>
                                 <p className="terminal-line" style={{ color: 'white', fontFamily: 'monospace', fontSize: '14px', marginTop: '10px' }}>
                                     {DEPLOY_COMMAND}
                                     <span className="terminal-caret">|</span>
@@ -1204,7 +1205,7 @@ const App = () => {
             {isAuthModalOpen && renderAuthModal()}
             <header className="glass-header">
                 <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '84px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={handleHeaderBrandClick}>
+                    <div className="header-brand-wrap" style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={handleHeaderBrandClick}>
                         <div style={{ width: '32px', height: '32px', background: 'var(--selangor-red)', borderRadius: '8px', border: '2px solid black' }}><Zap size={18} fill="yellow" style={{ margin: '5px' }} /></div>
                         <span className="header-brand-text" style={{ fontWeight: '900', fontSize: '30px', lineHeight: 1 }}>VibeSelangor</span>
                     </div>
@@ -1228,18 +1229,41 @@ const App = () => {
                                 <button className="btn btn-outline" style={{ padding: '8px 16px', fontSize: '11px' }} onClick={handleSignOut}>Logout</button>
                             </div>
                         ) : (
-                            <div className="header-auth-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                                <a
-                                    className="btn btn-outline"
-                                    style={{ padding: '10px 20px', textDecoration: 'none' }}
-                                    href="https://www.threads.com/@_zarulijam"
-                                    target="_blank"
-                                    rel="noreferrer"
-                                >
-                                    Contact
-                                </a>
-                                <button className="btn btn-red" style={{ padding: '10px 24px' }} onClick={() => setIsAuthModalOpen(true)}>Become a builder now!</button>
-                            </div>
+                            <>
+                                <div className="mobile-quick-actions">
+                                    <a
+                                        className="mobile-icon-btn"
+                                        href="https://www.threads.com/@_zarulijam"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        title="Contact on Threads"
+                                        aria-label="Contact on Threads"
+                                    >
+                                        <MessageCircle size={18} />
+                                    </a>
+                                    <button
+                                        type="button"
+                                        className="mobile-icon-btn mobile-icon-btn-red"
+                                        onClick={() => setIsAuthModalOpen(true)}
+                                        title="Become a builder now"
+                                        aria-label="Become a builder now"
+                                    >
+                                        <User size={18} />
+                                    </button>
+                                </div>
+                                <div className="header-auth-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                    <a
+                                        className="btn btn-outline"
+                                        style={{ padding: '10px 20px', textDecoration: 'none' }}
+                                        href="https://www.threads.com/@_zarulijam"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        Contact
+                                    </a>
+                                    <button className="btn btn-red" style={{ padding: '10px 24px' }} onClick={() => setIsAuthModalOpen(true)}>Become a builder now!</button>
+                                </div>
+                            </>
                         )}
                     </div>
                 </div>

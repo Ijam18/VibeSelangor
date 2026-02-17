@@ -57,7 +57,7 @@ h4 {
 }
 
 section {
-  padding: 72px 0;
+  padding: 56px 0;
 }
 
 /* Refined Neo-Brutal Cards */
@@ -65,7 +65,7 @@ section {
   background: white;
   border: 2px solid var(--border-charcoal);
   border-radius: var(--radius-sharp);
-  padding: 32px;
+  padding: 24px;
   box-shadow: var(--shadow-neo);
   transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
@@ -128,7 +128,7 @@ section {
 .grid-12 {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
-  gap: 32px;
+  gap: 24px;
 }
 
 .text-huge {
@@ -186,12 +186,40 @@ section {
   text-decoration: none;
 }
 
+.mobile-quick-actions {
+  display: none;
+}
+
+.mobile-icon-btn {
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  border: 2px solid var(--border-charcoal);
+  background: #fff;
+  color: var(--text-charcoal);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 4px 4px 0 var(--border-charcoal);
+  text-decoration: none;
+}
+
+.mobile-icon-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.mobile-icon-btn-red {
+  background: var(--selangor-red);
+  color: #fff;
+}
+
 .showcase-card {
-  min-height: 515px;
+  min-height: 470px;
 }
 
 .showcase-card.is-open {
-  min-height: 475px;
+  min-height: 440px;
 }
 
 .showcase-list {
@@ -621,6 +649,12 @@ section {
   }
 
   .program-sticker-alt {
+    position: static;
+    right: auto;
+    top: auto;
+    transform: none;
+    max-width: none;
+    margin-bottom: 12px;
     box-shadow: 6px 6px 0 var(--border-charcoal);
   }
 
@@ -631,6 +665,14 @@ section {
 }
 
 @media (max-width: 480px) {
+  .glass-header .container {
+    display: grid !important;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    row-gap: 8px;
+    position: relative;
+  }
+
   .container {
     padding: 0 12px;
   }
@@ -641,32 +683,51 @@ section {
   }
 
   .header-brand-text {
-    font-size: 21px !important;
+    font-size: 20px !important;
   }
 
   .header-actions-wrap {
-    align-items: flex-start;
+    display: grid !important;
+    grid-template-columns: 1fr auto;
+    width: 100%;
+    grid-column: 1 / -1;
+    gap: 8px 10px !important;
+    align-items: center;
+  }
+
+  .mobile-quick-actions {
+    display: inline-flex;
+    margin-left: 0;
+    gap: 8px;
+    position: absolute;
+    top: 24px;
+    right: 12px;
+    z-index: 2;
+  }
+
+  .header-brand-wrap {
+    margin-top: 8px;
   }
 
   .header-nav {
+    grid-column: 1 / -1;
+    grid-row: 2;
     width: 100%;
     justify-content: flex-start !important;
-    gap: 16px !important;
+    gap: 14px !important;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    margin-top: -4px;
+  }
+
+  .header-link {
+    font-size: 13px;
+    white-space: nowrap;
   }
 
   .header-auth-actions {
-    width: 100%;
-    justify-content: flex-start;
-    gap: 8px !important;
-    display: grid;
-    grid-template-columns: minmax(120px, 0.8fr) minmax(0, 1.2fr);
-  }
-
-  .header-auth-actions .btn {
-    width: 100%;
-    padding: 10px 10px !important;
-    font-size: 11px !important;
-    white-space: nowrap;
+    display: none !important;
   }
 
   .map-card {
@@ -703,52 +764,126 @@ section {
 
   .program-sticker,
   .program-sticker-alt {
-    position: static;
-    right: auto;
-    top: auto;
-    transform: none;
-    max-width: none;
-    margin-bottom: 12px;
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 14px 14px;
+    border-radius: 12px;
     box-shadow: 5px 5px 0 var(--border-charcoal);
+  }
+
+  .program-sticker-title {
+    font-size: 15px;
+    line-height: 1.2;
+    white-space: normal;
+  }
+
+  .program-sticker-sub {
+    font-size: 14px;
+    line-height: 1.35;
+    margin-top: 4px;
+    white-space: normal;
   }
 }
 
 @media (max-width: 360px) {
-  .header-link {
-    font-size: 15px;
-  }
+  .header-link { font-size: 12px; }
 
   .map-svg {
     max-width: 280px;
   }
 
-  .header-auth-actions {
-    grid-template-columns: 1fr;
-    gap: 8px !important;
+  .mobile-icon-btn {
+    width: 42px;
+    height: 42px;
   }
 }
 
 @media (max-height: 500px) and (orientation: landscape) {
   .glass-header .container {
+    display: grid !important;
+    grid-template-columns: 1fr auto;
+    align-items: center;
     min-height: 64px;
     padding-top: 6px;
     padding-bottom: 6px;
+    gap: 6px 10px;
+  }
+
+  .header-brand-wrap {
+    margin-top: 8px !important;
   }
 
   .header-brand-text {
     font-size: 20px !important;
   }
 
+  .header-actions-wrap {
+    display: grid !important;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    justify-content: end;
+    gap: 12px !important;
+    width: 100%;
+    grid-column: 1 / -1;
+    margin-top: -6px;
+  }
+
+  .header-nav {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-content: flex-start !important;
+    overflow-x: auto;
+    margin-top: -40px !important;
+    padding-bottom: 0;
+    gap: 10px !important;
+  }
+
   .header-link {
-    font-size: 14px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .header-auth-actions {
+    display: inline-flex !important;
+    width: auto;
+    gap: 8px !important;
+    margin-top: -8px;
   }
 
   .btn {
-    padding: 9px 12px;
-    font-size: 11px;
+    padding: 8px 12px;
+    font-size: 10px;
+    letter-spacing: 0.03em;
+  }
+
+  .mobile-quick-actions {
+    top: 34px;
   }
 
   .neo-card {
     padding: 16px;
+  }
+
+  .program-sticker,
+  .program-sticker-alt {
+    position: static;
+    transform: none;
+    max-width: none;
+    width: 100%;
+    display: block;
+    box-sizing: border-box;
+    padding: 12px 14px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+  }
+
+  .program-sticker-title {
+    font-size: 13px;
+  }
+
+  .program-sticker-sub {
+    font-size: 12px;
+    line-height: 1.3;
   }
 }
