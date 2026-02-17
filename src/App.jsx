@@ -983,6 +983,12 @@ const App = () => {
                             <p style={{ fontSize: '13px', marginBottom: '12px' }}>
                                 HQ: <a href="https://krackeddevs.com/" target="_blank" rel="noreferrer">krackeddevs.com</a>
                             </p>
+                            {isKualaLumpurLoading && (
+                                <div className="showcase-loading" style={{ marginBottom: '10px' }}>
+                                    <div className="showcase-spinner" />
+                                    <div style={{ fontSize: '12px', fontWeight: 700 }}>Syncing latest KrackedDevs showcase...</div>
+                                </div>
+                            )}
                             <p style={{ fontSize: '12px', marginBottom: '10px', opacity: 0.75 }}>
                                 {krackedDescription}
                             </p>
@@ -1055,7 +1061,11 @@ const App = () => {
                                                 setActiveRegion(region.id);
                                                 setActiveDistrictHoverKey(BUNDLED_HOVER_DISTRICTS.has(region.districtKey) ? region.districtKey : null);
                                             }}
-                                            onClick={() => setSelectedDistrictKey((prev) => (prev === region.districtKey ? null : region.districtKey))}
+                                            onTouchStart={(event) => {
+                                                event.preventDefault();
+                                                setSelectedDistrictKey(region.districtKey);
+                                            }}
+                                            onClick={() => setSelectedDistrictKey(region.districtKey)}
                                         />
                                     ))}
                                 </g>
