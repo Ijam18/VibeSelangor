@@ -258,6 +258,7 @@ const App = () => {
     const [kualaLumpurShowcase, setKualaLumpurShowcase] = useState([]);
     const [krackedDescription, setKrackedDescription] = useState('KrackedDevs');
     const [isKualaLumpurLoading, setIsKualaLumpurLoading] = useState(false);
+    const [pendingKualaLumpurOpen, setPendingKualaLumpurOpen] = useState(false);
 
     // Form States
     const [newClass, setNewClass] = useState({ title: '', date: '', time: '' });
@@ -393,6 +394,13 @@ const App = () => {
             isCancelled = true;
         };
     }, []);
+
+    useEffect(() => {
+        if (!pendingKualaLumpurOpen) return;
+        if (isKualaLumpurLoading) return;
+        setSelectedDistrictKey('kuala_lumpur');
+        setPendingKualaLumpurOpen(false);
+    }, [pendingKualaLumpurOpen, isKualaLumpurLoading]);
 
     useEffect(() => {
         // 1. Auth Listener
@@ -1064,9 +1072,17 @@ const App = () => {
                                             }}
                                             onTouchStart={(event) => {
                                                 event.preventDefault();
+                                                if (region.districtKey === 'kuala_lumpur' && isKualaLumpurLoading && kualaLumpurShowcase.length === 0) {
+                                                    setPendingKualaLumpurOpen(true);
+                                                }
                                                 setSelectedDistrictKey(region.districtKey);
                                             }}
-                                            onClick={() => setSelectedDistrictKey(region.districtKey)}
+                                            onClick={() => {
+                                                if (region.districtKey === 'kuala_lumpur' && isKualaLumpurLoading && kualaLumpurShowcase.length === 0) {
+                                                    setPendingKualaLumpurOpen(true);
+                                                }
+                                                setSelectedDistrictKey(region.districtKey);
+                                            }}
                                         />
                                     ))}
                                 </g>
