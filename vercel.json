@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/kracked/:path*",
+      "destination": "https://krackeddevs.com/:path*"
+    }
+  ]
+}

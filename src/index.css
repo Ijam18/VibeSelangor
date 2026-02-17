@@ -195,11 +195,30 @@ section {
 }
 
 .showcase-list {
-  max-height: 440px;
+  max-height: 360px;
 }
 
 .showcase-card.is-open .showcase-list {
-  max-height: 380px;
+  max-height: 320px;
+}
+
+.showcase-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 2px dashed var(--border-charcoal);
+  border-radius: 10px;
+  background: #fffdf2;
+}
+
+.showcase-spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 2px solid #121417;
+  border-top-color: transparent;
+  animation: showcaseSpin 0.8s linear infinite;
 }
 
 .map-svg {
@@ -471,6 +490,12 @@ section {
 
   100% {
     width: 27ch;
+  }
+}
+
+@keyframes showcaseSpin {
+  to {
+    transform: rotate(360deg);
   }
 }
 

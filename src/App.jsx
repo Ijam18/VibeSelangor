@@ -91,14 +91,24 @@ const HEADER_LINKS = [
     { label: 'Map', sectionId: 'map' }
 ];
 const DISTRICT_OPTIONS = Array.from(new Set(Object.values(DISTRICT_INFO).map((entry) => entry.name))).sort();
+const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || 'zarulijam@gmail.com')
+    .split(',')
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
 
 function normalizeDistrict(value) {
     return (value || '').toString().toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
 function extractShowcaseProjectUrls(htmlText) {
+    const doc = new DOMParser().parseFromString(htmlText, 'text/html');
     const urls = new Set();
-    const regex = /href="(\/showcase\/project\/[0-9a-f-]+)"/gi;
+    Array.from(doc.querySelectorAll('a[href]')).forEach((anchor) => {
+        const href = anchor.getAttribute('href') || '';
+        const match = href.match(/(\/showcase\/project\/[a-z0-9-]+)/i);
+        if (match?.[1]) urls.add(match[1]);
+    });
+    const regex = /href=['"](\/showcase\/project\/[a-z0-9-]+)['"]/gi;
     let match = regex.exec(htmlText);
     while (match) {
         urls.add(match[1]);
@@ -228,7 +238,6 @@ const App = () => {
     const [classes, setClasses] = useState([]);
     const [submissions, setSubmissions] = useState([]);
     const [kualaLumpurShowcase, setKualaLumpurShowcase] = useState([]);
-    const [kualaLumpurShowcaseTotal, setKualaLumpurShowcaseTotal] = useState(0);
     const [krackedDescription, setKrackedDescription] = useState('KrackedDevs');
     const [isKualaLumpurLoading, setIsKualaLumpurLoading] = useState(false);
 
@@ -237,11 +246,24 @@ const App = () => {
     const [newUpload, setNewUpload] = useState({ project: '', link: '' });
     const hoveredRegionData = mapRegions.find((region) => region.id === activeRegion) || null;
     const selectedDistrictName = selectedDistrictKey ? DISTRICT_INFO[selectedDistrictKey]?.name : null;
-    const districtShowcase = selectedDistrictKey === 'kuala_lumpur'
-        ? kualaLumpurShowcase
-        : selectedDistrictName
-        ? submissions.filter((item) => normalizeDistrict(item.district) === normalizeDistrict(selectedDistrictName))
-        : [];
+    const districtShowcase = useMemo(() => {
+        if (!selectedDistrictName) return [];
+
+        const districtSubmissions = submissions
+            .filter((item) => normalizeDistrict(item.district) === normalizeDistrict(selectedDistrictName))
+            .map((item) => ({
+                id: `user-${item.id}`,
+                submission_url: item.submission_url,
+                project_name: item.project_name,
+                one_liner: item.one_liner || 'Builder submission from VibeSelangor community.'
+            }));
+
+        if (selectedDistrictKey === 'kuala_lumpur') {
+            return [...kualaLumpurShowcase, ...districtSubmissions];
+        }
+
+        return districtSubmissions;
+    }, [selectedDistrictKey, selectedDistrictName, submissions, kualaLumpurShowcase]);
     const topDistricts = useMemo(() => {
         const districtProjects = new Map();
         submissions.forEach((item) => {
@@ -254,9 +276,10 @@ const App = () => {
             const label = matchedName || districtText;
             districtProjects.set(label, (districtProjects.get(label) || 0) + 1);
         });
-        return ['Kuala Lumpur', 'Ampang', 'Shah Alam']
-            .map((name) => [name, name === 'Kuala Lumpur' ? kualaLumpurShowcaseTotal : (districtProjects.get(name) || 0)]);
-    }, [submissions, kualaLumpurShowcaseTotal]);
+        return Array.from(districtProjects.entries())
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 3);
+    }, [submissions]);
     const currentUserProjectCount = useMemo(() => {
         if (!currentUser?.id) return 0;
         return submissions.filter((item) => item?.user_id === currentUser.id).length;
@@ -291,7 +314,6 @@ const App = () => {
             // Render cached showcase immediately while verifying if new submissions exist.
             if (cached?.records?.length) {
                 setKualaLumpurShowcase(cached.records);
-                setKualaLumpurShowcaseTotal(cached.total || cached.records.length);
                 setKrackedDescription(cached.description || 'KrackedDevs');
             }
 
@@ -305,8 +327,6 @@ const App = () => {
                 const latestSignature = projectUrls.join('|');
                 const cachedSignature = Array.isArray(cached?.projectUrls) ? cached.projectUrls.join('|') : '';
                 const hasNewSubmissions = latestSignature !== cachedSignature;
-
-                setKualaLumpurShowcaseTotal(projectUrls.length);
 
                 // If listing is unchanged and cache exists, skip detail refetch.
                 if (!hasNewSubmissions && cached?.records?.length) {
@@ -443,12 +463,15 @@ const App = () => {
         }
 
         const metadataName = user.user_metadata?.full_name || user.email.split('@')[0];
+        const email = (user.email || '').toLowerCase();
+        const isAdminByEmail = ADMIN_EMAILS.includes(email);
         const roleFromProfile = profile?.role;
+        const resolvedRole = isAdminByEmail ? 'admin' : (roleFromProfile || 'builder');
 
         setCurrentUser({
             id: user.id,
             email: user.email,
-            type: roleFromProfile || (user.email.includes('admin') ? 'admin' : 'builder'),
+            type: resolvedRole,
             name: profile?.full_name || metadataName,
             district: profile?.district || user.user_metadata?.district || ''
         });
@@ -608,6 +631,10 @@ const App = () => {
 
     const handleAdminAddClass = async (e) => {
         e.preventDefault();
+        if (currentUser?.type !== 'admin') {
+            alert('Only admin can create classes.');
+            return;
+        }
         const { error } = await supabase.from('cohort_classes').insert([{ ...newClass, status: 'Upcoming', type: 'Standard' }]);
         if (!error) setNewClass({ title: '', date: '', time: '' });
     };
@@ -898,6 +925,9 @@ const App = () => {
                                     ? `Hover district: ${DISTRICT_INFO[hoveredRegionData.districtKey]?.name || hoveredRegionData.districtKey}`
                                     : 'Hover over regions to inspect the map.'}
                         </p>
+                        <p style={{ fontSize: '12px', marginTop: '8px', opacity: 0.72 }}>
+                            Discover what Selangor builders are shipping this week and get inspired to launch your own project.
+                        </p>
                         <div className={`neo-card no-jitter showcase-card${selectedDistrictName ? ' is-open' : ''}`} style={{ marginTop: '20px', border: '2px solid black', boxShadow: '6px 6px 0px black', padding: '20px' }}>
                             <h3 style={{ fontSize: '22px', marginBottom: '10px' }}>
                                 {selectedDistrictName ? `${selectedDistrictName} Showcase` : 'District Showcase'}
@@ -911,8 +941,11 @@ const App = () => {
                             {!selectedDistrictName && (
                                 <p style={{ fontSize: '13px' }}>Click a region to view that district's submitted apps.</p>
                             )}
-                            {selectedDistrictKey === 'kuala_lumpur' && isKualaLumpurLoading && (
-                                <p style={{ fontSize: '13px' }}>Loading Kuala Lumpur showcase...</p>
+                            {selectedDistrictKey === 'kuala_lumpur' && isKualaLumpurLoading && kualaLumpurShowcase.length === 0 && (
+                                <div className="showcase-loading">
+                                    <div className="showcase-spinner" />
+                                    <div style={{ fontSize: '13px', fontWeight: 700 }}>Loading Kuala Lumpur showcase...</div>
+                                </div>
                             )}
                             {selectedDistrictName && districtShowcase.length === 0 && (
                                 <p style={{ fontSize: '13px' }}>No submissions yet for this district.</p>
@@ -1138,11 +1171,18 @@ const App = () => {
             {currentUser?.type === 'admin' && <AdminDashboard />}
             {currentUser?.type === 'builder' && <BuilderDashboard />}
 
-            <footer style={{ padding: '28px 0', borderTop: '3px solid black', textAlign: 'center', background: 'white' }}>
-                <p style={{ fontWeight: '800', opacity: 0.72, marginBottom: '8px' }}>
-                    Built by _zarulijam | DM me on Threads to connect | Support me in becoming the KrackedDevs Selangor Ambassador
-                </p>
-                <p style={{ fontWeight: '800', opacity: 0.4 }}>(c) 2026 VIBESELANGOR. NO CODE. JUST VIBES.</p>
+            <footer style={{ padding: '34px 0', borderTop: '3px solid black', background: 'linear-gradient(180deg, #fff 0%, #fff8dc 100%)' }}>
+                <div className="container">
+                    <div className="neo-card no-jitter" style={{ border: '2px solid black', boxShadow: '6px 6px 0px black', textAlign: 'center', padding: '18px 20px' }}>
+                        <p style={{ fontWeight: '900', marginBottom: '8px' }}>
+                            Built by _zarulijam | DM me on Threads to connect | Support me in becoming the KrackedDevs Selangor Ambassador
+                        </p>
+                        <p style={{ fontWeight: '700', fontSize: '13px', opacity: 0.78, marginBottom: '8px' }}>
+                            If you are outside Selangor, join the KrackedDevs Discord server to connect with your state ambassador.
+                        </p>
+                        <p style={{ fontWeight: '800', opacity: 0.45, fontSize: '12px' }}>(c) 2026 VIBESELANGOR. NO CODE. JUST VIBES.</p>
+                    </div>
+                </div>
             </footer>
         </div>
     );
