@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { SPRINT_MODULE_STEPS } from '../constants';
 import { truncateText } from '../utils';
@@ -12,6 +12,9 @@ const GalleryShowcase = ({
     limit,
     setPublicPage
 }) => {
+    const scrollRef = useRef(null);
+    const [isAutoScrolling, setIsAutoScrolling] = useState(true);
+
     let buildersToShow = profiles
         .filter(p => {
             const hasSubmission = submissions.some(s => s.user_id === p.id);
@@ -23,6 +26,45 @@ const GalleryShowcase = ({
 
     if (limit) buildersToShow = buildersToShow.slice(0, limit);
 
+    // Triplicate for seamless loop
+    const loopedBuilders = [...buildersToShow, ...buildersToShow, ...buildersToShow];
+
+    useEffect(() => {
+        if (scrollRef.current && buildersToShow.length > 0) {
+            const container = scrollRef.current;
+            const singleSectionWidth = container.scrollWidth / 3;
+            // Start in the middle section
+            container.scrollLeft = singleSectionWidth;
+        }
+    }, [buildersToShow.length]);
+
+    // Loop logic: when hitting the start/end of the cloned sections, jump back to middle
+    const handleScroll = () => {
+        if (!scrollRef.current || buildersToShow.length === 0) return;
+        const container = scrollRef.current;
+        const singleSectionWidth = container.scrollWidth / 3;
+
+        // Using a small buffer (1px) to prevent getting stuck at 0
+        if (container.scrollLeft <= 0) {
+            container.scrollLeft = singleSectionWidth;
+        } else if (container.scrollLeft >= singleSectionWidth * 2) {
+            container.scrollLeft = singleSectionWidth;
+        }
+    };
+
+    // Slow auto-scroll effect
+    useEffect(() => {
+        let interval;
+        if (isAutoScrolling && scrollRef.current && buildersToShow.length > 0) {
+            interval = setInterval(() => {
+                if (scrollRef.current) {
+                    scrollRef.current.scrollLeft += 1;
+                }
+            }, 30); // Move 1px every 30ms for a smooth drift
+        }
+        return () => clearInterval(interval);
+    }, [isAutoScrolling, buildersToShow.length]);
+
     return (
         <section id="gallery" style={{ borderTop: '3px solid black', padding: '24px 0 12px', background: '#fff' }}>
             <div className="container">
@@ -32,7 +74,14 @@ const GalleryShowcase = ({
                     <p className="text-sub" style={{ maxWidth: '600px', margin: '4px auto 0' }}>Discover the innovative apps and startups being built right here in Selangor.</p>
                 </div>
 
-                <div className="builders-scroll-container">
+                <div
+                    className="builders-scroll-container"
+                    ref={scrollRef}
+                    onScroll={handleScroll}
+                    onMouseEnter={() => setIsAutoScrolling(false)}
+                    onMouseLeave={() => setIsAutoScrolling(true)}
+                    onTouchStart={() => setIsAutoScrolling(false)}
+                >
                     <div className="builders-grid">
                         {buildersToShow.length === 0 ? (
                             <div style={{ gridColumn: 'span 12', textAlign: 'center', padding: '60px', border: '3px dashed #ccc', borderRadius: '20px', width: '100%' }}>
@@ -40,14 +89,14 @@ const GalleryShowcase = ({
                                 <h3 style={{ opacity: 0.5 }}>The gallery is preparing for takeoff...</h3>
                             </div>
                         ) : (
-                            buildersToShow.map(p => {
+                            loopedBuilders.map((p, idx) => {
                                 const builderSubmissions = submissions.filter(s => s.user_id === p.id);
                                 const latest = builderSubmissions[0];
                                 const stepIndex = builderSubmissions.length > 0 ? (builderSubmissions.length > SPRINT_MODULE_STEPS.length ? SPRINT_MODULE_STEPS.length : builderSubmissions.length) : 0;
 
                                 return (
                                     <div
-                                        key={p.id}
+                                        key={`${p.id}-${idx}`}
                                         className="neo-card builder-card"
                                         onClick={() => setSelectedDetailProfile(p)}
                                         style={{
