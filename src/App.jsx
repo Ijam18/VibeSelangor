@@ -283,6 +283,19 @@ const App = () => {
     const [activeDistrictHoverKey, setActiveDistrictHoverKey] = useState(null);
     const [selectedDistrictKey, setSelectedDistrictKey] = useState(null);
     const [activeOnboardingStep, setActiveOnboardingStep] = useState(0);
+    const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
+    const [editProfileForm, setEditProfileForm] = useState({
+        username: '',
+        district: '',
+        problemStatement: '',
+        ideaTitle: '',
+        threadsHandle: '',
+        whatsappContact: '',
+        discordTag: '',
+        aboutYourself: '',
+        programGoal: ''
+    });
+    const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
     const [publicPage, setPublicPage] = useState('home');
     const [scrolled, setScrolled] = useState(false);
     const [isMobileView, setIsMobileView] = useState(typeof window !== 'undefined' && window.innerWidth <= 768);
@@ -1001,6 +1014,51 @@ const App = () => {
         setIsUploading(false);
     };
 
+    const openEditProfileModal = async () => {
+        if (!session?.user?.id) return;
+
+        setIsUpdatingProfile(true);
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .maybeSingle();
+
+        if (data && !error) {
+            setEditProfileForm({
+                username: data.full_name || '',
+                district: data.district || '',
+                problemStatement: data.problem_statement || '',
+                ideaTitle: data.idea_title || '',
+                threadsHandle: data.threads_handle || '',
+                whatsappContact: data.whatsapp_contact || '',
+                discordTag: data.discord_tag || '',
+                aboutYourself: data.about_yourself || '',
+                programGoal: data.program_goal || ''
+            });
+            setIsEditProfileModalOpen(true);
+        }
+        setIsUpdatingProfile(false);
+    };
+
+    const handleUpdateProfile = async (e) => {
+        e.preventDefault();
+        setIsUpdatingProfile(true);
+
+        try {
+            await upsertProfile(session.user.id, editProfileForm, currentUser?.type);
+            await fetchUserProfile(session.user.id);
+            fetchData();
+            setIsEditProfileModalOpen(false);
+            alert('Profile updated successfully!');
+        } catch (error) {
+            console.error('Update profile error:', error);
+            alert('Failed to update profile: ' + error.message);
+        } finally {
+            setIsUpdatingProfile(false);
+        }
+    };
+
     const handleToggleClassStatus = async (classId, currentStatus) => {
         const nextStatus = currentStatus === 'Active' ? 'Scheduled' : 'Active';
         const { error } = await supabase
@@ -1038,6 +1096,130 @@ const App = () => {
     };
 
     // --- UI Components ---
+
+    const renderEditProfileModal = () => (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+            <div className="neo-card no-jitter" style={{ maxWidth: '500px', maxHeight: '85vh', overflowY: 'auto', width: '100%', background: 'white', border: '3px solid black' }}>
+                <h3 style={{ fontSize: '24px', marginBottom: '16px' }}>Edit Your Profile</h3>
+                <form style={{ display: 'flex', flexDirection: 'column', gap: '12px' }} onSubmit={handleUpdateProfile}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: '900' }}>FULL NAME</label>
+                        <input
+                            type="text"
+                            placeholder="Username"
+                            value={editProfileForm.username}
+                            onChange={(e) => setEditProfileForm((prev) => ({ ...prev, username: e.target.value }))}
+                            required
+                            style={{ padding: '14px', border: '2px solid black', borderRadius: '8px' }}
+                        />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: '900' }}>DISTRICT</label>
+                        <select
+                            value={editProfileForm.district}
+                            onChange={(e) => setEditProfileForm((prev) => ({ ...prev, district: e.target.value }))}
+                            required
+                            style={{ padding: '14px', border: '2px solid black', borderRadius: '8px' }}
+                        >
+                            <option value="">Select district</option>
+                            {DISTRICT_OPTIONS.map((district) => (
+                                <option key={district} value={district}>{district}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: '900' }}>IDEA TITLE</label>
+                        <input
+                            type="text"
+                            placeholder="App idea title"
+                            value={editProfileForm.ideaTitle}
+                            onChange={(e) => setEditProfileForm((prev) => ({ ...prev, ideaTitle: e.target.value }))}
+                            required
+                            style={{ padding: '14px', border: '2px solid black', borderRadius: '8px' }}
+                        />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: '900' }}>PROBLEM STATEMENT</label>
+                        <textarea
+                            placeholder="What problem are you solving? (Project Description)"
+                            value={editProfileForm.problemStatement}
+                            onChange={(e) => setEditProfileForm((prev) => ({ ...prev, problemStatement: e.target.value }))}
+                            rows={3}
+                            required
+                            maxLength={150}
+                            style={{ padding: '14px', border: '2px solid black', borderRadius: '8px', resize: 'vertical' }}
+                        />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: '900' }}>ABOUT YOURSELF</label>
+                        <textarea
+                            placeholder="Tell us about yourself"
+                            value={editProfileForm.aboutYourself}
+                            onChange={(e) => setEditProfileForm((prev) => ({ ...prev, aboutYourself: e.target.value }))}
+                            rows={2}
+                            required
+                            style={{ padding: '14px', border: '2px solid black', borderRadius: '8px', resize: 'vertical' }}
+                        />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: '900' }}>PROGRAM GOAL</label>
+                        <textarea
+                            placeholder="What is your goal in joining this program?"
+                            value={editProfileForm.programGoal}
+                            onChange={(e) => setEditProfileForm((prev) => ({ ...prev, programGoal: e.target.value }))}
+                            rows={2}
+                            required
+                            style={{ padding: '14px', border: '2px solid black', borderRadius: '8px', resize: 'vertical' }}
+                        />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: '900' }}>WHATSAPP CONTACT</label>
+                        <input
+                            type="text"
+                            placeholder="WhatsApp contact"
+                            value={editProfileForm.whatsappContact}
+                            onChange={(e) => setEditProfileForm((prev) => ({ ...prev, whatsappContact: e.target.value }))}
+                            required
+                            style={{ padding: '14px', border: '2px solid black', borderRadius: '8px' }}
+                        />
+                    </div>
+                    <div style={{ gridTemplateColumns: '1fr 1fr', display: 'grid', gap: '10px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <label style={{ fontSize: '11px', fontWeight: '900' }}>THREADS</label>
+                            <input
+                                type="text"
+                                placeholder="Threads handle"
+                                value={editProfileForm.threadsHandle}
+                                onChange={(e) => setEditProfileForm((prev) => ({ ...prev, threadsHandle: e.target.value }))}
+                                style={{ padding: '14px', border: '2px solid black', borderRadius: '8px' }}
+                            />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <label style={{ fontSize: '11px', fontWeight: '900' }}>DISCORD</label>
+                            <input
+                                type="text"
+                                placeholder="Discord tag"
+                                value={editProfileForm.discordTag}
+                                onChange={(e) => setEditProfileForm((prev) => ({ ...prev, discordTag: e.target.value }))}
+                                style={{ padding: '14px', border: '2px solid black', borderRadius: '8px' }}
+                            />
+                        </div>
+                    </div>
+                    <button className="btn btn-red" type="submit" disabled={isUpdatingProfile} style={{ marginTop: '8px' }}>
+                        {isUpdatingProfile ? 'Saving...' : 'Save Changes'}
+                    </button>
+                    <button
+                        className="btn"
+                        type="button"
+                        onClick={() => setIsEditProfileModalOpen(false)}
+                        style={{ background: 'none', border: 'none', fontSize: '12px', fontWeight: '800' }}
+                    >
+                        CANCEL
+                    </button>
+                </form>
+            </div>
+        </div>
+    );
 
     const renderAuthModal = () => (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
@@ -1742,6 +1924,9 @@ const App = () => {
                                         {checkedInToday && <div className="pill pill-teal" style={{ fontSize: '10px', fontWeight: '900' }}>✓ CHECKED IN TODAY</div>}
                                     </div>
                                 </div>
+                                <button className="btn btn-outline" onClick={openEditProfileModal} style={{ borderRadius: '8px', padding: '6px 12px', fontSize: '11px', height: 'fit-content', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }} disabled={isUpdatingProfile}>
+                                    {isUpdatingProfile ? '...' : <Settings size={12} />} Edit Profile
+                                </button>
                                 <button className="btn btn-outline" onClick={handleSignOut} style={{ borderRadius: '8px', padding: '6px 12px', fontSize: '11px', height: 'fit-content', textTransform: 'uppercase' }}>
                                     <LogOut size={12} /> Logout
                                 </button>
@@ -2319,6 +2504,7 @@ const App = () => {
     return (
         <div className="vibe-selangor">
             {isAuthModalOpen && renderAuthModal()}
+            {isEditProfileModalOpen && renderEditProfileModal()}
             {isAddClassModalOpen && renderAddClassModal()}
             {selectedDetailProfile && renderBuilderDetailModal()}
             <header className="glass-header">
