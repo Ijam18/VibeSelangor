@@ -44,11 +44,11 @@ const GalleryShowcase = ({
         const container = scrollRef.current;
         const singleSectionWidth = container.scrollWidth / 3;
 
-        // Using a small buffer (1px) to prevent getting stuck at 0
-        if (container.scrollLeft <= 0) {
-            container.scrollLeft = singleSectionWidth;
-        } else if (container.scrollLeft >= singleSectionWidth * 2) {
-            container.scrollLeft = singleSectionWidth;
+        // Using a 10px buffer to ensure smooth wrap-around even with momentum scrolling
+        if (container.scrollLeft <= 10) {
+            container.scrollLeft = singleSectionWidth + container.scrollLeft;
+        } else if (container.scrollLeft >= singleSectionWidth * 2 - 10) {
+            container.scrollLeft = container.scrollLeft - singleSectionWidth;
         }
     };
 

@@ -60,7 +60,7 @@ export default function MobileNavSidebar({
                 bottom: 0,
                 left: isRightSide ? 'auto' : 0,
                 right: isRightSide ? 0 : 'auto',
-                width: 'min(240px, 55%)',
+                width: isRightSide ? 'min(320px, 40%)' : 'min(240px, 55%)',
                 background: 'white',
                 zIndex: 20000,
                 display: 'flex',
