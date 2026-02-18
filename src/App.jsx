@@ -866,6 +866,7 @@ const App = () => {
                     handleSignOut={handleSignOut}
                     setPublicPage={setPublicPage}
                     onOpenChatbot={() => chatbotRef.current?.openChat()}
+                    isMobileView={isMobileView}
                 />
 
                 {/* Live Class Chat */}

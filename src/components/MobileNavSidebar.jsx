@@ -15,6 +15,7 @@ export default function MobileNavSidebar({
     setPublicPage,
     showChatbot,
     onOpenChatbot,
+    isMobileView = true
 }) {
     // Lock body scroll when sidebar is open
     useEffect(() => {
@@ -36,6 +37,8 @@ export default function MobileNavSidebar({
     const holidayTheme = getCurrentHolidayTheme();
     const holidayConfig = getHolidayThemeConfig(holidayTheme);
 
+    const isRightSide = !isMobileView;
+
     return (
         <>
             {/* Backdrop */}
@@ -55,14 +58,15 @@ export default function MobileNavSidebar({
                 position: 'fixed',
                 top: 0,
                 bottom: 0,
-                left: 0,
-                width: 'min(240px, 50%)',
+                left: isRightSide ? 'auto' : 0,
+                right: isRightSide ? 0 : 'auto',
+                width: 'min(240px, 55%)',
                 background: 'white',
                 zIndex: 20000,
                 display: 'flex',
                 flexDirection: 'column',
                 border: 'none',
-                boxShadow: '6px 0 16px rgba(0,0,0,0.12)',
+                boxShadow: isRightSide ? '-6px 0 16px rgba(0,0,0,0.12)' : '6px 0 16px rgba(0,0,0,0.12)',
                 overflow: 'hidden',
             }}>
                 {/* Header */}
