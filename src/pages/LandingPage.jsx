@@ -439,7 +439,7 @@ const LandingPage = ({
                         </div>
                     </div>
                     <div style={{ gridColumn: 'span 7' }}>
-                        <div className="neo-card no-jitter map-card" style={{ border: '3px solid black', boxShadow: '12px 12px 0px black', display: 'flex', justifyContent: 'center' }}>
+                        <div className="neo-card no-jitter map-card" style={{ border: '3px solid black', boxShadow: '12px 12px 0px black', display: 'flex', justifyContent: 'center', position: 'relative' }}>
                             <a
                                 href="https://www.selangor.gov.my/"
                                 target="_blank"
