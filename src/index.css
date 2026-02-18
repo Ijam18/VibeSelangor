@@ -302,7 +302,6 @@ section {
   padding: 0 4px 24px;
   width: 100%;
   -webkit-overflow-scrolling: touch;
-  scroll-snap-type: x mandatory;
 }
 
 /* Custom scrollbar for desktop visibility */
@@ -333,7 +332,6 @@ section {
 .builder-card {
   min-width: 330px;
   max-width: 330px;
-  scroll-snap-align: start;
 }
 
 @media (max-width: 991px) {
