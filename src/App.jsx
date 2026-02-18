@@ -175,6 +175,25 @@ function sanitizeAuthorText(value) {
     return text;
 }
 
+/**
+ * Normalizes phone numbers for WhatsApp links.
+ * Ensures Malaysian numbers starting with 0 or 1 are prefixed with 60.
+ */
+function formatWhatsAppLink(phone) {
+    if (!phone) return '#';
+    const cleaned = phone.toString().replace(/\D/g, '');
+    if (!cleaned) return '#';
+
+    let formatted = cleaned;
+    if (cleaned.startsWith('0')) {
+        formatted = '60' + cleaned.substring(1);
+    } else if (cleaned.startsWith('1')) {
+        formatted = '60' + cleaned;
+    }
+
+    return `https://api.whatsapp.com/send?phone=${formatted}`;
+}
+
 function parseKrackedProjectDetail(htmlText, projectPath, index) {
     const doc = new DOMParser().parseFromString(htmlText, 'text/html');
     const getText = (el) => (el?.textContent || '').replace(/\s+/g, ' ').trim();
@@ -1269,7 +1288,7 @@ const App = () => {
                                         </a>
                                     )}
                                     {(currentUser?.type === 'admin' || currentUser?.type === 'owner') && selectedDetailProfile.whatsapp_contact && (
-                                        <a href={`https://wa.me/${selectedDetailProfile.whatsapp_contact.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="btn btn-outline" style={{ padding: '14px', fontSize: '13px', textTransform: 'none', justifyContent: 'flex-start', gap: '12px', width: '100%', borderRadius: '12px', borderColor: '#25D366' }}>
+                                        <a href={formatWhatsAppLink(selectedDetailProfile.whatsapp_contact)} target="_blank" rel="noreferrer" className="btn btn-outline" style={{ padding: '14px', fontSize: '13px', textTransform: 'none', justifyContent: 'flex-start', gap: '12px', width: '100%', borderRadius: '12px', borderColor: '#25D366' }}>
                                             <WhatsAppIcon size={22} /> WhatsApp (Admin)
                                         </a>
                                     )}
@@ -1643,7 +1662,7 @@ const App = () => {
                                                             <div style={{ fontWeight: '800', marginBottom: '2px' }}>Contact:</div>
                                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                                                 {p.whatsapp_contact && (
-                                                                    <a href={`https://wa.me/${p.whatsapp_contact.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" style={{ color: '#25D366', fontWeight: 'bold', fontSize: '12px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                    <a href={formatWhatsAppLink(p.whatsapp_contact)} target="_blank" rel="noreferrer" style={{ color: '#25D366', fontWeight: 'bold', fontSize: '12px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                                                         <WhatsAppIcon size={16} /> {p.whatsapp_contact}
                                                                     </a>
                                                                 )}
