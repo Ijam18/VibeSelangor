@@ -1037,6 +1037,20 @@ const App = () => {
                 programGoal: data.program_goal || ''
             });
             setIsEditProfileModalOpen(true);
+        } else if (session.user.id === 'demo-builder-id') {
+            // Demo account fallback
+            setEditProfileForm({
+                username: currentUser?.name || 'Demo Builder',
+                district: currentUser?.district || 'Petaling',
+                problemStatement: currentUser?.problem_statement || '',
+                ideaTitle: currentUser?.idea_title || '',
+                threadsHandle: '',
+                whatsappContact: '',
+                discordTag: '',
+                aboutYourself: '',
+                programGoal: ''
+            });
+            setIsEditProfileModalOpen(true);
         }
         setIsUpdatingProfile(false);
     };
@@ -1046,11 +1060,24 @@ const App = () => {
         setIsUpdatingProfile(true);
 
         try {
-            await upsertProfile(session.user.id, editProfileForm, currentUser?.type);
-            await fetchUserProfile(session.user.id);
-            fetchData();
-            setIsEditProfileModalOpen(false);
-            alert('Profile updated successfully!');
+            if (session.user.id === 'demo-builder-id') {
+                // Simulate update for demo account
+                setCurrentUser({
+                    ...currentUser,
+                    name: editProfileForm.username,
+                    district: editProfileForm.district,
+                    idea_title: editProfileForm.ideaTitle,
+                    problem_statement: editProfileForm.problemStatement
+                });
+                setIsEditProfileModalOpen(false);
+                alert('Demo Profile updated successfully! (Note: Changes are simulated and not saved to DB)');
+            } else {
+                await upsertProfile(session.user.id, editProfileForm, currentUser?.type);
+                await fetchUserProfile(session.user.id);
+                fetchData();
+                setIsEditProfileModalOpen(false);
+                alert('Profile updated successfully!');
+            }
         } catch (error) {
             console.error('Update profile error:', error);
             alert('Failed to update profile: ' + error.message);
