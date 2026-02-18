@@ -285,7 +285,7 @@ section {
 }
 
 .showcase-card {
-  min-height: 470px;
+  min-height: 180px;
 }
 
 .showcase-card.is-open {
