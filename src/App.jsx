@@ -688,7 +688,42 @@ const App = () => {
 
                         {!isMobileView && (
                             <div className="header-actions-wrap" style={{ display: 'flex', alignItems: 'center', gap: '22px' }}>
-                                {/* Nav links/auth removed from header - in sidebar */}
+                                <nav className="header-nav" style={{ display: 'flex', gap: '20px' }}>
+                                    {HEADER_LINKS.map(link => (
+                                        <a
+                                            key={link.label}
+                                            href={link.page ? `#${link.page}-page` : `#${link.sectionId}`}
+                                            className="header-link"
+                                            onClick={(e) => handleHeaderNavClick(e, link)}
+                                            style={{
+                                                color: (publicPage === link.page) ? 'var(--selangor-red)' : 'black',
+                                                textDecoration: 'none',
+                                                fontWeight: '800',
+                                                fontSize: '14px'
+                                            }}
+                                        >
+                                            {link.label}
+                                        </a>
+                                    ))}
+                                </nav>
+                                <div className="header-auth-actions" style={{ display: 'flex', gap: '10px' }}>
+                                    {!session ? (
+                                        <button className="btn btn-red" onClick={handleJoinClick} style={{ padding: '8px 20px', fontSize: '12px' }}>
+                                            JOIN COHORT
+                                        </button>
+                                    ) : (
+                                        <button className="btn btn-outline" onClick={() => setPublicPage('dashboard')} style={{ padding: '8px 20px', fontSize: '12px' }}>
+                                            DASHBOARD
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={() => setIsSidebarOpen(true)}
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '5px' }}
+                                        title="Open Menu"
+                                    >
+                                        <Menu size={24} />
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>

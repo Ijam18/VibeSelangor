@@ -31,3 +31,5 @@ pnpm-debug.log*
 # Local agent artifacts
 .agent/
 *.png
+.vercel
+.env*.local
