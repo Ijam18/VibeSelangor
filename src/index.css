@@ -48,6 +48,7 @@ h4 {
   letter-spacing: -0.04em;
   color: var(--text-charcoal);
   line-height: 1.1;
+  margin-bottom: 0.4em;
 }
 
 .container {
@@ -160,13 +161,35 @@ section {
   color: white;
 }
 
+.scroll-box {
+  max-height: 500px;
+  overflow-y: auto;
+  padding-right: 12px;
+}
+
+.scroll-box::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scroll-box::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.scroll-box::-webkit-scrollbar-thumb {
+  background: var(--border-charcoal);
+  border-radius: 10px;
+}
+
 .glass-header {
-  position: sticky;
+  position: relative;
+  /* Scrolls away with page content */
   top: 0;
   z-index: 1000;
-  background: rgba(253, 252, 251, 0.95);
+  background: rgba(253, 252, 251, 0.98);
   backdrop-filter: blur(4px);
   border-bottom: 2px solid var(--border-charcoal);
+  width: 100%;
 }
 
 .header-link {
@@ -501,6 +524,7 @@ section {
 }
 
 @keyframes blinkCaret {
+
   0%,
   50% {
     opacity: 1;
@@ -513,6 +537,7 @@ section {
 }
 
 @keyframes promptPulse {
+
   0%,
   100% {
     opacity: 1;
@@ -545,13 +570,54 @@ section {
   }
 }
 
+@keyframes mapRegionPulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.map-region-pulse {
+  animation: mapRegionPulse 1.2s ease-in-out infinite;
+}
+
+.map-region-pulse-med {
+  animation: mapRegionPulse 0.8s ease-in-out infinite;
+}
+
+.map-region-pulse-fast {
+  animation: mapRegionPulse 0.5s ease-in-out infinite;
+}
+
 @media (max-width: 768px) {
   .container {
     padding: 0 16px;
   }
 
   section {
-    padding: 56px 0;
+    padding: 32px 0;
   }
 
   .neo-card {
@@ -566,43 +632,85 @@ section {
   .glass-header .container {
     height: auto;
     min-height: 72px;
-    gap: 10px;
-    padding-top: 10px;
-    padding-bottom: 10px;
-    flex-wrap: wrap;
+    gap: 16px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
   }
 
-  .glass-header nav {
-    width: 100%;
-    justify-content: space-between;
-    gap: 12px;
+  .header-container {
+    flex-direction: column !important;
+    gap: 6px !important;
+    min-height: auto !important;
+    padding: 16px 16px 8px !important;
   }
 
   .header-brand-text {
-    font-size: 24px !important;
+    font-size: 26px !important;
+  }
+
+  .header-brand-wrap div {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  .header-brand-wrap div svg {
+    width: 16px !important;
+    height: 16px !important;
+    margin: 4px !important;
+  }
+
+  .header-brand-wrap {
+    justify-content: center;
+    width: 100%;
   }
 
   .header-actions-wrap {
+    flex-direction: column;
+    gap: 8px !important;
     width: 100%;
-    justify-content: space-between;
-    gap: 12px !important;
-    flex-wrap: wrap;
   }
 
   .header-nav {
-    flex: 1;
-  }
-
-  .header-auth-actions {
-    margin-left: auto;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 4px 12px !important;
   }
 
   .header-link {
-    font-size: 16px;
+    font-size: 15px !important;
+    letter-spacing: -0.01em;
+  }
+
+  .header-auth-actions {
+    gap: 8px !important;
+    margin-top: 4px;
+    justify-content: center;
+    width: 100%;
+    margin-left: 0;
+    text-align: center;
+  }
+
+  .header-auth-actions .btn {
+    padding: 8px 18px !important;
+    font-size: 13px !important;
+    min-width: 0 !important;
+  }
+
+  .mobile-quick-actions {
+    display: none !important;
+    /* Hide redundant icon buttons, use text buttons instead */
   }
 
   .map-card {
     padding: 16px;
+  }
+
+  .selangor-title {
+    font-size: 9px !important;
+    letter-spacing: 1px !important;
   }
 
   .map-insight {
@@ -666,68 +774,41 @@ section {
 
 @media (max-width: 480px) {
   .glass-header .container {
-    display: grid !important;
-    grid-template-columns: 1fr auto;
+    display: flex !important;
+    flex-direction: column !important;
     align-items: center;
-    row-gap: 8px;
-    position: relative;
-  }
-
-  .container {
-    padding: 0 12px;
-  }
-
-  .btn {
-    padding: 12px 16px;
-    font-size: 12px;
-  }
-
-  .header-brand-text {
-    font-size: 20px !important;
-  }
-
-  .header-actions-wrap {
-    display: grid !important;
-    grid-template-columns: 1fr auto;
-    width: 100%;
-    grid-column: 1 / -1;
-    gap: 8px 10px !important;
-    align-items: center;
-  }
-
-  .mobile-quick-actions {
-    display: inline-flex;
-    margin-left: 0;
-    gap: 8px;
-    position: absolute;
-    top: 24px;
-    right: 12px;
-    z-index: 2;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    gap: 12px;
   }
 
   .header-brand-wrap {
-    margin-top: 8px;
+    margin-top: 0;
+    justify-content: center;
+  }
+
+  .header-actions-wrap {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100%;
+    gap: 12px !important;
+    align-items: center;
   }
 
   .header-nav {
-    grid-column: 1 / -1;
-    grid-row: 2;
+    display: flex !important;
+    justify-content: center !important;
     width: 100%;
-    justify-content: flex-start !important;
-    gap: 14px !important;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    padding-bottom: 2px;
-    margin-top: -4px;
-  }
-
-  .header-link {
-    font-size: 13px;
-    white-space: nowrap;
+    gap: 12px !important;
+    overflow-x: visible;
+    margin-top: 0;
   }
 
   .header-auth-actions {
-    display: none !important;
+    display: flex !important;
+    width: 100%;
+    justify-content: center;
+    gap: 8px !important;
   }
 
   .map-card {
@@ -787,7 +868,9 @@ section {
 }
 
 @media (max-width: 360px) {
-  .header-link { font-size: 12px; }
+  .header-link {
+    font-size: 12px;
+  }
 
   .map-svg {
     max-width: 280px;
@@ -818,37 +901,46 @@ section {
     font-size: 20px !important;
   }
 
-  .header-actions-wrap {
-    display: grid !important;
-    grid-template-columns: 1fr auto;
+  .glass-header .container {
+    display: flex !important;
+    flex-direction: column !important;
     align-items: center;
-    justify-content: end;
-    gap: 12px !important;
+    min-height: 64px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    gap: 8px;
+  }
+
+  .header-brand-wrap {
+    margin-top: 0 !important;
+  }
+
+  .header-brand-text {
+    font-size: 20px !important;
+  }
+
+  .header-actions-wrap {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center;
     width: 100%;
-    grid-column: 1 / -1;
-    margin-top: -6px;
+    gap: 8px !important;
   }
 
   .header-nav {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    justify-content: flex-start !important;
-    overflow-x: auto;
-    margin-top: -40px !important;
-    padding-bottom: 0;
-    gap: 10px !important;
-  }
-
-  .header-link {
-    font-size: 13px;
-    white-space: nowrap;
+    display: flex !important;
+    justify-content: center !important;
+    width: 100%;
+    gap: 12px !important;
+    margin-top: 0 !important;
   }
 
   .header-auth-actions {
-    display: inline-flex !important;
-    width: auto;
+    display: flex !important;
+    width: 100%;
+    justify-content: center;
     gap: 8px !important;
-    margin-top: -8px;
+    margin-top: 0 !important;
   }
 
   .btn {
