@@ -1263,7 +1263,7 @@ const App = () => {
                             <div style={{ marginBottom: '32px' }}>
                                 <h4 style={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#666', borderBottom: '2px solid #eee', paddingBottom: '8px', marginBottom: '16px' }}>Idea & Vision</h4>
                                 <div style={{ fontWeight: '900', fontSize: '24px', marginBottom: '16px', lineHeight: 1.1, letterSpacing: '-0.5px' }}>{selectedDetailProfile.idea_title || 'Untitled Innovation'}</div>
-                                <div style={{ background: '#fcfcfc', borderLeft: '4px solid var(--selangor-red)', padding: '16px 20px', borderRadius: '4px', border: '1px solid #eee', borderLeft: '4px solid var(--selangor-red)' }}>
+                                <div style={{ background: '#fcfcfc', borderLeft: '4px solid var(--selangor-red)', padding: '16px 20px', borderRadius: '4px', border: '1px solid #eee' }}>
                                     <p style={{ fontSize: '15px', lineHeight: '1.6', color: '#333', fontWeight: '500' }}>
                                         {selectedDetailProfile.problem_statement || 'No problem statement defined yet.'}
                                     </p>
