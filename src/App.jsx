@@ -1122,6 +1122,20 @@ const App = () => {
         fetchData();
     };
 
+    const handleJoinClick = (e) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        // Check both session and currentUser to ensure profile is loaded
+        if (session && currentUser) {
+            setPublicPage('dashboard');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            setIsAuthModalOpen(true);
+        }
+    };
+
     // --- UI Components ---
 
     const renderEditProfileModal = () => (
@@ -1569,70 +1583,75 @@ const App = () => {
                         <p className="text-sub" style={{ maxWidth: '600px', margin: '4px auto 0' }}>Discover the innovative apps and startups being built right here in Selangor.</p>
                     </div>
 
-                    <div className="grid-12">
-                        {buildersToShow.length === 0 ? (
-                            <div style={{ gridColumn: 'span 12', textAlign: 'center', padding: '60px', border: '3px dashed #ccc', borderRadius: '20px' }}>
-                                <Sparkles size={48} style={{ opacity: 0.2, marginBottom: '20px' }} />
-                                <h3 style={{ opacity: 0.5 }}>The gallery is preparing for takeoff...</h3>
-                            </div>
-                        ) : (
-                            buildersToShow.map(p => {
-                                const builderSubmissions = submissions.filter(s => s.user_id === p.id);
-                                const latest = builderSubmissions[0];
-                                const stepIndex = builderSubmissions.length > 0 ? (builderSubmissions.length > SPRINT_MODULE_STEPS.length ? SPRINT_MODULE_STEPS.length : builderSubmissions.length) : 0;
+                    <div className="builders-scroll-container">
+                        <div className="builders-grid">
+                            {buildersToShow.length === 0 ? (
+                                <div style={{ gridColumn: 'span 12', textAlign: 'center', padding: '60px', border: '3px dashed #ccc', borderRadius: '20px', width: '100%' }}>
+                                    <Sparkles size={48} style={{ opacity: 0.2, marginBottom: '20px' }} />
+                                    <h3 style={{ opacity: 0.5 }}>The gallery is preparing for takeoff...</h3>
+                                </div>
+                            ) : (
+                                buildersToShow.map(p => {
+                                    const builderSubmissions = submissions.filter(s => s.user_id === p.id);
+                                    const latest = builderSubmissions[0];
+                                    const stepIndex = builderSubmissions.length > 0 ? (builderSubmissions.length > SPRINT_MODULE_STEPS.length ? SPRINT_MODULE_STEPS.length : builderSubmissions.length) : 0;
 
-                                return (
-                                    <div
-                                        key={p.id}
-                                        className="neo-card"
-                                        onClick={() => setSelectedDetailProfile(p)}
-                                        style={{
-                                            gridColumn: isMobileView ? 'span 12' : 'span 3',
-                                            border: '3px solid black',
-                                            boxShadow: '8px 8px 0px black',
-                                            cursor: 'pointer',
-                                            transition: 'transform 0.2s, box-shadow 0.2s',
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            gap: '12px',
-                                            padding: '24px',
-                                            background: 'white'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.transform = 'translate(-2px, -2px)';
-                                            e.currentTarget.style.boxShadow = '10px 10px 0px black';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.transform = 'none';
-                                            e.currentTarget.style.boxShadow = '8px 8px 0px black';
-                                        }}
-                                    >
-                                        <div style={{ flexGrow: 1 }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                                                <div style={{ width: '32px', height: '32px', background: 'var(--selangor-red)', color: 'white', borderRadius: '8px', border: '2px solid black', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '950', fontSize: '14px' }}>
-                                                    {p.full_name?.[0]}
+                                    return (
+                                        <div
+                                            key={p.id}
+                                            className="neo-card builder-card"
+                                            onClick={() => setSelectedDetailProfile(p)}
+                                            style={{
+                                                border: '3px solid black',
+                                                boxShadow: '8px 8px 0px black',
+                                                cursor: 'pointer',
+                                                transition: 'transform 0.2s, box-shadow 0.2s',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                gap: '12px',
+                                                padding: '24px',
+                                                background: 'white'
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                if (!isMobileView) {
+                                                    e.currentTarget.style.transform = 'translate(-2px, -2px)';
+                                                    e.currentTarget.style.boxShadow = '10px 10px 0px black';
+                                                }
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                if (!isMobileView) {
+                                                    e.currentTarget.style.transform = 'none';
+                                                    e.currentTarget.style.boxShadow = '8px 8px 0px black';
+                                                }
+                                            }}
+                                        >
+                                            <div style={{ flexGrow: 1 }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                                                    <div style={{ width: '32px', height: '32px', background: 'var(--selangor-red)', color: 'white', borderRadius: '8px', border: '2px solid black', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '950', fontSize: '14px' }}>
+                                                        {p.full_name?.[0]}
+                                                    </div>
+                                                    <div className="pill pill-red" style={{ fontSize: '9px', padding: '2px 8px' }}>
+                                                        {stepIndex === 0 ? 'KICKOFF' : SPRINT_MODULE_STEPS[stepIndex - 1]?.split(':')[1]?.trim()?.toUpperCase()}
+                                                    </div>
                                                 </div>
-                                                <div className="pill pill-red" style={{ fontSize: '9px', padding: '2px 8px' }}>
-                                                    {stepIndex === 0 ? 'KICKOFF' : SPRINT_MODULE_STEPS[stepIndex - 1]?.split(':')[1]?.trim()?.toUpperCase()}
+                                                <h4 style={{ fontSize: '20px', marginBottom: '12px', lineHeight: 1.1 }}>{latest?.project_name || p.idea_title || 'Untitled Project'}</h4>
+                                                <div style={{ fontSize: '12px', lineHeight: '1.5', color: '#444' }}>
+                                                    <div style={{ fontWeight: '900', fontSize: '10px', color: '#888', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Vision & Mission</div>
+                                                    {truncateText(latest?.one_liner || p.problem_statement, 120)}
                                                 </div>
                                             </div>
-                                            <h4 style={{ fontSize: '20px', marginBottom: '12px', lineHeight: 1.1 }}>{latest?.project_name || p.idea_title || 'Untitled Project'}</h4>
-                                            <div style={{ fontSize: '12px', lineHeight: '1.5', color: '#444' }}>
-                                                <div style={{ fontWeight: '900', fontSize: '10px', color: '#888', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Vision & Mission</div>
-                                                {truncateText(latest?.one_liner || p.problem_statement, 120)}
+
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderTop: '2px solid #eee', paddingTop: '12px', marginTop: '4px' }}>
+                                                <div>
+                                                    <div style={{ fontSize: '12px', fontWeight: '900' }}>{p.full_name}</div>
+                                                    <div style={{ fontSize: '10px', opacity: 0.5 }}>{p.district || 'Selangor'}</div>
+                                                </div>
                                             </div>
                                         </div>
-
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderTop: '2px solid #eee', paddingTop: '12px', marginTop: '4px' }}>
-                                            <div>
-                                                <div style={{ fontSize: '12px', fontWeight: '900' }}>{p.full_name}</div>
-                                                <div style={{ fontSize: '10px', opacity: 0.5 }}>{p.district || 'Selangor'}</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })
-                        )}
+                                    );
+                                })
+                            )}
+                        </div>
                     </div>
 
                     {limit && profiles.filter(p => !session?.user || p.id !== session.user.id).length > limit && (
@@ -1672,7 +1691,7 @@ const App = () => {
             <div style={{ background: 'black', color: 'white', padding: '100px 0', borderTop: '3px solid black' }}>
                 <div className="container text-center" style={{ textAlign: 'center' }}>
                     <h2 style={{ fontSize: '48px', marginBottom: '24px' }}>Ready to join them?</h2>
-                    <button className="btn btn-red" onClick={() => setIsAuthModalOpen(true)}>START YOUR SPRINT</button>
+                    <button className="btn btn-red" onClick={handleJoinClick}>START YOUR SPRINT</button>
                 </div>
             </div>
         </div>
@@ -2170,11 +2189,11 @@ const App = () => {
                     <div style={{ gridColumn: 'span 7' }}>
                         <div className="pill pill-red" style={{ marginBottom: '12px' }}>SELANGOR BUILDER SPRINT 2026</div>
                         <h1 className="text-huge">Built for <span style={{ color: 'var(--selangor-red)' }}>Selangor</span>. Connecting and growing the builder community.</h1>
-                        <button className="btn btn-red" style={{ marginTop: '12px' }} onClick={() => setIsAuthModalOpen(true)}>Join the Cohort</button>
+                        <button className="btn btn-red" style={{ marginTop: '12px' }} onClick={handleJoinClick}>Join the Cohort</button>
                     </div>
                     <div style={{ gridColumn: 'span 5' }}>
                         <div className="neo-card no-jitter" style={{ border: '3px solid black', boxShadow: '12px 12px 0px black' }}>
-                            <span className="pill" style={{ background: 'black', color: 'white', cursor: 'pointer' }} onClick={() => setIsAuthModalOpen(true)}>PORTAL_ACCESS</span>
+                            <span className="pill" style={{ background: 'black', color: 'white', cursor: 'pointer' }} onClick={handleJoinClick}>PORTAL_ACCESS</span>
                             <div className="terminal-shell" style={{ background: '#000', borderRadius: '12px', padding: '32px', marginTop: '24px' }}>
                                 <div className="terminal-prompt" style={{ color: 'var(--selangor-red)', fontFamily: 'monospace', fontSize: '24px', lineHeight: 1 }}>{TERMINAL_CONTEXT}</div>
                                 <p className="terminal-line" style={{ color: 'white', fontFamily: 'monospace', fontSize: '14px', marginTop: '10px' }}>
@@ -2482,7 +2501,7 @@ const App = () => {
                         Disclaimer: This sprint does not teach programming in depth. It teaches you how to build and launch a web/app using modern AI tools.
                     </p>
                     <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                        <button className="btn btn-red" onClick={() => setIsAuthModalOpen(true)}>Join the Cohort</button>
+                        <button className="btn btn-red" onClick={handleJoinClick}>Join the Cohort</button>
                         <button className="btn btn-outline" onClick={() => setPublicPage('home')}>Back to Home</button>
                     </div>
                 </div>
@@ -2605,7 +2624,7 @@ const App = () => {
                                     <button
                                         type="button"
                                         className="mobile-icon-btn mobile-icon-btn-red"
-                                        onClick={() => setIsAuthModalOpen(true)}
+                                        onClick={handleJoinClick}
                                         title="Become a builder now"
                                         aria-label="Become a builder now"
                                     >
@@ -2622,7 +2641,7 @@ const App = () => {
                                     >
                                         Contact
                                     </a>
-                                    <button className="btn btn-red" style={{ padding: '8px 16px', fontSize: '12px' }} onClick={() => setIsAuthModalOpen(true)}>Become a builder now!</button>
+                                    <button className="btn btn-red" style={{ padding: '8px 16px', fontSize: '12px' }} onClick={handleJoinClick}>Become a builder now!</button>
                                 </div>
                             </>
                         )}

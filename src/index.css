@@ -245,12 +245,48 @@ section {
   min-height: 440px;
 }
 
-.showcase-list {
-  max-height: 360px;
-}
-
 .showcase-card.is-open .showcase-list {
   max-height: 320px;
+}
+
+/* Builders Scroll Gallery */
+.builders-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.builder-card {
+  grid-column: span 1;
+}
+
+@media (max-width: 991px) {
+  .builders-scroll-container {
+    overflow-x: auto;
+    padding: 0 4px 24px;
+    margin: 0 -16px;
+    padding-left: 16px;
+    width: calc(100% + 32px);
+    -webkit-overflow-scrolling: touch;
+    cursor: grab;
+    scroll-snap-type: x mandatory;
+  }
+
+  .builders-scroll-container::-webkit-scrollbar {
+    display: none;
+  }
+
+  .builders-grid {
+    display: flex !important;
+    gap: 16px;
+    width: max-content;
+  }
+
+  .builder-card {
+    min-width: 300px;
+    max-width: 300px;
+    scroll-snap-align: start;
+  }
 }
 
 .showcase-loading {
