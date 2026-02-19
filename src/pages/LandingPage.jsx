@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Users, Folder } from 'lucide-react';
+import { Users, Folder, Sunrise, Sun, Moon, Coffee, Flag, PartyPopper, Gift, Hammer } from 'lucide-react';
 import GalleryShowcase from '../components/GalleryShowcase';
 import {
     DISTRICT_INFO,
@@ -413,18 +413,24 @@ const LandingPage = ({
                                         const date = now.getDate();
                                         const month = now.getMonth() + 1; // 0-indexed
 
-                                        // Malaysia Public Holidays (Simples)
-                                        if (month === 8 && date === 31) return "SELAMAT HARI MERDEKA! 🇲🇾";
-                                        if (month === 9 && date === 16) return "SELAMAT HARI MALAYSIA! 🇲🇾";
-                                        if (month === 5 && date === 1) return "SELAMAT HARI PEKERJA! 🛠️";
-                                        if (month === 12 && date === 25) return "MERRY CHRISTMAS! 🎄";
-                                        if (month === 1 && date === 1) return "HAPPY NEW YEAR! 🎉";
+                                        let greeting = { text: "SELAMAT DATANG!", icon: <Zap size={18} fill="yellow" /> };
 
-                                        // Time of Day
-                                        if (hour >= 5 && hour < 12) return "SELAMAT PAGI! ☀️";
-                                        if (hour >= 12 && hour < 15) return "SELAMAT TENGAHARI! 🌤️";
-                                        if (hour >= 15 && hour < 19) return "SELAMAT PETANG! ☕";
-                                        return "SELAMAT MALAM! 🌙";
+                                        if (month === 8 && date === 31) greeting = { text: "SELAMAT HARI MERDEKA!", icon: <Flag size={18} fill="#ef4444" /> };
+                                        else if (month === 9 && date === 16) greeting = { text: "SELAMAT HARI MALAYSIA!", icon: <Flag size={18} fill="#ef4444" /> };
+                                        else if (month === 5 && date === 1) greeting = { text: "SELAMAT HARI PEKERJA!", icon: <Hammer size={18} fill="#888" /> };
+                                        else if (month === 12 && date === 25) greeting = { text: "MERRY CHRISTMAS!", icon: <Gift size={18} fill="#ef4444" /> };
+                                        else if (month === 1 && date === 1) greeting = { text: "HAPPY NEW YEAR!", icon: <PartyPopper size={18} fill="#f97316" /> };
+                                        else if (hour >= 5 && hour < 12) greeting = { text: "SELAMAT PAGI!", icon: <Sunrise size={18} color="#f97316" /> };
+                                        else if (hour >= 12 && hour < 15) greeting = { text: "SELAMAT TENGAHARI!", icon: <Sun size={18} fill="#facc15" color="#ca8a04" /> };
+                                        else if (hour >= 15 && hour < 19) greeting = { text: "SELAMAT PETANG!", icon: <Coffee size={18} color="#92400e" /> };
+                                        else greeting = { text: "SELAMAT MALAM!", icon: <Moon size={18} fill="#1e293b" color="#1e293b" /> };
+
+                                        return (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end' }}>
+                                                <span>{greeting.text}</span>
+                                                {greeting.icon}
+                                            </div>
+                                        );
                                     })()}
                                 </span>
                             </div>
@@ -520,8 +526,8 @@ const LandingPage = ({
                                             <div
                                                 key={item.id}
                                                 onClick={() => {
-                                                    if (item.isKD) {
-                                                        window.open('https://krackeddevs.com/showcase', '_blank');
+                                                    if (item.isKD && item.submission_url) {
+                                                        window.open(item.submission_url, '_blank');
                                                     } else if (item.builder_profile) {
                                                         setSelectedDetailProfile(item.builder_profile);
                                                     }
