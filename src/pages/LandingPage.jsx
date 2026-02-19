@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Users, Folder, Sunrise, Sun, Moon, Coffee, Flag, PartyPopper, Gift, Hammer, Zap, Cpu, MessageSquare } from 'lucide-react';
+import { Users, Folder, Sunrise, Sun, Moon, Coffee, Flag, PartyPopper, Gift, Hammer, Zap, Cpu, MessageSquare, Bot, Cloud, CloudRain, CloudLightning, Wind } from 'lucide-react';
 import GalleryShowcase from '../components/GalleryShowcase';
 import {
     DISTRICT_INFO,
@@ -37,12 +37,49 @@ const LandingPage = ({
     const [mapRegions, setMapRegions] = useState([]);
     const [mapViewMode, setMapViewMode] = useState('builders'); // 'builders' or 'projects'
 
+    // Mascot & Weather State
+    const [showMascotModal, setShowMascotModal] = useState(false);
+    const [weatherData, setWeatherData] = useState({ temp: '--', condition: 'Loading...' });
+
     // Sequential Animation State
     const [currentTime, setCurrentTime] = useState(new Date());
     const [typedCommand, setTypedCommand] = useState('');
     const [typedTimestamp, setTypedTimestamp] = useState('');
     const [typedGreeting, setTypedGreeting] = useState('');
     const [typingPhase, setTypingPhase] = useState('command'); // command -> timestamp -> greeting
+
+    // Weather Fetching (Shah Alam, Selangor)
+    useEffect(() => {
+        const fetchWeather = async () => {
+            try {
+                const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=3.0738&longitude=101.5183&current_weather=true');
+                const data = await res.json();
+                const temp = Math.round(data.current_weather.temperature);
+                const code = data.current_weather.weathercode;
+
+                let condition = 'Clear';
+                if (code >= 1 && code <= 3) condition = 'Cloudy';
+                else if (code >= 45 && code <= 48) condition = 'Foggy';
+                else if (code >= 51 && code <= 67) condition = 'Raining';
+                else if (code >= 71 && code <= 86) condition = 'Snowing';
+                else if (code >= 95) condition = 'Storm';
+
+                setWeatherData({ temp, condition });
+            } catch (e) {
+                setWeatherData({ temp: '30', condition: 'Sunny' }); // Fallback
+            }
+        };
+        fetchWeather();
+        const weatherInterval = setInterval(fetchWeather, 600000); // Update every 10 mins
+        return () => clearInterval(weatherInterval);
+    }, []);
+
+    const WeatherIcon = ({ condition, size = 16 }) => {
+        if (condition.includes('Rain')) return <CloudRain size={size} color="#3b82f6" />;
+        if (condition.includes('Storm')) return <CloudLightning size={size} color="#fbbf24" />;
+        if (condition.includes('Cloud')) return <Cloud size={size} color="#64748b" />;
+        return <Sun size={size} color="#f59e0b" fill="#f59e0b" />;
+    };
 
     // Ticking Clock for Prompt
     useEffect(() => {
@@ -481,17 +518,21 @@ const LandingPage = ({
                     </div>
                     <div style={{ gridColumn: 'span 5' }}>
                         <div className="neo-card no-jitter" style={{ border: '3px solid black', boxShadow: '12px 12px 0px black', padding: '32px', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'auto' }}>
-                                <span className="pill" style={{ background: 'black', color: 'white', cursor: 'pointer', fontSize: '12px' }} onClick={handleJoinClick}>PORTAL_ACCESS</span>
-                                <span style={{ fontFamily: 'monospace', fontWeight: '800', fontSize: '14px', color: '#666' }}>
-                                    SYSTEM_INITIALIZED
-                                </span>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'auto', gap: '12px' }}>
+                                <span className="pill" style={{ background: 'black', color: 'white', cursor: 'pointer', fontSize: '11px', whiteSpace: 'nowrap' }} onClick={handleJoinClick}>PORTAL_ACCESS</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'monospace', fontWeight: '800', fontSize: '12px', color: '#444' }}>
+                                    <span style={{ opacity: 0.6 }}>SELANGOR:</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <WeatherIcon condition={weatherData.condition} />
+                                        <span>{weatherData.temp}°C</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="terminal-shell" style={{ background: '#000', borderRadius: '12px', padding: '24px', marginTop: '20px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '190px' }}>
+                            <div className="terminal-shell" style={{ background: '#000', borderRadius: '12px', padding: '16px 20px', marginTop: '20px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '210px' }}>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                    <div className="terminal-prompt" style={{ color: 'var(--selangor-red)', fontFamily: 'monospace', fontSize: '14px', lineHeight: 1.4, display: 'flex', justifyContent: 'space-between' }}>
-                                        <span>{TERMINAL_CONTEXT}</span>
-                                        <span style={{ opacity: 0.7 }}>{currentTime.toLocaleTimeString()}</span>
+                                    <div className="terminal-prompt" style={{ color: 'var(--selangor-red)', fontFamily: 'monospace', fontSize: '13px', lineHeight: 1.4, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                                        <span style={{ wordBreak: 'break-all' }}>{TERMINAL_CONTEXT}</span>
+                                        <span style={{ opacity: 0.7, marginLeft: 'auto' }}>{currentTime.toLocaleTimeString()}</span>
                                     </div>
 
                                     <p className="terminal-line" style={{ color: 'white', fontFamily: 'monospace', fontSize: '14px', marginTop: '0', width: 'auto', animation: 'none' }}>
@@ -501,21 +542,46 @@ const LandingPage = ({
                                 </div>
 
                                 <div style={{ marginTop: 'auto', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                                    <div style={{ background: 'var(--selangor-red)', padding: '6px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <Cpu size={18} color="white" />
+                                    <div
+                                        onClick={() => setShowMascotModal(true)}
+                                        style={{ background: 'var(--selangor-red)', padding: '6px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.2s' }}
+                                        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
+                                        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                                    >
+                                        <Bot size={18} color="white" />
                                     </div>
                                     <div style={{ flex: 1 }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                                            <span style={{ color: 'var(--selangor-red)', fontSize: '11px', fontWeight: 'bold', fontFamily: 'monospace' }}>MASCOT_VIBE</span>
-                                            <span style={{ color: '#666', fontSize: '10px', fontFamily: 'monospace' }}>{typedTimestamp}</span>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px', marginBottom: '2px' }}>
+                                            <span style={{ color: 'var(--selangor-red)', fontSize: '10px', fontWeight: '950', fontFamily: 'monospace', letterSpacing: '1px' }}>IJAM_BOT</span>
+                                            <span style={{ color: '#666', fontSize: '9px', fontFamily: 'monospace' }}>{typedTimestamp}</span>
                                         </div>
-                                        <p style={{ color: '#22c55e', fontWeight: 'bold', fontFamily: 'monospace', fontSize: '13px', lineHeight: 1.4, minHeight: '1.2em' }}>
+                                        <p style={{ color: '#22c55e', fontWeight: 'bold', fontFamily: 'monospace', fontSize: '12px', lineHeight: 1.4, minHeight: '1.2em' }}>
                                             {typedGreeting}
                                             {typingPhase === 'greeting' && <span className="terminal-caret" style={{ background: '#22c55e' }}>|</span>}
                                         </p>
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Mascot Modal */}
+                            {showMascotModal && (
+                                <div
+                                    style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+                                    onClick={() => setShowMascotModal(false)}
+                                >
+                                    <div
+                                        style={{ background: 'white', border: '4px solid black', boxShadow: '12px 12px 0px black', padding: '40px', maxWidth: '400px', width: '100%', textAlign: 'center' }}
+                                        onClick={e => e.stopPropagation()}
+                                    >
+                                        <div style={{ background: 'var(--selangor-red)', width: '80px', height: '80px', margin: '0 auto 24px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <Bot size={48} color="white" />
+                                        </div>
+                                        <h2 style={{ fontSize: '28px', marginBottom: '16px' }}>Hello! I'm IJAM_BOT</h2>
+                                        <p style={{ marginBottom: '24px', fontSize: '16px', lineHeight: 1.6 }}>"The digital guardian of Selangor's builder community. I help track progress, connect districts, and ensure every launch is a vibe!"</p>
+                                        <button className="btn btn-red w-full" onClick={() => setShowMascotModal(false)}>Back to Portal</button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
