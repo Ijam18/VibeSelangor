@@ -1192,3 +1192,14 @@ section {
     overflow-y: auto;
   }
 }
+/* Greeting Animation */
+@keyframes greetingPulse {
+  0% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.9; }
+}
+
+.greeting-anim {
+  display: inline-block;
+  animation: greetingPulse 2s infinite ease-in-out;
+}

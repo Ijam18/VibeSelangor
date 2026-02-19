@@ -346,7 +346,7 @@ const LandingPage = ({
                         <div className="neo-card no-jitter" style={{ border: '3px solid black', boxShadow: '12px 12px 0px black', padding: '32px', height: '100%', display: 'flex', flexDirection: 'column' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'auto' }}>
                                 <span className="pill" style={{ background: 'black', color: 'white', cursor: 'pointer', fontSize: '12px' }} onClick={handleJoinClick}>PORTAL_ACCESS</span>
-                                <span style={{ fontFamily: 'monospace', fontWeight: '800', fontSize: '14px', textAlign: 'right' }}>
+                                <span className="greeting-anim" style={{ fontFamily: 'monospace', fontWeight: '800', fontSize: '14px', textAlign: 'right' }}>
                                     {(() => {
                                         const now = new Date();
                                         const hour = now.getHours();
@@ -368,9 +368,9 @@ const LandingPage = ({
                                     })()}
                                 </span>
                             </div>
-                            <div className="terminal-shell" style={{ background: '#000', borderRadius: '12px', padding: '40px', marginTop: '20px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                <div className="terminal-prompt" style={{ color: 'var(--selangor-red)', fontFamily: 'monospace', fontSize: '32px', lineHeight: 1.1 }}>{TERMINAL_CONTEXT}</div>
-                                <p className="terminal-line" style={{ color: 'white', fontFamily: 'monospace', fontSize: '16px', marginTop: '16px' }}>
+                            <div className="terminal-shell" style={{ background: '#000', borderRadius: '12px', padding: '24px', marginTop: '20px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
+                                <div className="terminal-prompt" style={{ color: 'var(--selangor-red)', fontFamily: 'monospace', fontSize: '14px', lineHeight: 1.4, marginBottom: '8px' }}>{TERMINAL_CONTEXT}</div>
+                                <p className="terminal-line" style={{ color: 'white', fontFamily: 'monospace', fontSize: '14px', marginTop: '0' }}>
                                     {DEPLOY_COMMAND}
                                     <span className="terminal-caret">|</span>
                                 </p>
