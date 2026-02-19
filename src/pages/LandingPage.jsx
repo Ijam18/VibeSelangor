@@ -36,6 +36,70 @@ const LandingPage = ({
     const [selectedDistrictKey, setSelectedDistrictKey] = useState(null);
     const [mapRegions, setMapRegions] = useState([]);
     const [mapViewMode, setMapViewMode] = useState('builders'); // 'builders' or 'projects'
+    const [selectedDetailProfile, setSelectedDetailProfile] = useState(null);
+
+    // Sequential Animation State
+    const [greetingTextDisplay, setGreetingTextDisplay] = useState('');
+    const [terminalTextDisplay, setTerminalTextDisplay] = useState('');
+    const [showGreetingIcon, setShowGreetingIcon] = useState(false);
+
+    const greetingInfo = useMemo(() => {
+        const now = new Date();
+        const hour = now.getHours();
+        const date = now.getDate();
+        const month = now.getMonth() + 1;
+
+        let greeting = { text: "SELAMAT DATANG!", icon: <Zap size={18} fill="yellow" /> };
+
+        if (month === 8 && date === 31) greeting = { text: "SELAMAT HARI MERDEKA!", icon: <Flag size={18} fill="#ef4444" /> };
+        else if (month === 9 && date === 16) greeting = { text: "SELAMAT HARI MALAYSIA!", icon: <Flag size={18} fill="#ef4444" /> };
+        else if (month === 5 && date === 1) greeting = { text: "SELAMAT HARI PEKERJA!", icon: <Hammer size={18} fill="#888" /> };
+        else if (month === 12 && date === 25) greeting = { text: "MERRY CHRISTMAS!", icon: <Gift size={18} fill="#ef4444" /> };
+        else if (month === 1 && date === 1) greeting = { text: "HAPPY NEW YEAR!", icon: <PartyPopper size={18} fill="#f97316" /> };
+        else if (hour >= 5 && hour < 12) greeting = { text: "SELAMAT PAGI!", icon: <Sunrise size={18} color="#f97316" /> };
+        else if (hour >= 12 && hour < 15) greeting = { text: "SELAMAT TENGAHARI!", icon: <Sun size={18} fill="#facc15" color="#ca8a04" /> };
+        else if (hour >= 15 && hour < 19) greeting = { text: "SELAMAT PETANG!", icon: <Coffee size={18} color="#92400e" /> };
+        else greeting = { text: "SELAMAT MALAM!", icon: <Moon size={18} fill="#1e293b" color="#1e293b" /> };
+
+        return greeting;
+    }, []);
+
+    useEffect(() => {
+        let currentText = '';
+        let phase = 'greeting'; // greeting -> pause -> terminal
+        let index = 0;
+
+        const timer = setInterval(() => {
+            if (phase === 'greeting') {
+                if (index < greetingInfo.text.length) {
+                    currentText += greetingInfo.text[index];
+                    setGreetingTextDisplay(currentText);
+                    index++;
+                } else {
+                    setShowGreetingIcon(true);
+                    phase = 'pause';
+                    index = 0;
+                    currentText = '';
+                }
+            } else if (phase === 'pause') {
+                index++;
+                if (index >= 12) { // Short pause
+                    phase = 'terminal';
+                    index = 0;
+                }
+            } else if (phase === 'terminal') {
+                if (index < DEPLOY_COMMAND.length) {
+                    currentText += DEPLOY_COMMAND[index];
+                    setTerminalTextDisplay(currentText);
+                    index++;
+                } else {
+                    clearInterval(timer);
+                }
+            }
+        }, 40);
+
+        return () => clearInterval(timer);
+    }, [greetingInfo]);
 
     // KL Showcase State
     const [kualaLumpurShowcase, setKualaLumpurShowcase] = useState([]);
@@ -407,37 +471,16 @@ const LandingPage = ({
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'auto' }}>
                                 <span className="pill" style={{ background: 'black', color: 'white', cursor: 'pointer', fontSize: '12px' }} onClick={handleJoinClick}>PORTAL_ACCESS</span>
                                 <span className="greeting-anim" style={{ fontFamily: 'monospace', fontWeight: '800', fontSize: '14px', textAlign: 'right' }}>
-                                    {(() => {
-                                        const now = new Date();
-                                        const hour = now.getHours();
-                                        const date = now.getDate();
-                                        const month = now.getMonth() + 1; // 0-indexed
-
-                                        let greeting = { text: "SELAMAT DATANG!", icon: <Zap size={18} fill="yellow" /> };
-
-                                        if (month === 8 && date === 31) greeting = { text: "SELAMAT HARI MERDEKA!", icon: <Flag size={18} fill="#ef4444" /> };
-                                        else if (month === 9 && date === 16) greeting = { text: "SELAMAT HARI MALAYSIA!", icon: <Flag size={18} fill="#ef4444" /> };
-                                        else if (month === 5 && date === 1) greeting = { text: "SELAMAT HARI PEKERJA!", icon: <Hammer size={18} fill="#888" /> };
-                                        else if (month === 12 && date === 25) greeting = { text: "MERRY CHRISTMAS!", icon: <Gift size={18} fill="#ef4444" /> };
-                                        else if (month === 1 && date === 1) greeting = { text: "HAPPY NEW YEAR!", icon: <PartyPopper size={18} fill="#f97316" /> };
-                                        else if (hour >= 5 && hour < 12) greeting = { text: "SELAMAT PAGI!", icon: <Sunrise size={18} color="#f97316" /> };
-                                        else if (hour >= 12 && hour < 15) greeting = { text: "SELAMAT TENGAHARI!", icon: <Sun size={18} fill="#facc15" color="#ca8a04" /> };
-                                        else if (hour >= 15 && hour < 19) greeting = { text: "SELAMAT PETANG!", icon: <Coffee size={18} color="#92400e" /> };
-                                        else greeting = { text: "SELAMAT MALAM!", icon: <Moon size={18} fill="#1e293b" color="#1e293b" /> };
-
-                                        return (
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end' }}>
-                                                <span>{greeting.text}</span>
-                                                {greeting.icon}
-                                            </div>
-                                        );
-                                    })()}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end', minHeight: '24px' }}>
+                                        <span>{greetingTextDisplay}</span>
+                                        {showGreetingIcon && greetingInfo.icon}
+                                    </div>
                                 </span>
                             </div>
                             <div className="terminal-shell" style={{ background: '#000', borderRadius: '12px', padding: '24px', marginTop: '20px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
                                 <div className="terminal-prompt" style={{ color: 'var(--selangor-red)', fontFamily: 'monospace', fontSize: '14px', lineHeight: 1.4, marginBottom: '8px' }}>{TERMINAL_CONTEXT}</div>
-                                <p className="terminal-line" style={{ color: 'white', fontFamily: 'monospace', fontSize: '14px', marginTop: '0' }}>
-                                    {DEPLOY_COMMAND}
+                                <p className="terminal-line" style={{ color: 'white', fontFamily: 'monospace', fontSize: '14px', marginTop: '0', width: 'auto', animation: 'none' }}>
+                                    {terminalTextDisplay}
                                     <span className="terminal-caret">|</span>
                                 </p>
                             </div>

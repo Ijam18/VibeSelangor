@@ -607,9 +607,6 @@ section {
 .terminal-line {
   display: inline-block;
   white-space: nowrap;
-  overflow: hidden;
-  width: 0;
-  animation: typeLine 2.8s steps(27, end) infinite;
 }
 
 .terminal-caret {
