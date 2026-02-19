@@ -873,7 +873,7 @@ const App = () => {
                 <LiveChat session={session} activeClass={activeClass} />
 
                 {/* Floating Menu Button (Global) */}
-                {!isSidebarOpen && (
+                {!isSidebarOpen && isMobileView && (
                     <button
                         className="mobile-floating-menu"
                         onClick={() => setIsSidebarOpen(true)}
