@@ -39,9 +39,10 @@ const LandingPage = ({
 
     // Sequential Animation State
     const [currentTime, setCurrentTime] = useState(new Date());
-    const [typedLine1, setTypedLine1] = useState('');
-    const [typedLine2, setTypedLine2] = useState('');
-    const [typingPhase, setTypingPhase] = useState('line1'); // line1 -> line2
+    const [typedTimestamp, setTypedTimestamp] = useState('');
+    const [typedGreeting, setTypedGreeting] = useState('');
+    const [typedCommand, setTypedCommand] = useState('');
+    const [typingPhase, setTypingPhase] = useState('timestamp'); // timestamp -> greeting -> command
 
     // Ticking Clock for Prompt
     useEffect(() => {
@@ -70,20 +71,41 @@ const LandingPage = ({
         else if (hour >= 15 && hour < 19) greeting = { text: "SELAMAT PETANG!", icon: "☕" };
         else greeting = { text: "SELAMAT MALAM!", icon: "🌙" };
 
-        const timestamp = `[${year}-${String(month).padStart(2, '0')}-${String(date).padStart(2, '0')} ${String(hour).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}]`;
-        return `${timestamp} ${greeting.icon} ${greeting.text}`;
+        return {
+            timestamp: `[${year}-${String(month).padStart(2, '0')}-${String(date).padStart(2, '0')} ${String(hour).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}]`,
+            text: `${greeting.icon} ${greeting.text}`
+        };
     }, []);
 
     // Sequential Typing
     useEffect(() => {
-        let index1 = 0;
+        let index = 0;
         const typingTimer = setInterval(() => {
-            if (typingPhase === 'line1') {
-                if (index1 < staticGreeting.length) {
-                    setTypedLine1(staticGreeting.substring(0, index1 + 1));
-                    index1++;
+            if (typingPhase === 'timestamp') {
+                if (index < staticGreeting.timestamp.length) {
+                    setTypedTimestamp(staticGreeting.timestamp.substring(0, index + 1));
+                    index++;
                 } else {
-                    setTimeout(() => setTypingPhase('line2'), 500);
+                    clearInterval(typingTimer);
+                    setTimeout(() => {
+                        setTypingPhase('greeting');
+                    }, 300);
+                }
+            } else if (typingPhase === 'greeting') {
+                if (index < staticGreeting.text.length) {
+                    setTypedGreeting(staticGreeting.text.substring(0, index + 1));
+                    index++;
+                } else {
+                    clearInterval(typingTimer);
+                    setTimeout(() => {
+                        setTypingPhase('command');
+                    }, 500);
+                }
+            } else if (typingPhase === 'command') {
+                if (index < DEPLOY_COMMAND.length) {
+                    setTypedCommand(DEPLOY_COMMAND.substring(0, index + 1));
+                    index++;
+                } else {
                     clearInterval(typingTimer);
                 }
             }
@@ -91,20 +113,6 @@ const LandingPage = ({
 
         return () => clearInterval(typingTimer);
     }, [typingPhase, staticGreeting]);
-
-    useEffect(() => {
-        if (typingPhase !== 'line2') return;
-        let index2 = 0;
-        const typingTimer2 = setInterval(() => {
-            if (index2 < DEPLOY_COMMAND.length) {
-                setTypedLine2(DEPLOY_COMMAND.substring(0, index2 + 1));
-                index2++;
-            } else {
-                clearInterval(typingTimer2);
-            }
-        }, 40);
-        return () => clearInterval(typingTimer2);
-    }, [typingPhase]);
 
     // KL Showcase State
     const [kualaLumpurShowcase, setKualaLumpurShowcase] = useState([]);
@@ -479,20 +487,25 @@ const LandingPage = ({
                                     SYSTEM_INITIALIZED
                                 </span>
                             </div>
-                            <div className="terminal-shell" style={{ background: '#000', borderRadius: '12px', padding: '24px', marginTop: '20px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', minHeight: '160px' }}>
-                                <div className="terminal-prompt" style={{ color: 'var(--selangor-red)', fontFamily: 'monospace', fontSize: '14px', lineHeight: 1.4, marginBottom: '12px', display: 'flex', justifyContent: 'space-between' }}>
+                            <div className="terminal-shell" style={{ background: '#000', borderRadius: '12px', padding: '24px', marginTop: '20px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '180px' }}>
+                                <div className="terminal-prompt" style={{ color: 'var(--selangor-red)', fontFamily: 'monospace', fontSize: '14px', lineHeight: 1.4, display: 'flex', justifyContent: 'space-between' }}>
                                     <span>{TERMINAL_CONTEXT}</span>
                                     <span style={{ opacity: 0.7 }}>{currentTime.toLocaleTimeString()}</span>
                                 </div>
 
-                                <p style={{ color: '#22c55e', fontFamily: 'monospace', fontSize: '13px', marginBottom: '8px', minHeight: '1.2em' }}>
-                                    {typedLine1}
-                                </p>
+                                <div style={{ marginTop: 'auto' }}>
+                                    <p style={{ color: '#22c55e', opacity: 0.8, fontFamily: 'monospace', fontSize: '12px', marginBottom: '2px', minHeight: '1.2em' }}>
+                                        {typedTimestamp}
+                                    </p>
+                                    <p style={{ color: '#22c55e', fontWeight: 'bold', fontFamily: 'monospace', fontSize: '13px', marginBottom: '8px', minHeight: '1.2em' }}>
+                                        {typedGreeting}
+                                    </p>
 
-                                <p className="terminal-line" style={{ color: 'white', fontFamily: 'monospace', fontSize: '14px', marginTop: '0', width: 'auto', animation: 'none' }}>
-                                    {typedLine2}
-                                    {typingPhase === 'line2' && <span className="terminal-caret">|</span>}
-                                </p>
+                                    <p className="terminal-line" style={{ color: 'white', fontFamily: 'monospace', fontSize: '14px', marginTop: '0', width: 'auto', animation: 'none' }}>
+                                        {typedCommand}
+                                        {typingPhase === 'command' && <span className="terminal-caret">|</span>}
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
