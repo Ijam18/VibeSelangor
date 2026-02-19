@@ -29,6 +29,7 @@ import LiveChat from './components/LiveChat';
 
 import LandingPage from './pages/LandingPage';
 import ShowcasePage from './pages/ShowcasePage';
+import ResourcePage from './pages/ResourcePage';
 import { HEADER_LINKS, OWNER_EMAIL, ADMIN_EMAILS } from './constants';
 import { resolveRoleByEmail } from './utils';
 import { getCurrentHolidayTheme, getHolidayThemeConfig } from './utils/holidayUtils';
@@ -672,107 +673,147 @@ const App = () => {
                 )}
 
                 <header className="glass-header">
-                    <div className="container header-container" style={{
+                    <div className="header-container" style={{
                         display: 'flex',
-                        justifyContent: isMobileView ? 'center' : 'space-between',
+                        justifyContent: 'space-between',
                         alignItems: 'center',
                         position: 'relative',
-                        paddingTop: isMobileView ? '24px' : '0',
-                        paddingRight: isMobileView ? '280px' : '0'
+                        paddingTop: isMobileView ? '16px' : '0',
+                        paddingBottom: isMobileView ? '16px' : '0',
+                        maxWidth: '100%',
+                        paddingLeft: isMobileView ? '16px' : '24px',
+                        paddingRight: isMobileView ? '16px' : '24px'
                     }}>
-                        <div className="header-brand-wrap" style={{
+                        {/* Left portion: Menu button (desktop) and Logo */}
+                        <div style={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '10px',
-                            cursor: 'pointer'
-                        }} onClick={handleHeaderBrandClick}>
-                            <div style={{
-                                width: isMobileView ? '32px' : '36px',
-                                height: isMobileView ? '32px' : '36px',
-                                background: holidayConfig?.color || 'var(--selangor-red)',
-                                borderRadius: '8px',
-                                border: '2px solid black',
+                            gap: '12px'
+                        }}>
+                            <button
+                                onClick={() => setIsSidebarOpen(true)}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    padding: '5px'
+                                }}
+                                title="Open Menu"
+                            >
+                                <Menu size={24} />
+                            </button>
+
+                            {/* Logo */}
+                            <div className="header-brand-wrap" style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'center',
-                                boxShadow: '2.5px 2.5px 0 black',
-                                transition: 'all 0.2s ease',
-                                flexShrink: 0
-                            }}>
-                                <Zap size={isMobileView ? 20 : 24} fill="yellow" color="black" strokeWidth={2.5} />
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                <span className="header-brand-text" style={{
-                                    fontWeight: '950',
-                                    fontSize: isMobileView ? '20px' : '26px',
-                                    lineHeight: 1,
-                                    letterSpacing: '-0.03em',
-                                    marginTop: '2px'
+                                gap: '10px',
+                                cursor: 'pointer',
+                                zIndex: 10
+                            }} onClick={handleHeaderBrandClick}>
+                                <div style={{
+                                    width: isMobileView ? '32px' : '36px',
+                                    height: isMobileView ? '32px' : '36px',
+                                    background: holidayConfig?.color || 'var(--selangor-red)',
+                                    borderRadius: '8px',
+                                    border: '2px solid black',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    boxShadow: '2.5px 2.5px 0 black',
+                                    transition: 'all 0.2s ease',
+                                    flexShrink: 0
                                 }}>
-                                    VibeSelangor
-                                </span>
-                                {holidayConfig && (
-                                    <div style={{
-                                        fontSize: '9px',
-                                        color: holidayConfig.color || 'var(--selangor-red)',
-                                        fontWeight: '900',
-                                        textTransform: 'uppercase',
-                                        letterSpacing: '0.05em',
-                                        marginTop: '1px',
-                                        opacity: 0.9,
-                                        whiteSpace: 'nowrap'
+                                    <Zap size={isMobileView ? 20 : 24} fill="yellow" color="black" strokeWidth={2.5} />
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                    <span className="header-brand-text" style={{
+                                        fontWeight: '950',
+                                        fontSize: isMobileView ? '20px' : '26px',
+                                        lineHeight: 1,
+                                        letterSpacing: '-0.03em',
+                                        marginTop: '2px'
                                     }}>
-                                        {holidayConfig.headerLabel}
-                                    </div>
+                                        VibeSelangor
+                                    </span>
+                                    {holidayConfig && (
+                                        <div style={{
+                                            fontSize: '9px',
+                                            color: holidayConfig.color || 'var(--selangor-red)',
+                                            fontWeight: '900',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.05em',
+                                            marginTop: '1px',
+                                            opacity: 0.9,
+                                            whiteSpace: 'nowrap'
+                                        }}>
+                                            {holidayConfig.headerLabel}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* LIVE badge in header */}
+                                {activeClass && (
+                                    <LiveHeaderBadge onClick={handleJoinClick} />
                                 )}
                             </div>
-
-                            {/* LIVE badge in header */}
-                            {activeClass && (
-                                <LiveHeaderBadge onClick={handleJoinClick} />
-                            )}
                         </div>
 
-                        {!isMobileView && (
-                            <div className="header-actions-wrap" style={{ display: 'flex', alignItems: 'center', gap: '22px' }}>
-                                <nav className="header-nav" style={{ display: 'flex', gap: '20px' }}>
-                                    {HEADER_LINKS.map(link => (
-                                        <a
-                                            key={link.label}
-                                            href={link.page ? `#${link.page}-page` : `#${link.sectionId}`}
-                                            className="header-link"
-                                            onClick={(e) => handleHeaderNavClick(e, link)}
-                                            style={{
-                                                color: (publicPage === link.page) ? 'var(--selangor-red)' : 'black',
-                                                textDecoration: 'none',
-                                                fontWeight: '800',
-                                                fontSize: '14px'
-                                            }}
-                                        >
-                                            {link.label}
-                                        </a>
-                                    ))}
-                                </nav>
+                        {/* Right side: Auth actions for mobile, full nav for desktop */}
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'flex-end'
+                        }}>
+                            {!isMobileView ? (
+                                <div className="header-actions-wrap" style={{ display: 'flex', alignItems: 'center', gap: '22px' }}>
+                                    <nav className="header-nav" style={{ display: 'flex', gap: '20px' }}>
+                                        {HEADER_LINKS.map(link => (
+                                            <a
+                                                key={link.label}
+                                                href={link.page ? `#${link.page}-page` : `#${link.sectionId}`}
+                                                className="header-link"
+                                                onClick={(e) => handleHeaderNavClick(e, link)}
+                                                style={{
+                                                    color: (publicPage === link.page) ? 'var(--selangor-red)' : 'black',
+                                                    textDecoration: 'none',
+                                                    fontWeight: '800',
+                                                    fontSize: '14px'
+                                                }}
+                                            >
+                                                {link.label}
+                                            </a>
+                                        ))}
+                                    </nav>
+                                    <div className="header-auth-actions" style={{ display: 'flex', gap: '10px' }}>
+                                        {!session ? (
+                                            <button className="btn btn-red" onClick={handleJoinClick} style={{ padding: '8px 20px', fontSize: '12px' }}>
+                                                JOIN COHORT
+                                            </button>
+                                        ) : (
+                                            <button className="btn btn-outline" onClick={() => setPublicPage('dashboard')} style={{ padding: '8px 20px', fontSize: '12px' }}>
+                                                DASHBOARD
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            ) : (
+                                // Mobile auth actions
                                 <div className="header-auth-actions" style={{ display: 'flex', gap: '10px' }}>
                                     {!session ? (
-                                        <button className="btn btn-red" onClick={handleJoinClick} style={{ padding: '8px 20px', fontSize: '12px' }}>
-                                            JOIN COHORT
+                                        <button className="btn btn-red" onClick={handleJoinClick} style={{ padding: '6px 12px', fontSize: '11px' }}>
+                                            JOIN
                                         </button>
                                     ) : (
-                                        <button className="btn btn-outline" onClick={() => setPublicPage('dashboard')} style={{ padding: '8px 20px', fontSize: '12px' }}>
-                                            DASHBOARD
+                                        <button className="btn btn-outline" onClick={() => setPublicPage('dashboard')} style={{ padding: '6px 12px', fontSize: '11px' }}>
+                                            DASH
                                         </button>
                                     )}
-                                    <button
-                                        onClick={() => setIsSidebarOpen(true)}
-                                        style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '5px' }}
-                                        title="Open Menu"
-                                    >
-                                        <Menu size={24} />
-                                    </button>
                                 </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
                 </header>
 
@@ -792,7 +833,7 @@ const App = () => {
                         holidayConfig={holidayConfig}
                     />
                 )}
-                {!currentUser && !['home', 'how-it-works', 'coming-soon', 'showcase', 'leaderboard', 'forum', 'studio', 'public-studio'].includes(publicPage) && (
+                {!currentUser && !['home', 'how-it-works', 'coming-soon', 'showcase', 'leaderboard', 'forum', 'studio', 'public-studio', 'resources'].includes(publicPage) && (
                     <LandingPage
                         profiles={profiles}
                         submissions={submissions}
@@ -844,7 +885,13 @@ const App = () => {
                         handleJoinClick={handleJoinClick}
                     />
                 )}
-                {currentUser && (publicPage === 'dashboard' || !['home', 'how-it-works', 'coming-soon', 'showcase', 'forum', 'studio', 'leaderboard'].includes(publicPage)) && (
+                {publicPage === 'resources' && (
+                    <ResourcePage
+                        session={session}
+                        currentUser={currentUser}
+                    />
+                )}
+                {currentUser && (publicPage === 'dashboard' || !['home', 'how-it-works', 'coming-soon', 'showcase', 'forum', 'studio', 'leaderboard', 'resources'].includes(publicPage)) && (
                     <>
                         {(currentUser?.type === 'admin' || currentUser?.type === 'owner') && (
                             <AdminDashboard
@@ -880,6 +927,7 @@ const App = () => {
                     </>
                 )}
 
+                {publicPage !== 'resources' && (
                 <footer style={{ padding: '16px 0', borderTop: '3px solid black', background: 'linear-gradient(180deg, #fff 0%, #fff8dc 100%)' }}>
                     <div className="container">
                         <div className="neo-card no-jitter" style={{ border: '2px solid black', boxShadow: '6px 6px 0px black', textAlign: 'center', padding: '24px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -887,7 +935,7 @@ const App = () => {
                                 Built by <span style={{ color: 'var(--selangor-red)' }}>_zarulijam</span>
                             </p>
                             <a
-                                href="https://threads.net/@_zarulijam"
+                                href="https://www.threads.net/@_zarulijam"
                                 target="_blank"
                                 rel="noreferrer"
                                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', color: 'black', textDecoration: 'none', fontWeight: '800', fontSize: '13px', marginBottom: '8px', width: '100%', flexWrap: 'wrap' }}
@@ -904,6 +952,7 @@ const App = () => {
                         </div>
                     </div>
                 </footer>
+                )}
                 {/* Zarulijam AI Chatbot removed in favor of IJAM_BOT terminal console */}
 
                 {/* Mobile Navigation Sidebar */}
@@ -928,8 +977,8 @@ const App = () => {
                 {/* Live Class Chat */}
                 <LiveChat session={session} activeClass={activeClass} />
 
-                {/* Floating Menu Button (Global) */}
-                {!isSidebarOpen && isMobileView && (
+                {/* Floating Menu Button (Desktop Only) */}
+                {!isSidebarOpen && !isMobileView && publicPage !== 'resources' && (
                     <button
                         className="mobile-floating-menu"
                         onClick={() => setIsSidebarOpen(true)}
@@ -949,7 +998,7 @@ const App = () => {
                             if (authPages.includes(id)) {
                                 if (session) { setPublicPage(id); window.scrollTo({ top: 0, behavior: 'smooth' }); }
                                 else setIsAuthModalOpen(true);
-                            } else if (['leaderboard', 'forum', 'showcase'].includes(id)) {
+                            } else if (['leaderboard', 'forum', 'showcase', 'resources'].includes(id)) {
                                 setPublicPage(id);
                                 window.scrollTo({ top: 0, behavior: 'smooth' });
                             } else {

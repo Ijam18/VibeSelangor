@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { SPRINT_MODULE_STEPS } from '../constants';
-import { truncateText } from '../utils';
+import { truncateText, formatThreadsProfileUrl } from '../utils';
 import { ExternalLink, Calendar, MapPin, ArrowRight, MessageCircle } from 'lucide-react';
 import ThreadsIcon from './ThreadsIcon';
 
@@ -105,7 +105,7 @@ const ProjectCard = ({ s, profile, userSubmissionCount }) => {
                                 {profile?.full_name || 'Anonymous Builder'}
                             </div>
                             {profile?.threads_handle && (
-                                <a href={`https://www.threads.net/@${profile.threads_handle.replace('@', '')}`} target="_blank" rel="noreferrer"
+                                <a href={formatThreadsProfileUrl(profile.threads_handle)} target="_blank" rel="noreferrer"
                                     style={{ color: 'black', opacity: 0.6 }} onClick={e => e.stopPropagation()}>
                                     <ThreadsIcon size={12} />
                                 </a>

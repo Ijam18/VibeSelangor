@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { ArrowRight, Sparkles, MapPin, MessageCircle } from 'lucide-react';
 import ThreadsIcon from './ThreadsIcon';
 import { SPRINT_MODULE_STEPS } from '../constants';
-import { truncateText } from '../utils';
+import { truncateText, formatThreadsProfileUrl } from '../utils';
 
 const GalleryShowcase = ({
     profiles,
@@ -213,7 +213,7 @@ const GalleryShowcase = ({
                                                     {stepIndex === 0 ? 'NOT STARTED' : stepIndex === 7 ? '⭐ SPRINT COMPLETE' : `DAY ${stepIndex} / 7`}
                                                 </div>
                                                 {p.threads_handle && (
-                                                    <a href={`https://www.threads.net/@${p.threads_handle.replace('@', '')}`} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'black', textDecoration: 'none', opacity: 0.7 }}>
+                                                    <a href={formatThreadsProfileUrl(p.threads_handle)} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'black', textDecoration: 'none', opacity: 0.7 }}>
                                                         <ThreadsIcon size={10} />
                                                         <span>@{p.threads_handle.replace('@', '')}</span>
                                                     </a>

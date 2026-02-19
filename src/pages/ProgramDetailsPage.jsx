@@ -138,7 +138,7 @@ export default function ProgramDetailsPage({ classes, handleJoinClick, setPublic
                             </div>
                         </div>
                         <a
-                            href="https://threads.net/@_zarulijam"
+                            href="https://www.threads.net/@_zarulijam"
                             target="_blank"
                             rel="noreferrer"
                             className="btn btn-outline"
@@ -294,7 +294,7 @@ export default function ProgramDetailsPage({ classes, handleJoinClick, setPublic
                         <Rocket size={16} /> Join the Cohort
                     </button>
                     <a
-                        href="https://threads.net/@_zarulijam"
+                        href="https://www.threads.net/@_zarulijam"
                         target="_blank"
                         rel="noreferrer"
                         className="btn btn-outline"

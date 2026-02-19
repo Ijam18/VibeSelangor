@@ -10,6 +10,7 @@ import './MobileBottomNav.css';
 
 const NAV_ITEMS = [
     { id: 'home', icon: Home, label: 'Home' },
+    { id: 'resources', icon: Zap, label: 'Resources' },
     { id: 'showcase', icon: Star, label: 'Showcase' },
     { id: 'forum', icon: MessageSquare, label: 'Forum' },
     { id: 'studio', icon: Gamepad2, label: 'Arcade', authRequired: true },

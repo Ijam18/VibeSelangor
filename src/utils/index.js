@@ -52,6 +52,15 @@ export function formatWhatsAppLink(phone) {
     return `https://api.whatsapp.com/send?phone=${formatted}`;
 }
 
+export function formatThreadsProfileUrl(handle) {
+    const normalized = String(handle || '')
+        .trim()
+        .replace(/^@+/, '');
+
+    if (!normalized) return 'https://www.threads.net/';
+    return `https://www.threads.net/@${normalized}`;
+}
+
 export function extractShowcaseProjectUrls(htmlText) {
     const doc = new DOMParser().parseFromString(htmlText, 'text/html');
     const urls = new Set();

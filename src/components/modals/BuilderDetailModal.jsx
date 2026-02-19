@@ -2,7 +2,7 @@ import React from 'react';
 import { Check, Mail, ExternalLink, Gamepad2 } from 'lucide-react';
 import ThreadsIcon from '../ThreadsIcon';
 import { SPRINT_MODULE_STEPS } from '../../constants';
-import { formatWhatsAppLink } from '../../utils';
+import { formatWhatsAppLink, formatThreadsProfileUrl } from '../../utils';
 import WhatsAppIcon from '../WhatsAppIcon';
 
 
@@ -40,7 +40,7 @@ export default function BuilderDetailModal({
                             <span className="pill" style={{ border: '2px solid black', padding: '4px 12px', fontSize: '10px' }}>{builder.district.toUpperCase()}</span>
                             {builder.threads_handle && (
                                 <a
-                                    href={`https://threads.net/@${builder.threads_handle.replace(/^@/, '')}`}
+                                    href={formatThreadsProfileUrl(builder.threads_handle)}
                                     target="_blank"
                                     rel="noreferrer"
                                     style={{ display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none', color: 'black', fontSize: '13px', fontWeight: '900', marginLeft: '4px', borderBottom: '2px solid var(--selangor-red)' }}
@@ -78,7 +78,7 @@ export default function BuilderDetailModal({
                                 <h4 style={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#666', borderBottom: '2px solid #eee', paddingBottom: '8px', marginBottom: '16px' }}>Connect</h4>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                     {builder.threads_handle && (
-                                        <a href={`https://threads.net/@${builder.threads_handle.replace(/^@/, '')}`} target="_blank" rel="noreferrer" className="btn btn-outline" style={{ padding: '14px', fontSize: '13px', textTransform: 'none', justifyContent: 'flex-start', gap: '12px', width: '100%', borderRadius: '12px' }}>
+                                        <a href={formatThreadsProfileUrl(builder.threads_handle)} target="_blank" rel="noreferrer" className="btn btn-outline" style={{ padding: '14px', fontSize: '13px', textTransform: 'none', justifyContent: 'flex-start', gap: '12px', width: '100%', borderRadius: '12px' }}>
                                             <ThreadsIcon size={22} /> Threads Profile
                                         </a>
                                     )}

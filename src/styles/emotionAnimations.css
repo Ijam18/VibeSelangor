@@ -1,0 +1,419 @@
+/* Enhanced Emotion Animation System for IjamBot */
+
+/* Base Animation Keyframes */
+@keyframes blink {
+
+    0%,
+    100% {
+        transform: scaleY(1);
+    }
+
+    50% {
+        transform: scaleY(0.1);
+    }
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-3px);
+    }
+}
+
+@keyframes bounce {
+
+    0%,
+    100% {
+        transform: translateY(0px) scale(1);
+    }
+
+    50% {
+        transform: translateY(-5px) scale(1.05);
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0px);
+    }
+
+    25% {
+        transform: translateX(-2px);
+    }
+
+    75% {
+        transform: translateX(2px);
+    }
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes thinking {
+
+    0%,
+    100% {
+        transform: rotate(0deg);
+    }
+
+    50% {
+        transform: rotate(-5deg);
+    }
+}
+
+@keyframes sleepy {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.3;
+    }
+}
+
+@keyframes confused {
+
+    0%,
+    100% {
+        transform: rotate(0deg);
+    }
+
+    25% {
+        transform: rotate(5deg);
+    }
+
+    75% {
+        transform: rotate(-5deg);
+    }
+}
+
+@keyframes excited {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.2);
+    }
+}
+
+/* Emotion-Specific Animations */
+.ijam-bot-happy {
+    animation: bounce 0.5s ease-in-out;
+}
+
+.ijam-bot-excited {
+    animation: pulse 0.3s ease-in-out infinite;
+}
+
+.ijam-bot-thinking {
+    animation: thinking 2s ease-in-out infinite;
+}
+
+.ijam-bot-confused {
+    animation: shake 0.5s ease-in-out;
+}
+
+.ijam-bot-sleepy {
+    animation: sleepy 3s ease-in-out infinite;
+}
+
+.ijam-bot-sad {
+    animation: none;
+    filter: grayscale(0.5);
+}
+
+.ijam-bot-neutral {
+    animation: none;
+}
+
+/* Eye Animations */
+.ijam-bot-eye-blink {
+    animation: blink 0.1s ease-in-out;
+}
+
+.ijam-bot-eye-wide-open {
+    animation: pulse 0.2s ease-in-out;
+}
+
+.ijam-bot-eye-half-closed {
+    animation: sleepy 2s ease-in-out infinite;
+}
+
+.ijam-bot-eye-squinted {
+    animation: thinking 1.5s ease-in-out infinite;
+}
+
+/* Mouth Animations */
+.ijam-bot-mouth-smile {
+    animation: bounce 0.3s ease-in-out;
+}
+
+.ijam-bot-mouth-big-smile {
+    animation: pulse 0.2s ease-in-out infinite;
+}
+
+.ijam-bot-mouth-frown {
+    animation: none;
+}
+
+.ijam-bot-mouth-straight {
+    animation: none;
+}
+
+.ijam-bot-mouth-confused {
+    animation: shake 0.3s ease-in-out;
+}
+
+/* Body Animations */
+.ijam-bot-body-excited {
+    animation: pulse 0.2s ease-in-out infinite;
+}
+
+.ijam-bot-body-thinking {
+    animation: thinking 2s ease-in-out infinite;
+}
+
+.ijam-bot-body-sleepy {
+    animation: sleepy 3s ease-in-out infinite;
+}
+
+.ijam-bot-body-confused {
+    animation: shake 0.5s ease-in-out;
+}
+
+/* Sparkle Animations */
+.ijam-bot-sparkle {
+    animation: spin 1s linear infinite;
+}
+
+.ijam-bot-sparkle-blink {
+    animation: blink 0.2s ease-in-out infinite 0.5s;
+}
+
+/* Cheek Animations */
+.ijam-bot-cheeks {
+    animation: pulse 0.5s ease-in-out;
+}
+
+.ijam-bot-cheeks-excited {
+    animation: pulse 0.2s ease-in-out infinite;
+}
+
+/* Thought Bubble Animations */
+.ijam-bot-thought-bubble {
+    animation: float 1.5s ease-in-out infinite;
+}
+
+.ijam-bot-thought-bubble-small {
+    animation: float 1s ease-in-out infinite;
+}
+
+.ijam-bot-thought-bubble-tiny {
+    animation: float 0.8s ease-in-out infinite;
+}
+
+/* Kaomoji Text Animations */
+.ijam-bot-kaomoji {
+    animation: float 1s ease-in-out infinite;
+}
+
+.ijam-bot-kaomoji-excited {
+    animation: bounce 0.3s ease-in-out infinite;
+}
+
+.ijam-bot-kaomoji-thinking {
+    animation: thinking 2s ease-in-out infinite;
+}
+
+.ijam-bot-kaomoji-confused {
+    animation: shake 0.3s ease-in-out;
+}
+
+.ijam-bot-kaomoji-sleepy {
+    animation: sleepy 3s ease-in-out infinite;
+}
+
+/* Combined State Animations */
+.ijam-bot-state-happy-excited {
+    animation: bounce 0.3s ease-in-out, pulse 0.2s ease-in-out infinite;
+}
+
+.ijam-bot-state-thinking-confused {
+    animation: thinking 1.5s ease-in-out infinite, shake 0.3s ease-in-out;
+}
+
+.ijam-bot-state-sleepy-tired {
+    animation: sleepy 3s ease-in-out infinite;
+}
+
+/* Transition Classes */
+.ijam-bot-transition {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ijam-bot-smooth {
+    transition: all 0.5s ease-in-out;
+}
+
+.ijam-bot-instant {
+    transition: none;
+}
+
+/* Hover Effects */
+.ijam-bot:hover {
+    cursor: pointer;
+    transform: scale(1.05);
+    transition: transform 0.2s ease-in-out;
+}
+
+.ijam-bot:hover .ijam-bot-kaomoji {
+    animation: bounce 0.3s ease-in-out;
+}
+
+/* Focus Effects */
+.ijam-bot:focus {
+    outline: none;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+    border-radius: 50%;
+}
+
+/* Accessibility Animations */
+@media (prefers-reduced-motion: reduce) {
+
+    .ijam-bot *,
+    .ijam-bot *::before,
+    .ijam-bot *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+    .ijam-bot {
+        filter: contrast(1.5);
+    }
+
+    .ijam-bot-sad {
+        filter: grayscale(0.5) contrast(1.5);
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .ijam-bot-kaomoji {
+        color: #ffffff;
+        text-shadow: 1px 1px 0px #000000, -1px -1px 0px #000000;
+    }
+
+    .ijam-bot-sparkle {
+        fill: #fde68a;
+    }
+}
+
+/* Responsive Animations */
+@media (max-width: 768px) {
+    .ijam-bot-kaomoji {
+        font-size: 12px !important;
+        animation: float 0.8s ease-in-out infinite;
+    }
+
+    .ijam-bot-sparkle {
+        animation: spin 0.8s linear infinite;
+    }
+}
+
+@media (max-width: 480px) {
+    .ijam-bot-kaomoji {
+        font-size: 10px !important;
+        animation: float 0.5s ease-in-out infinite;
+    }
+}
+
+/* Performance Optimizations */
+.ijam-bot {
+    will-change: transform, opacity;
+    transform: translateZ(0);
+}
+
+.ijam-bot-eye,
+.ijam-bot-mouth,
+.ijam-bot-kaomoji {
+    will-change: transform;
+    transform: translateZ(0);
+}
+
+/* Custom Properties for Dynamic Styling */
+:root {
+    --emotion-happy-color: #f59e0b;
+    --emotion-excited-color: #22c55e;
+    --emotion-thinking-color: #60a5fa;
+    --emotion-confused-color: #f97316;
+    --emotion-sleepy-color: #64748b;
+    --emotion-sad-color: #3b82f6;
+    --emotion-neutral-color: #ef4444;
+
+    --emotion-animation-duration: 0.3s;
+    --emotion-transition-duration: 0.3s;
+}
+
+/* Dynamic Color Classes */
+.ijam-bot-color-happy {
+    fill: var(--emotion-happy-color);
+}
+
+.ijam-bot-color-excited {
+    fill: var(--emotion-excited-color);
+}
+
+.ijam-bot-color-thinking {
+    fill: var(--emotion-thinking-color);
+}
+
+.ijam-bot-color-confused {
+    fill: var(--emotion-confused-color);
+}
+
+.ijam-bot-color-sleepy {
+    fill: var(--emotion-sleepy-color);
+}
+
+.ijam-bot-color-sad {
+    fill: var(--emotion-sad-color);
+}
+
+.ijam-bot-color-neutral {
+    fill: var(--emotion-neutral-color);
+}

@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
 import ThreadsIcon from '../components/ThreadsIcon';
-import { Rocket, CheckCircle, Clock, Zap, Users, MessageSquare, Trophy, Smartphone, Brain, Star, Bot, Gamepad2, Globe, Image, MessageCircle } from 'lucide-react';
+import { Rocket, CheckCircle, Clock, Zap, Users, MessageSquare, Trophy, Smartphone, Brain, Star, Bot, Gamepad2, Globe, Image, MessageCircle, ArrowRight } from 'lucide-react';
 
 const SHIPPED = [
-    { icon: <Bot size={20} />, label: 'Ijam Bot (AI Chatbot)', desc: 'Local + NVIDIA AI fallback' },
-    { icon: <Gamepad2 size={20} />, label: 'Builder Arcade', desc: 'Bug Squash mini-game' },
-    { icon: <MessageSquare size={20} />, label: 'Builders Forum', desc: 'Post, reply, earn XP' },
-    { icon: <Trophy size={20} />, label: 'Leaderboard', desc: 'Top builders by XP & vibes' },
-    { icon: <Smartphone size={20} />, label: 'PWA Support', desc: 'Install on Android & iOS' },
-    { icon: <Globe size={20} />, label: 'Selangor Map', desc: 'Live district builder tracker' },
-    { icon: <Image size={20} />, label: 'Showcase Gallery', desc: 'Browse all builder projects' },
-    { icon: <MessageCircle size={20} />, label: 'Live Class Chat', desc: 'Real-time chat during sessions' },
+    { icon: <Bot size={20} />, label: 'Ijam Bot (AI Chatbot)', desc: 'Local + NVIDIA AI fallback', page: 'home', sectionId: 'how-it-works' },
+    { icon: <Gamepad2 size={20} />, label: 'Builder Arcade', desc: 'Bug Squash mini-game', page: 'studio' },
+    { icon: <MessageSquare size={20} />, label: 'Builders Forum', desc: 'Post, reply, earn XP', page: 'forum' },
+    { icon: <Trophy size={20} />, label: 'Leaderboard', desc: 'Top builders by XP & vibes', page: 'leaderboard' },
+    { icon: <Smartphone size={20} />, label: 'PWA Support', desc: 'Install on Android & iOS', page: 'how-it-works' },
+    { icon: <Globe size={20} />, label: 'Selangor Map', desc: 'Live district builder tracker', page: 'home', sectionId: 'map' },
+    { icon: <Image size={20} />, label: 'Showcase Gallery', desc: 'Browse all builder projects', page: 'showcase' },
+    { icon: <MessageCircle size={20} />, label: 'Live Class Chat', desc: 'Real-time chat during sessions', page: 'home', sectionId: 'how-it-works' },
 ];
 
 const ROADMAP = [
@@ -72,6 +72,23 @@ const STATUS_CONFIG = {
 
 export default function ComingSoonPage({ setPublicPage }) {
     const [expanded, setExpanded] = useState(null);
+    const [activeFeature, setActiveFeature] = useState(null);
+
+    const openFeature = (feature) => {
+        setActiveFeature(feature.label);
+        window.requestAnimationFrame(() => setActiveFeature(null));
+
+        if (feature.page) {
+            setPublicPage(feature.page);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        if (feature.sectionId) {
+            setTimeout(() => {
+                document.getElementById(feature.sectionId)?.scrollIntoView({ behavior: 'smooth' });
+            }, 120);
+        }
+    };
 
     return (
         <section id="coming-soon-page" style={{ paddingTop: '40px', paddingBottom: '80px', minHeight: '80vh' }}>
@@ -96,23 +113,46 @@ export default function ComingSoonPage({ setPublicPage }) {
                         <CheckCircle size={22} color="#059669" />
                         <h2 style={{ fontSize: '22px', margin: 0, color: '#059669', display: 'flex', alignItems: 'center', gap: '8px' }}><Rocket size={20} color="#059669" /> Already Shipped</h2>
                     </div>
+                    <p style={{ marginTop: '-10px', marginBottom: '16px', fontSize: '12px', opacity: 0.68, fontWeight: '700' }}>
+                        Click any feature card to open its page.
+                    </p>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
                         {SHIPPED.map((item, i) => (
-                            <div key={i} style={{
-                                background: '#fff',
-                                border: '2px solid #121417',
-                                borderRadius: '10px',
-                                padding: '12px 14px',
-                                display: 'flex',
-                                alignItems: 'flex-start',
-                                gap: '10px',
-                            }}>
+                            <button
+                                key={i}
+                                type="button"
+                                onClick={() => openFeature(item)}
+                                style={{
+                                    background: activeFeature === item.label ? '#fff7ed' : '#fff',
+                                    border: '2px solid #121417',
+                                    borderRadius: '10px',
+                                    padding: '12px 14px',
+                                    display: 'flex',
+                                    alignItems: 'flex-start',
+                                    gap: '10px',
+                                    textAlign: 'left',
+                                    cursor: 'pointer',
+                                    transition: 'transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease',
+                                    boxShadow: '3px 3px 0px black'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translate(-2px, -2px)';
+                                    e.currentTarget.style.boxShadow = '5px 5px 0px black';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'none';
+                                    e.currentTarget.style.boxShadow = '3px 3px 0px black';
+                                }}
+                            >
                                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexShrink: 0 }}>{item.icon}</div>
-                                <div>
+                                <div style={{ flex: 1 }}>
                                     <div style={{ fontWeight: '800', fontSize: '13px', lineHeight: 1.2 }}>{item.label}</div>
                                     <div style={{ fontSize: '11px', opacity: 0.6, marginTop: '2px' }}>{item.desc}</div>
+                                    <div style={{ marginTop: '8px', display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--selangor-red)' }}>
+                                        Open Page <ArrowRight size={12} />
+                                    </div>
                                 </div>
-                            </div>
+                            </button>
                         ))}
                     </div>
                 </div>
@@ -185,7 +225,7 @@ export default function ComingSoonPage({ setPublicPage }) {
                     <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
                         <a
                             className="btn btn-red"
-                            href="https://threads.net/@_zarulijam"
+                            href="https://www.threads.net/@_zarulijam"
                             target="_blank"
                             rel="noreferrer"
                             style={{ display: 'inline-flex', gap: '8px', textDecoration: 'none' }}

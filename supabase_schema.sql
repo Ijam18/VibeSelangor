@@ -311,7 +311,7 @@ do $$ begin
 end $$;
 
 -- ─── 11. REALTIME ───────────────────────────────────────────
--- Enable realtime for live features (class chat, attendance, game)
+-- Enable realtime for live features (class chat, attendance, game, resources)
 -- Run these in Supabase Dashboard → Database → Replication
 -- Or uncomment and run here:
 
@@ -321,6 +321,7 @@ end $$;
 -- alter publication supabase_realtime add table builder_game;
 -- alter publication supabase_realtime add table forum_posts;
 -- alter publication supabase_realtime add table forum_replies;
+-- alter publication supabase_realtime add table resources;
 
 -- ─── 12. HELPER FUNCTION: Auto-update updated_at ────────────
 create or replace function update_updated_at_column()
@@ -356,7 +357,53 @@ do $$ begin
   end if;
 end $$;
 
--- ─── 13. STUDIO LIKES ───────────────────────────────────────
+-- ─── 13. RESOURCES ──────────────────────────────────────────
+-- Educational resources for builders (tutorials, guides, tools)
+create table if not exists resources (
+  id uuid default gen_random_uuid() primary key,
+  title text not null,
+  description text not null,
+  url text not null,
+  category text default 'tutorial' check (category in ('tutorial', 'guide', 'code', 'tool')),
+  difficulty text default 'beginner' check (difficulty in ('beginner', 'intermediate', 'advanced')),
+  duration text,
+  thumbnail text,
+  tags text[],
+  author text,
+  published_at timestamptz default now(),
+  views int default 0,
+  rating numeric default 0,
+  is_featured boolean default false,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- Enable RLS for resources table
+alter table resources enable row level security;
+
+-- ─── RESOURCES POLICIES ─────────────────────────────────────
+-- Public can read all resources
+do $$ begin
+  if not exists (select 1 from pg_policies where tablename='resources' and policyname='Public Read Resources') then
+    create policy "Public Read Resources" on resources for select using (true);
+  end if;
+end $$;
+
+-- Only authenticated users can insert resources
+do $$ begin
+  if not exists (select 1 from pg_policies where tablename='resources' and policyname='Authenticated Insert Resources') then
+    create policy "Authenticated Insert Resources" on resources for insert with check (auth.role() = 'authenticated');
+  end if;
+end $$;
+
+-- Only authenticated users can update resources
+do $$ begin
+  if not exists (select 1 from pg_policies where tablename='resources' and policyname='Authenticated Update Resources') then
+    create policy "Authenticated Update Resources" on resources for update using (auth.role() = 'authenticated');
+  end if;
+end $$;
+
+-- ─── 14. STUDIO LIKES ───────────────────────────────────────
 -- Builders can like each other's studios (one like per builder per studio)
 create table if not exists studio_likes (
   id uuid default gen_random_uuid() primary key,

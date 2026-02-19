@@ -60,15 +60,15 @@ export default function MobileNavSidebar({
                 position: 'fixed',
                 top: 0,
                 bottom: 0,
-                left: isRightSide ? 'auto' : 0,
-                right: isRightSide ? 0 : 'auto',
-                width: isRightSide ? 'min(320px, 40%)' : 'min(240px, 55%)',
+                left: 0,
+                right: 'auto',
+                width: isMobileView ? 'min(240px, 55%)' : 'min(320px, 40%)',
                 background: 'white',
                 zIndex: 20000,
                 display: 'flex',
                 flexDirection: 'column',
                 border: 'none',
-                boxShadow: isRightSide ? '-6px 0 16px rgba(0,0,0,0.12)' : '6px 0 16px rgba(0,0,0,0.12)',
+                boxShadow: '6px 0 16px rgba(0,0,0,0.12)',
                 overflow: 'hidden',
             }}>
                 {/* Header */}
@@ -245,7 +245,7 @@ export default function MobileNavSidebar({
                                     gap: '4px',
                                     border: '1.5px solid black'
                                 }}
-                                href="https://www.threads.com/@_zarulijam"
+                                href="https://www.threads.net/@_zarulijam"
                                 target="_blank"
                                 rel="noreferrer"
                                 onClick={onClose}

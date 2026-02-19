@@ -194,20 +194,31 @@ const LandingPage = ({
         const month = now.getMonth() + 1;
         const year = now.getFullYear();
 
-        let timeLabel = "SELAMAT DATANG!";
-        let timeIcon = "⚡";
+        // Kaomoji Collections
+        const KAOMOJI = {
+            MORNING: ['(o^▽^o)', '(´• ω •`)', '(⌒_⌒;)', '(*/ω＼)', '(o_ _)o'],
+            AFTERNOON: ['(⌐■_■)', '(¯h¯)', '(¬‿¬)', '(^_−)☆', '(˙꒳˙)'],
+            EVENING: ['( ☕_☕ )', '(￣▽￣)', '( ´ ▽ ` )', '(o_ _)o', '(・・ ) ?'],
+            NIGHT: ['( ☾ )', '(－_－) zzZ', '(x_x)', '(o_ _)o 💤', '(⇀‸↼‶)'],
+            VIBE: ['(ﾉ^ヮ^)ﾉ*:・ﾟ✧', '(✿◠‿◠)', '(☆▽☆)', '( ˙꒳​˙ )', '(b ᵔ▽ᵔ)b']
+        };
 
-        if (hour >= 5 && hour < 12) { timeLabel = "SELAMAT PAGI!"; timeIcon = "🌅"; }
-        else if (hour >= 12 && hour < 15) { timeLabel = "SELAMAT TENGAHARI!"; timeIcon = "☀️"; }
-        else if (hour >= 15 && hour < 19) { timeLabel = "SELAMAT PETANG!"; timeIcon = "☕"; }
-        else if (hour >= 19 || hour < 5) { timeLabel = "SELAMAT MALAM!"; timeIcon = "🌙"; }
+        const getRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+        let timeLabel = "SELAMAT DATANG!";
+        let timeIcon = getRandom(KAOMOJI.VIBE);
+
+        if (hour >= 5 && hour < 12) { timeLabel = "SELAMAT PAGI!"; timeIcon = getRandom(KAOMOJI.MORNING); }
+        else if (hour >= 12 && hour < 15) { timeLabel = "SELAMAT TENGAHARI!"; timeIcon = getRandom(KAOMOJI.AFTERNOON); }
+        else if (hour >= 15 && hour < 19) { timeLabel = "SELAMAT PETANG!"; timeIcon = getRandom(KAOMOJI.EVENING); }
+        else if (hour >= 19 || hour < 5) { timeLabel = "SELAMAT MALAM!"; timeIcon = getRandom(KAOMOJI.NIGHT); }
 
         // Combine with holiday greeting if available
         let finalGreetingText = `${timeIcon} ${timeLabel}`;
         if (holidayConfig) {
-            finalGreetingText += ` & ${holidayConfig.botLabel}! 🎉`;
+            finalGreetingText += ` & ${holidayConfig.botLabel}! ${getRandom(KAOMOJI.VIBE)}`;
         } else {
-            finalGreetingText += " READY TO VIBE? 🚀";
+            finalGreetingText += ` READY TO VIBE? ${getRandom(KAOMOJI.VIBE)}`;
         }
 
         return {
@@ -347,23 +358,25 @@ const LandingPage = ({
         if (!selectedDistrictName) return [];
 
         const normalizedSelected = normalizeDistrict(selectedDistrictName);
+        const isDistrictMatch = (districtValue) => {
+            const itemDistrict = normalizeDistrict(districtValue || '');
+            if (!itemDistrict || !normalizedSelected) return false;
+            return itemDistrict === normalizedSelected ||
+                itemDistrict.includes(normalizedSelected) ||
+                normalizedSelected.includes(itemDistrict);
+        };
 
         if (mapViewMode === 'builders') {
             const districtBuilders = profiles
                 .filter(p => !['owner', 'admin'].includes(p.role))
-                .filter(p => {
-                    if (!p.district) return false;
-                    const itemDistrict = normalizeDistrict(p.district);
-                    return itemDistrict === normalizedSelected ||
-                        itemDistrict.includes(normalizedSelected) ||
-                        normalizedSelected.includes(itemDistrict);
-                })
+                .filter(p => isDistrictMatch(p.district))
                 .map(p => ({
                     id: `builder-${p.id}`,
                     name: p.full_name || 'Anonymous Builder',
                     handle: p.threads_handle || '',
                     role: p.role,
-                    district: p.district
+                    district: p.district,
+                    builder_profile: p
                 }));
             return districtBuilders;
         }
@@ -374,12 +387,7 @@ const LandingPage = ({
             const profile = profiles.find(p => p.id === s.user_id);
             if (profile && ['owner', 'admin'].includes(profile.role)) return;
 
-            const itemDistrict = normalizeDistrict(s.district || profile?.district || '');
-            const isMatch = itemDistrict === normalizedSelected ||
-                itemDistrict.includes(normalizedSelected) ||
-                normalizedSelected.includes(itemDistrict);
-
-            if (isMatch) {
+            if (isDistrictMatch(s.district || profile?.district)) {
                 const existing = submissionMap.get(s.user_id);
                 if (!existing || new Date(s.created_at) > new Date(existing.created_at)) {
                     submissionMap.set(s.user_id, s);
@@ -403,10 +411,7 @@ const LandingPage = ({
                 if (!p.district || !p.idea_title) return false;
                 if (submissionMap.has(p.id)) return false; // Already have a submission
 
-                const itemDistrict = normalizeDistrict(p.district);
-                return itemDistrict === normalizedSelected ||
-                    itemDistrict.includes(normalizedSelected) ||
-                    normalizedSelected.includes(itemDistrict);
+                return isDistrictMatch(p.district);
             })
             .map(p => ({
                 id: `day0-${p.id}`,
@@ -445,6 +450,7 @@ const LandingPage = ({
 
     const submissionCountsByDistrict = useMemo(() => {
         const counts = {};
+        const latestSubmissionByUser = new Map();
         const uniqueUsersWithProjects = new Set();
 
         // 1. Identify users with formal submissions
@@ -452,6 +458,11 @@ const LandingPage = ({
             const profile = profiles.find(p => p.id === s.user_id);
             if (profile && ['owner', 'admin'].includes(profile.role)) return;
             uniqueUsersWithProjects.add(s.user_id);
+
+            const existing = latestSubmissionByUser.get(s.user_id);
+            if (!existing || new Date(s.created_at) > new Date(existing.created_at)) {
+                latestSubmissionByUser.set(s.user_id, s);
+            }
         });
 
         // 2. Add users with idea titles (Day 0) who don't have submissions yet
@@ -466,7 +477,7 @@ const LandingPage = ({
         uniqueUsersWithProjects.forEach(userId => {
             const profile = profiles.find(p => p.id === userId);
             // Check submission district first, then profile district
-            const latestSub = submissions.find(s => s.user_id === userId);
+            const latestSub = latestSubmissionByUser.get(userId);
             const districtText = (latestSub?.district || profile?.district || '').trim();
 
             if (districtText) {
@@ -857,7 +868,11 @@ const LandingPage = ({
                                 </div>
                             )}
                             {selectedDistrictName && districtShowcase.length === 0 && (
-                                <p style={{ fontSize: '13px' }}>No submissions yet for this district.</p>
+                                <p style={{ fontSize: '13px' }}>
+                                    {mapViewMode === 'builders'
+                                        ? 'No builders found for this district yet.'
+                                        : 'No submissions yet for this district.'}
+                                </p>
                             )}
                             {selectedDistrictName && districtShowcase.length > 0 && (
                                 <div
@@ -868,7 +883,10 @@ const LandingPage = ({
                                         mapViewMode === 'builders' ? (
                                             <div
                                                 key={item.id}
-                                                onClick={() => item.builder_profile && setSelectedDetailProfile(item.builder_profile)}
+                                                onClick={() => {
+                                                    const detailProfile = item.builder_profile || profiles.find((p) => p.id === item.id?.replace('builder-', ''));
+                                                    if (detailProfile) setSelectedDetailProfile(detailProfile);
+                                                }}
                                                 style={{ display: 'flex', flexDirection: 'column', borderBottom: '1px dashed #999', paddingBottom: '6px', cursor: 'pointer' }}
                                                 onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
                                                 onMouseLeave={e => e.currentTarget.style.opacity = '1'}
