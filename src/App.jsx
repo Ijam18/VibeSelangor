@@ -829,25 +829,25 @@ const App = () => {
 
                 <footer style={{ padding: '16px 0', borderTop: '3px solid black', background: 'linear-gradient(180deg, #fff 0%, #fff8dc 100%)' }}>
                     <div className="container">
-                        <div className="neo-card no-jitter" style={{ border: '2px solid black', boxShadow: '6px 6px 0px black', textAlign: 'center', padding: '16px 16px' }}>
-                            <p style={{ fontWeight: '900', marginBottom: '2px', fontSize: '14px' }}>
+                        <div className="neo-card no-jitter" style={{ border: '2px solid black', boxShadow: '6px 6px 0px black', textAlign: 'center', padding: '24px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <p style={{ fontWeight: '900', marginBottom: '8px', fontSize: '14px', width: '100%' }}>
                                 Built by <span style={{ color: 'var(--selangor-red)' }}>_zarulijam</span>
                             </p>
                             <a
                                 href="https://threads.net/@_zarulijam"
                                 target="_blank"
                                 rel="noreferrer"
-                                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '5px', color: 'black', textDecoration: 'none', fontWeight: '800', fontSize: '13px', marginBottom: '2px' }}
+                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', color: 'black', textDecoration: 'none', fontWeight: '800', fontSize: '13px', marginBottom: '8px', width: '100%', flexWrap: 'wrap' }}
                             >
                                 <ThreadsIcon size={16} /> DM me on Threads to connect
                             </a>
-                            <p style={{ fontWeight: '800', fontSize: '12px', marginBottom: '6px', whiteSpace: 'nowrap' }}>
+                            <p style={{ fontWeight: '800', fontSize: '12px', marginBottom: '8px', lineHeight: '1.4', width: '100%' }}>
                                 Support me in becoming the KrackedDevs Selangor Ambassador
                             </p>
-                            <p style={{ fontWeight: '700', fontSize: '11px', opacity: 0.78, marginBottom: '4px' }}>
+                            <p style={{ fontWeight: '700', fontSize: '11px', opacity: 0.78, marginBottom: '6px', lineHeight: '1.4', maxWidth: '400px' }}>
                                 If you are outside Selangor, join the KrackedDevs Discord server to connect with your state ambassador.
                             </p>
-                            <p style={{ fontWeight: '800', opacity: 0.45, fontSize: '10px' }}>(c) 2026 VIBESELANGOR. NO CODE. JUST VIBES.</p>
+                            <p style={{ fontWeight: '800', opacity: 0.45, fontSize: '10px', marginTop: '4px' }}>(c) 2026 VIBESELANGOR. NO CODE. JUST VIBES.</p>
                         </div>
                     </div>
                 </footer>
