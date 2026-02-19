@@ -6,10 +6,7 @@ import {
 import { supabase } from './lib/supabase';
 import { ToastProvider, useToast } from './components/ToastNotification';
 import { LiveBanner, LiveHeaderBadge } from './components/LiveBanner';
-import ZarulijamChatbot from './components/ZarulijamChatbot';
 import MobileNavSidebar from './components/MobileNavSidebar';
-import { Download } from 'lucide-react';
-import SprintAssistant from './components/SprintAssistant';
 import MobileBottomNav from './components/MobileBottomNav';
 import BuilderStudioPage from './pages/BuilderStudioPage';
 import ComingSoonPage from './pages/ComingSoonPage';
@@ -81,7 +78,7 @@ const App = () => {
     const holidayConfig = useMemo(() => getHolidayThemeConfig(holidayTheme), [holidayTheme]);
     const [isMobileView, setIsMobileView] = useState(typeof window !== 'undefined' && window.innerWidth <= 768);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const chatbotRef = React.useRef(null);
+    const [isTerminalEnlarged, setIsTerminalEnlarged] = useState(false);
 
     // Real-time Data State
     const [classes, setClasses] = useState([]);
@@ -612,8 +609,11 @@ const App = () => {
                     handleJoinClick={handleJoinClick}
                     handleSignOut={handleSignOut}
                     setPublicPage={setPublicPage}
-                    showChatbot={chatbotRef.current?.isOpen} // Weak ref check
-                    onOpenChatbot={() => chatbotRef.current?.openChat()}
+                    showChatbot={isTerminalEnlarged}
+                    onOpenChatbot={() => {
+                        if (publicPage !== 'home') setPublicPage('home');
+                        setIsTerminalEnlarged(true);
+                    }}
                     isMobileView={isMobileView}
                     installPrompt={deferredPrompt}
                     onInstallClick={handleInstallClick}
@@ -676,53 +676,53 @@ const App = () => {
                         display: 'flex',
                         justifyContent: isMobileView ? 'center' : 'space-between',
                         alignItems: 'center',
-                        minHeight: '60px',
-                        height: 'auto',
-                        gap: '10px',
-                        position: 'relative'
+                        position: 'relative',
+                        paddingTop: isMobileView ? '24px' : '0',
+                        paddingRight: isMobileView ? '280px' : '0'
                     }}>
                         <div className="header-brand-wrap" style={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '12px',
-                            cursor: 'pointer',
-                            paddingTop: isMobileView ? '8px' : '0',
-                            transform: isMobileView ? 'translateX(-45px)' : 'none'
+                            gap: '10px',
+                            cursor: 'pointer'
                         }} onClick={handleHeaderBrandClick}>
                             <div style={{
-                                width: isMobileView ? '38px' : '42px',
-                                height: isMobileView ? '38px' : '42px',
+                                width: isMobileView ? '32px' : '36px',
+                                height: isMobileView ? '32px' : '36px',
                                 background: holidayConfig?.color || 'var(--selangor-red)',
-                                borderRadius: '10px',
-                                border: '2.5px solid black',
+                                borderRadius: '8px',
+                                border: '2px solid black',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                boxShadow: '3px 3px 0 black',
+                                boxShadow: '2.5px 2.5px 0 black',
                                 transition: 'all 0.2s ease',
                                 flexShrink: 0
                             }}>
-                                <Zap size={isMobileView ? 24 : 28} fill="yellow" color="black" strokeWidth={2.5} />
+                                <Zap size={isMobileView ? 20 : 24} fill="yellow" color="black" strokeWidth={2.5} />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                                 <span className="header-brand-text" style={{
-                                    fontWeight: '900',
-                                    fontSize: isMobileView ? '24px' : '30px',
+                                    fontWeight: '950',
+                                    fontSize: isMobileView ? '20px' : '26px',
                                     lineHeight: 1,
-                                    letterSpacing: '-0.02em'
+                                    letterSpacing: '-0.03em',
+                                    marginTop: '2px'
                                 }}>
                                     VibeSelangor
                                 </span>
                                 {holidayConfig && (
                                     <div style={{
-                                        fontSize: '10px',
+                                        fontSize: '9px',
                                         color: holidayConfig.color || 'var(--selangor-red)',
                                         fontWeight: '900',
                                         textTransform: 'uppercase',
                                         letterSpacing: '0.05em',
-                                        marginTop: '2px'
+                                        marginTop: '1px',
+                                        opacity: 0.9,
+                                        whiteSpace: 'nowrap'
                                     }}>
-                                        {holidayConfig.label}
+                                        {holidayConfig.headerLabel}
                                     </div>
                                 )}
                             </div>
@@ -787,6 +787,9 @@ const App = () => {
                         isMobileView={isMobileView}
                         setPublicPage={setPublicPage}
                         setSelectedDetailProfile={setSelectedDetailProfile}
+                        isTerminalEnlarged={isTerminalEnlarged}
+                        setIsTerminalEnlarged={setIsTerminalEnlarged}
+                        holidayConfig={holidayConfig}
                     />
                 )}
                 {!currentUser && !['home', 'how-it-works', 'coming-soon', 'showcase', 'leaderboard', 'forum', 'studio', 'public-studio'].includes(publicPage) && (
@@ -798,6 +801,9 @@ const App = () => {
                         isMobileView={isMobileView}
                         setPublicPage={setPublicPage}
                         setSelectedDetailProfile={setSelectedDetailProfile}
+                        isTerminalEnlarged={isTerminalEnlarged}
+                        setIsTerminalEnlarged={setIsTerminalEnlarged}
+                        holidayConfig={holidayConfig}
                     />
                 )}
                 {publicPage === 'how-it-works' && <ProgramDetailsPage classes={classes} handleJoinClick={handleJoinClick} setPublicPage={setPublicPage} isMobileView={isMobileView} />}
@@ -898,8 +904,7 @@ const App = () => {
                         </div>
                     </div>
                 </footer>
-                {/* Zarulijam AI Chatbot — visible on all pages, manages its own hidden state */}
-                <ZarulijamChatbot ref={chatbotRef} />
+                {/* Zarulijam AI Chatbot removed in favor of IJAM_BOT terminal console */}
 
                 {/* Mobile Navigation Sidebar */}
                 <MobileNavSidebar
@@ -912,7 +917,11 @@ const App = () => {
                     handleJoinClick={handleJoinClick}
                     handleSignOut={handleSignOut}
                     setPublicPage={setPublicPage}
-                    onOpenChatbot={() => chatbotRef.current?.openChat()}
+                    showChatbot={isTerminalEnlarged}
+                    onOpenChatbot={() => {
+                        if (publicPage !== 'home') setPublicPage('home');
+                        setIsTerminalEnlarged(true);
+                    }}
                     isMobileView={isMobileView}
                 />
 

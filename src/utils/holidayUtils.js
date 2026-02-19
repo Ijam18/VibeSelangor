@@ -14,12 +14,20 @@ const FIXED_HOLIDAYS = {
 
 // Placeholder for lunar-based holidays (calculated or updated yearly)
 // In a real app, this might fetch from an API or use a library like 'date-fns-tz'
-const LUNAR_HOLIDAYS_2024_2025 = {
+const LUNAR_HOLIDAYS = {
+    // 2025
     '2025-01-29': 'cny',
     '2025-01-30': 'cny',
     '2025-03-31': 'raya',
     '2025-04-01': 'raya',
     '2025-10-20': 'deepavali',
+    // 2026
+    '2026-02-17': 'cny',
+    '2026-02-18': 'cny',
+    '2026-02-19': 'cny', // Adding Day 3 as well
+    '2026-03-20': 'raya',
+    '2026-03-21': 'raya',
+    '2026-11-08': 'deepavali',
 };
 
 /**
@@ -40,8 +48,8 @@ export function getCurrentHolidayTheme() {
     }
 
     // Check lunar holidays
-    if (LUNAR_HOLIDAYS_2024_2025[fullDateStr]) {
-        return LUNAR_HOLIDAYS_2024_2025[fullDateStr];
+    if (LUNAR_HOLIDAYS[fullDateStr]) {
+        return LUNAR_HOLIDAYS[fullDateStr];
     }
 
     return null;
@@ -54,49 +62,57 @@ export function getHolidayThemeConfig(theme) {
     switch (theme) {
         case 'raya':
             return {
-                label: 'Selamat Hari Raya',
+                headerLabel: 'Selamat Hari Raya Aidilfitri',
+                botLabel: 'Selamat Hari Raya',
                 color: '#16a34a', // Green
                 overlayIcon: 'ketupat',
             };
         case 'cny':
             return {
-                label: 'Gong Xi Fa Cai',
+                headerLabel: 'Selamat Tahun Baru Cina',
+                botLabel: 'Gong Xi Fa Cai',
                 color: '#dc2626', // Red
                 overlayIcon: 'lantern',
             };
         case 'merdeka':
         case 'malaysia_day':
             return {
-                label: 'Selamat Hari Kebangsaan',
+                headerLabel: 'Selamat Hari Kebangsaan',
+                botLabel: 'Selamat Hari Kebangsaan',
                 color: '#1d4ed8', // Blue
                 overlayIcon: 'flag',
             };
         case 'deepavali':
             return {
-                label: 'Happy Deepavali',
+                headerLabel: 'Selamat Hari Deepavali',
+                botLabel: 'Happy Deepavali',
                 color: '#f59e0b', // Orange/Amber
                 overlayIcon: 'lamp',
             };
         case 'christmas':
             return {
-                label: 'Merry Christmas',
+                headerLabel: 'Selamat Hari Krismas',
+                botLabel: 'Merry Christmas',
                 color: '#b91c1c', // Deep Red
                 overlayIcon: 'tree',
             };
         case 'new_year':
             return {
-                label: 'Happy New Year',
+                headerLabel: 'Selamat Tahun Baru',
+                botLabel: 'Happy New Year',
                 color: '#4338ca', // Indigo
                 overlayIcon: 'sparkles',
             };
         case 'labour_day':
             return {
-                label: 'Happy Labour Day',
+                headerLabel: 'Selamat Hari Pekerja',
+                botLabel: 'Happy Labour Day',
                 color: '#374151', // Gray
             };
         case 'selangor_sultan_birthday':
             return {
-                label: 'Daulat Tuanku',
+                headerLabel: 'Daulat Tuanku',
+                botLabel: 'Daulat Tuanku',
                 color: '#CE1126', // Selangor Red
             };
         default:

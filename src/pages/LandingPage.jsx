@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Users, Folder, Sunrise, Sun, Moon, Coffee, Flag, PartyPopper, Gift, Hammer, Zap, Cpu, MessageSquare, Bot, Cloud, CloudRain, CloudLightning, Wind, Maximize2, Minimize2, X } from 'lucide-react';
+import { Users, Folder, Sunrise, Sun, Moon, Coffee, Flag, PartyPopper, Gift, Hammer, Zap, Cpu, MessageSquare, Bot, Cloud, CloudRain, CloudLightning, Wind, Maximize2, Minimize2, X, HelpCircle } from 'lucide-react';
 import GalleryShowcase from '../components/GalleryShowcase';
+import { localIntelligence, callNvidiaLLM, ZARULIJAM_SYSTEM_PROMPT } from '../lib/nvidia';
 import {
     DISTRICT_INFO,
     ANCHOR_PATH_TO_DISTRICT,
@@ -28,7 +29,10 @@ const LandingPage = ({
     handleJoinClick,
     isMobileView,
     setPublicPage,
-    setSelectedDetailProfile
+    setSelectedDetailProfile,
+    isTerminalEnlarged,
+    setIsTerminalEnlarged,
+    holidayConfig
 }) => {
     // Map State
     const [activeRegion, setActiveRegion] = useState(null);
@@ -40,10 +44,11 @@ const LandingPage = ({
     // Mascot & Weather State
     const [showMascotModal, setShowMascotModal] = useState(false);
     const [weatherData, setWeatherData] = useState({ temp: '--', condition: 'Loading...' });
-    const [isTerminalEnlarged, setIsTerminalEnlarged] = useState(false);
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const [chatMessages, setChatMessages] = useState([]);
     const [chatInput, setChatInput] = useState('');
+    const [chatMode, setChatMode] = useState('local'); // 'ai' or 'local'
+    const [isAiLoading, setIsAiLoading] = useState(false);
     const chatEndRef = React.useRef(null);
 
     // Auto-scroll chat
@@ -53,30 +58,56 @@ const LandingPage = ({
         }
     }, [chatMessages]);
 
-    // Mascot Responses
-    const getBotResponse = (input) => {
-        const lower = input.toLowerCase();
-        if (lower.includes('hello') || lower.includes('hi')) return "Hello Builder! IJAM_BOT here. Ready to vibe in Selangor?";
-        if (lower.includes('weather')) return `Shah Alam is currently ${weatherData.temp}°C and ${weatherData.condition}. Perfect for building!`;
-        if (lower.includes('project') || lower.includes('build')) return "We have amazing projects across Selangor! Check out the District Showcases for the latest vibes.";
-        if (lower.includes('selangor')) return "Selangor is where the magic happens. 9 districts, endless possibilities.";
-        if (lower.includes('ijam')) return "I'm the digital guardian of this community. Ijam created me to help you navigate the Selangor vibe!";
-        return "That's a vibe! Tell me more about your journey in Selangor.";
-    };
+    // Mascot Responses — Focused on site navigation with chill Malaysian vibe
+    const handleSendMessage = async (e, text = null) => {
+        if (e) e.preventDefault();
+        const input = text || chatInput;
+        if (!input.trim() || isAiLoading) return;
 
-    const handleSendMessage = (e) => {
-        e.preventDefault();
-        if (!chatInput.trim()) return;
-
-        const userMsg = { role: 'user', text: chatInput };
+        const userMsg = { role: 'user', text: input };
         setChatMessages(prev => [...prev, userMsg]);
-        setChatInput('');
+        if (!text) setChatInput('');
 
-        setTimeout(() => {
-            const botMsg = { role: 'bot', text: getBotResponse(chatInput) };
-            setChatMessages(prev => [...prev, botMsg]);
-        }, 800);
+        if (chatMode === 'ai') {
+            setIsAiLoading(true);
+            try {
+                const history = chatMessages.map(m => ({
+                    role: m.role === 'bot' ? 'assistant' : 'user',
+                    content: m.text
+                }));
+                const response = await callNvidiaLLM(ZARULIJAM_SYSTEM_PROMPT, input, 'meta/llama-3.3-70b-instruct', history);
+                setChatMessages(prev => [...prev, { role: 'bot', text: response }]);
+            } catch (error) {
+                console.error('AI Error:', error);
+                // Fallback to local if AI fails
+                const fallback = localIntelligence(input, chatMessages.map(m => ({
+                    role: m.role === 'bot' ? 'assistant' : 'user',
+                    content: m.text
+                })));
+                setChatMessages(prev => [...prev, { role: 'bot', text: `(AI Offline) ${fallback}` }]);
+            } finally {
+                setIsAiLoading(false);
+            }
+        } else {
+            // Local Mode
+            setTimeout(() => {
+                const response = localIntelligence(input, chatMessages.map(m => ({
+                    role: m.role === 'bot' ? 'assistant' : 'user',
+                    content: m.text
+                })));
+                const botMsg = { role: 'bot', text: response };
+                setChatMessages(prev => [...prev, botMsg]);
+            }, 600);
+        }
     };
+
+    const SUGGESTED_QUESTIONS = [
+        "macam mana nak join?",
+        "apa itu necb?",
+        "7-day sprint tu apa?",
+        "tools apa yang perlu?",
+        "siapa ijam?"
+    ];
 
     // Mouse Tracking for Mascot Eyes
     useEffect(() => {
@@ -163,24 +194,27 @@ const LandingPage = ({
         const month = now.getMonth() + 1;
         const year = now.getFullYear();
 
-        let greeting = { text: "SELAMAT DATANG!", icon: "⚡" };
+        let timeLabel = "SELAMAT DATANG!";
+        let timeIcon = "⚡";
 
-        if (month === 8 && date === 31) greeting = { text: "SELAMAT HARI MERDEKA!", icon: "🚩" };
-        else if (month === 9 && date === 16) greeting = { text: "SELAMAT HARI MALAYSIA!", icon: "🚩" };
-        else if (month === 5 && date === 1) greeting = { text: "SELAMAT HARI PEKERJA!", icon: "🛠️" };
-        else if (month === 12 && date === 25) greeting = { text: "MERRY CHRISTMAS!", icon: "🎄" };
-        else if (month === 1 && date === 1) greeting = { text: "HAPPY NEW YEAR!", icon: "🎉" };
-        else if (month === 2 && (date >= 17 && date <= 19)) greeting = { text: "SELAMAT TAHUN BARU CINA!", icon: "🏮" };
-        else if (hour >= 5 && hour < 12) greeting = { text: "SELAMAT PAGI!", icon: "🌅" };
-        else if (hour >= 12 && hour < 15) greeting = { text: "SELAMAT TENGAHARI!", icon: "☀️" };
-        else if (hour >= 15 && hour < 19) greeting = { text: "SELAMAT PETANG!", icon: "☕" };
-        else greeting = { text: "SELAMAT MALAM!", icon: "🌙" };
+        if (hour >= 5 && hour < 12) { timeLabel = "SELAMAT PAGI!"; timeIcon = "🌅"; }
+        else if (hour >= 12 && hour < 15) { timeLabel = "SELAMAT TENGAHARI!"; timeIcon = "☀️"; }
+        else if (hour >= 15 && hour < 19) { timeLabel = "SELAMAT PETANG!"; timeIcon = "☕"; }
+        else if (hour >= 19 || hour < 5) { timeLabel = "SELAMAT MALAM!"; timeIcon = "🌙"; }
+
+        // Combine with holiday greeting if available
+        let finalGreetingText = `${timeIcon} ${timeLabel}`;
+        if (holidayConfig) {
+            finalGreetingText += ` & ${holidayConfig.botLabel}! 🎉`;
+        } else {
+            finalGreetingText += " READY TO VIBE? 🚀";
+        }
 
         return {
             timestamp: `${year}-${String(month).padStart(2, '0')}-${String(date).padStart(2, '0')} ${String(hour).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`,
-            text: `${greeting.icon} ${greeting.text}`
+            text: finalGreetingText
         };
-    }, []);
+    }, [holidayConfig]);
 
     // Sequential Typing
     useEffect(() => {
@@ -588,17 +622,17 @@ const LandingPage = ({
                         <div className="neo-card no-jitter" style={{ border: '3px solid black', boxShadow: '12px 12px 0px black', padding: '32px', height: '100%', display: 'flex', flexDirection: 'column' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'auto', gap: '12px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <span className="pill" style={{ background: 'black', color: 'white', cursor: 'pointer', fontSize: '11px', whiteSpace: 'nowrap' }} onClick={handleJoinClick}>PORTAL_ACCESS</span>
                                     <button
                                         onClick={() => setIsTerminalEnlarged(true)}
                                         style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                     >
                                         <Maximize2 size={18} />
                                     </button>
-                                    <span className="pill" style={{ background: 'black', color: 'white', cursor: 'pointer', fontSize: '11px', whiteSpace: 'nowrap' }} onClick={handleJoinClick}>PORTAL_ACCESS</span>
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'monospace', fontWeight: '800', fontSize: '12px', color: '#444' }}>
-                                    <span style={{ opacity: 0.6 }}>SELANGOR:</span>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <div className="weather-widget" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'monospace', fontWeight: '800', fontSize: '12px', color: '#444' }}>
+                                    <span className="weather-location" style={{ opacity: 0.6 }}>SELANGOR:</span>
+                                    <div className="weather-temp" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                         <WeatherIcon condition={weatherData.condition} />
                                         <span>{weatherData.temp}°C</span>
                                     </div>
@@ -630,10 +664,10 @@ const LandingPage = ({
                                     </button>
                                     <div style={{ flex: 1 }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px', marginBottom: '2px' }}>
-                                            <span style={{ color: 'var(--selangor-red)', fontSize: '10px', fontWeight: '950', fontFamily: 'monospace', letterSpacing: '1px' }}>IJAM_BOT</span>
+                                            <span className="terminal-bot-label" style={{ color: 'var(--selangor-red)', fontSize: '10px', fontWeight: '950', fontFamily: 'monospace', letterSpacing: '1px' }}>IJAM_BOT</span>
                                             <span style={{ color: '#666', fontSize: '9px', fontFamily: 'monospace' }}>{typedTimestamp}</span>
                                         </div>
-                                        <p style={{ color: '#22c55e', fontWeight: 'bold', fontFamily: 'monospace', fontSize: '12px', lineHeight: 1.4, minHeight: '1.2em' }}>
+                                        <p className="terminal-greeting" style={{ color: '#22c55e', fontWeight: 'bold', fontFamily: 'monospace', fontSize: '12px', lineHeight: 1.4, minHeight: '1.2em' }}>
                                             {typedGreeting}
                                             {typingPhase === 'greeting' && <span className="terminal-caret" style={{ background: '#22c55e' }}>|</span>}
                                         </p>
@@ -655,7 +689,7 @@ const LandingPage = ({
                                             <IjamBotMascot size={64} mousePos={mousePos} />
                                         </div>
                                         <h2 style={{ fontSize: '28px', marginBottom: '16px' }}>Hello! I'm IJAM_BOT</h2>
-                                        <p style={{ marginBottom: '24px', fontSize: '16px', lineHeight: 1.6 }}>"The digital guardian of Selangor's builder community. I help track progress, connect districts, and ensure every launch is a vibe!"</p>
+                                        <p style={{ marginBottom: '24px', fontSize: '16px', lineHeight: 1.6 }}>"I'm your site navigation helper. Whether you're looking for the community map, tracking the leaderboard, or ready to join the cohort, I'm here to guide your way!"</p>
                                         <button className="btn btn-red w-full" onClick={() => setShowMascotModal(false)}>Back to Portal</button>
                                     </div>
                                 </div>
@@ -668,6 +702,28 @@ const LandingPage = ({
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                                             <Bot size={24} color="var(--selangor-red)" />
                                             <h2 style={{ color: 'white', fontFamily: 'monospace', margin: 0 }}>IJAM_BOT_CONSOLE v1.0</h2>
+
+                                            {/* Mode Toggle */}
+                                            <div style={{ display: 'flex', background: '#222', padding: '2px', borderRadius: '6px', marginLeft: '20px', border: '1px solid #444' }}>
+                                                <button
+                                                    onClick={() => setChatMode('local')}
+                                                    style={{
+                                                        background: chatMode === 'local' ? 'var(--selangor-red)' : 'transparent',
+                                                        color: 'white', border: 'none', padding: '4px 12px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s', fontFamily: 'monospace'
+                                                    }}
+                                                >
+                                                    LOCAL_INTEL
+                                                </button>
+                                                <button
+                                                    onClick={() => setChatMode('ai')}
+                                                    style={{
+                                                        background: chatMode === 'ai' ? '#3b82f6' : 'transparent',
+                                                        color: 'white', border: 'none', padding: '4px 12px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s', fontFamily: 'monospace'
+                                                    }}
+                                                >
+                                                    HYPER_AI
+                                                </button>
+                                            </div>
                                         </div>
                                         <button
                                             onClick={() => setIsTerminalEnlarged(false)}
@@ -710,20 +766,37 @@ const LandingPage = ({
                                             <div ref={chatEndRef} />
                                         </div>
 
+                                        {/* Suggested Questions */}
+                                        <div style={{ padding: '10px 40px', background: '#050505', display: 'flex', gap: '10px', flexWrap: 'wrap', borderTop: '1px solid #222' }}>
+                                            {SUGGESTED_QUESTIONS.map((q, i) => (
+                                                <button
+                                                    key={i}
+                                                    onClick={() => handleSendMessage(null, q)}
+                                                    style={{ background: '#111', border: '1px solid #333', color: '#999', padding: '6px 12px', borderRadius: '20px', fontSize: '12px', cursor: 'pointer', fontFamily: 'monospace', transition: 'all 0.2s' }}
+                                                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--selangor-red)'; e.currentTarget.style.color = 'white'; }}
+                                                    onMouseLeave={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#999'; }}
+                                                >
+                                                    {q}
+                                                </button>
+                                            ))}
+                                        </div>
+
                                         {/* Input Area */}
                                         <form onSubmit={handleSendMessage} style={{ padding: '20px 40px', background: '#000', borderTop: '2px solid #222', display: 'flex', gap: '20px' }}>
                                             <input
                                                 type="text"
                                                 value={chatInput}
                                                 onChange={(e) => setChatInput(e.target.value)}
-                                                placeholder="Type a message to IJAM_BOT..."
-                                                style={{ flex: 1, background: '#0a0a0a', border: '1px solid #333', color: 'white', padding: '16px 24px', borderRadius: '8px', outline: 'none', fontFamily: 'monospace', fontSize: '16px' }}
+                                                placeholder={isAiLoading ? "Thinking..." : "Type a message to IJAM_BOT..."}
+                                                disabled={isAiLoading}
+                                                style={{ flex: 1, background: '#0a0a0a', border: '1px solid #333', color: 'white', padding: '16px 24px', borderRadius: '8px', outline: 'none', fontFamily: 'monospace', fontSize: '16px', opacity: isAiLoading ? 0.5 : 1 }}
                                             />
                                             <button
                                                 type="submit"
-                                                style={{ background: 'var(--selangor-red)', color: 'white', border: 'none', padding: '16px 32px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+                                                disabled={isAiLoading}
+                                                style={{ background: 'var(--selangor-red)', color: 'white', border: 'none', padding: '16px 32px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', opacity: isAiLoading ? 0.5 : 1 }}
                                             >
-                                                SEND_VIBE
+                                                {isAiLoading ? 'THINKING...' : 'SEND_VIBE'}
                                             </button>
                                         </form>
                                     </div>
