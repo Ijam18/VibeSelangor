@@ -20,7 +20,7 @@ const ShowcasePage = ({
         <div style={{ paddingTop: '40px', background: '#fff' }}>
 
 
-            <ProgressWall submissions={submissions} profiles={profiles} />
+            <ProgressWall submissions={submissions} profiles={profiles} session={session} />
 
             <GalleryShowcase
                 profiles={profiles}

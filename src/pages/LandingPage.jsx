@@ -152,28 +152,66 @@ const LandingPage = ({
             return districtBuilders;
         }
 
-        const districtSubmissions = submissions
-            .filter((item) => {
-                const profile = profiles.find(p => p.id === item.user_id);
-                if (profile && ['owner', 'admin'].includes(profile.role)) return false;
+        // Project Showcase Logic: Deduplicate and Include Day 0
+        const submissionMap = new Map();
+        submissions.forEach(s => {
+            const profile = profiles.find(p => p.id === s.user_id);
+            if (profile && ['owner', 'admin'].includes(profile.role)) return;
 
-                const itemDistrict = normalizeDistrict(item.district);
+            const itemDistrict = normalizeDistrict(s.district || profile?.district || '');
+            const isMatch = itemDistrict === normalizedSelected ||
+                itemDistrict.includes(normalizedSelected) ||
+                normalizedSelected.includes(itemDistrict);
+
+            if (isMatch) {
+                const existing = submissionMap.get(s.user_id);
+                if (!existing || new Date(s.created_at) > new Date(existing.created_at)) {
+                    submissionMap.set(s.user_id, s);
+                }
+            }
+        });
+
+        // Convert Map to list
+        const districtSubmissions = Array.from(submissionMap.values()).map(item => ({
+            id: `project-${item.id}`,
+            submission_url: item.submission_url,
+            project_name: item.project_name || 'Untitled Project',
+            one_liner: item.one_liner || 'Builder update from VibeSelangor community.',
+            builder_profile: profiles.find(p => p.id === item.user_id)
+        }));
+
+        // Add Day 0 Builders who don't have submissions yet
+        const day0Builders = profiles
+            .filter(p => !['owner', 'admin'].includes(p.role))
+            .filter(p => {
+                if (!p.district || !p.idea_title) return false;
+                if (submissionMap.has(p.id)) return false; // Already have a submission
+
+                const itemDistrict = normalizeDistrict(p.district);
                 return itemDistrict === normalizedSelected ||
                     itemDistrict.includes(normalizedSelected) ||
                     normalizedSelected.includes(itemDistrict);
             })
-            .map((item) => ({
-                id: `project-${item.id}`,
-                submission_url: item.submission_url,
-                project_name: item.project_name,
-                one_liner: item.one_liner || 'Builder submission from VibeSelangor community.'
+            .map(p => ({
+                id: `day0-${p.id}`,
+                submission_url: '#',
+                project_name: p.idea_title,
+                one_liner: p.problem_statement || 'Building the future of Selangor.',
+                builder_profile: p
             }));
 
+        const combined = [...day0Builders, ...districtSubmissions];
+
         if (selectedDistrictKey === 'kuala_lumpur') {
-            return [...kualaLumpurShowcase, ...districtSubmissions];
+            const enrichedKL = kualaLumpurShowcase.map(record => ({
+                ...record,
+                isKD: true,
+                favicon: 'https://www.google.com/s2/favicons?sz=64&domain=krackeddevs.com'
+            }));
+            return [...enrichedKL, ...combined];
         }
 
-        return districtSubmissions;
+        return combined;
     }, [selectedDistrictKey, selectedDistrictName, submissions, kualaLumpurShowcase, mapViewMode, profiles]);
 
     const builderCountsByDistrict = useMemo(() => {
@@ -191,14 +229,34 @@ const LandingPage = ({
 
     const submissionCountsByDistrict = useMemo(() => {
         const counts = {};
+        const uniqueUsersWithProjects = new Set();
+
+        // 1. Identify users with formal submissions
         submissions.forEach(s => {
             const profile = profiles.find(p => p.id === s.user_id);
             if (profile && ['owner', 'admin'].includes(profile.role)) return;
+            uniqueUsersWithProjects.add(s.user_id);
+        });
 
-            const districtText = (s.district || profile?.district || '').trim();
-            if (!districtText) return;
-            const norm = normalizeDistrict(districtText);
-            counts[norm] = (counts[norm] || 0) + 1;
+        // 2. Add users with idea titles (Day 0) who don't have submissions yet
+        profiles.forEach(p => {
+            if (['owner', 'admin'].includes(p.role)) return;
+            if (p.idea_title && !uniqueUsersWithProjects.has(p.id)) {
+                uniqueUsersWithProjects.add(p.id);
+            }
+        });
+
+        // 3. Map these unique project owners to their district
+        uniqueUsersWithProjects.forEach(userId => {
+            const profile = profiles.find(p => p.id === userId);
+            // Check submission district first, then profile district
+            const latestSub = submissions.find(s => s.user_id === userId);
+            const districtText = (latestSub?.district || profile?.district || '').trim();
+
+            if (districtText) {
+                const norm = normalizeDistrict(districtText);
+                counts[norm] = (counts[norm] || 0) + 1;
+            }
         });
 
         // Include KrackedDevs showcase projects for Kuala Lumpur
@@ -247,8 +305,10 @@ const LandingPage = ({
         return Object.entries(source)
             .map(([norm, count]) => {
                 const matchedInfo = Object.values(DISTRICT_INFO).find(info => normalizeDistrict(info.name) === norm);
-                const displayLabel = matchedInfo ? matchedInfo.name : (norm === 'kuala_lumpur' ? 'Kuala Lumpur' : norm);
-                return [displayLabel, count];
+                const isKL = norm === 'kualalumpur' || norm === 'kuala_lumpur' || (matchedInfo && normalizeDistrict(matchedInfo.name) === 'kualalumpur');
+                const displayLabel = matchedInfo ? matchedInfo.name : (isKL ? 'Kuala Lumpur' : norm);
+                const finalLabel = isKL ? `${displayLabel} [HQ]` : displayLabel;
+                return [finalLabel, count];
             })
             .sort((a, b) => b[1] - a[1])
             .slice(0, 3);
@@ -413,8 +473,8 @@ const LandingPage = ({
                         <div className={`neo-card no-jitter showcase-card${selectedDistrictName ? ' is-open' : ''}`} style={{ marginTop: '20px', border: '2px solid black', boxShadow: '6px 6px 0px black', padding: '20px' }}>
                             <h3 style={{ fontSize: '22px', marginBottom: '10px' }}>
                                 {mapViewMode === 'builders'
-                                    ? (selectedDistrictName ? `${selectedDistrictName} Builders` : 'District Builders')
-                                    : (selectedDistrictName ? `${selectedDistrictName} Showcase` : 'District Showcase')}
+                                    ? (selectedDistrictName ? `${selectedDistrictName}${selectedDistrictKey === 'kuala_lumpur' ? ' [HQ]' : ''} Builders` : 'District Builders')
+                                    : (selectedDistrictName ? `${selectedDistrictName}${selectedDistrictKey === 'kuala_lumpur' ? ' [HQ]' : ''} Showcase` : 'District Showcase')}
                             </h3>
                             {!selectedDistrictName && (
                                 <p style={{ fontSize: '13px' }}>
@@ -439,22 +499,43 @@ const LandingPage = ({
                                 >
                                     {districtShowcase.map((item) => (
                                         mapViewMode === 'builders' ? (
-                                            <div key={item.id} style={{ display: 'flex', flexDirection: 'column', borderBottom: '1px dashed #999', paddingBottom: '6px' }}>
+                                            <div
+                                                key={item.id}
+                                                onClick={() => item.builder_profile && setSelectedDetailProfile(item.builder_profile)}
+                                                style={{ display: 'flex', flexDirection: 'column', borderBottom: '1px dashed #999', paddingBottom: '6px', cursor: 'pointer' }}
+                                                onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
+                                                onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                                            >
                                                 <div style={{ fontSize: '14px', fontWeight: 800 }}>{item.name}</div>
                                                 <div style={{ fontSize: '12px', opacity: 0.78, display: 'flex', alignItems: 'center', gap: '4px' }}>
                                                     {item.handle && (
-                                                        <a href={`https://threads.net/@${item.handle.replace('@', '')}`} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', color: 'var(--selangor-red)', fontWeight: 600 }}>
+                                                        <span style={{ textDecoration: 'none', color: 'var(--selangor-red)', fontWeight: 600 }}>
                                                             {item.handle.startsWith('@') ? item.handle : `@${item.handle}`}
-                                                        </a>
+                                                        </span>
                                                     )}
                                                     {!item.handle && <span style={{ fontStyle: 'italic' }}>No Threads handle</span>}
                                                 </div>
                                             </div>
                                         ) : (
-                                            <a key={item.id} href={item.submission_url || '#'} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', color: 'black', borderBottom: '1px dashed #999', paddingBottom: '6px' }}>
-                                                <div style={{ fontSize: '14px', fontWeight: 800 }}>{item.project_name || 'Untitled Project'}</div>
+                                            <div
+                                                key={item.id}
+                                                onClick={() => {
+                                                    if (item.isKD) {
+                                                        window.open('https://krackeddevs.com/showcase', '_blank');
+                                                    } else if (item.builder_profile) {
+                                                        setSelectedDetailProfile(item.builder_profile);
+                                                    }
+                                                }}
+                                                style={{ textDecoration: 'none', color: 'black', borderBottom: '1px dashed #999', paddingBottom: '6px', cursor: 'pointer' }}
+                                                onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
+                                                onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                                            >
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                    {item.isKD && <img src={item.favicon} alt="" style={{ width: '18px', height: '18px', borderRadius: '4px' }} />}
+                                                    <div style={{ fontSize: '14px', fontWeight: 800 }}>{item.project_name || 'Untitled Project'}</div>
+                                                </div>
                                                 <div style={{ fontSize: '12px', opacity: 0.78 }}>{item.one_liner || 'No transmission log.'}</div>
-                                            </a>
+                                            </div>
                                         )
                                     ))}
                                 </div>
@@ -612,7 +693,7 @@ const LandingPage = ({
                 session={session}
                 submissions={submissions}
                 isMobileView={isMobileView}
-                limit={isMobileView ? 4 : 8}
+                limit={null}
                 setPublicPage={setPublicPage}
                 setSelectedDetailProfile={setSelectedDetailProfile}
             />

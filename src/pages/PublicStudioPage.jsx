@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import RoomRenderer from '../components/game/RoomRenderer';
+
 import { Heart, ArrowLeft, Zap, Trophy, MapPin, Star, Package, Gamepad2 } from 'lucide-react';
 import { GAME_LEVELS, GAME_ITEMS } from '../constants';
 
@@ -184,12 +184,13 @@ export default function PublicStudioPage({ targetUserId, targetUserName, session
             </div>
 
             {/* Room */}
-            <div className="neo-card" style={{ padding: '0', overflow: 'hidden', border: '3px solid black', marginBottom: '20px', background: '#ddd' }}>
-                <div style={{ padding: '10px 16px', background: 'black', color: 'white', fontSize: '12px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Zap size={12} fill="yellow" color="yellow" /> {displayName.toUpperCase()}'S ROOM
-                </div>
-                <RoomRenderer items={roomItems} />
-            </div>
+            {/* Room - Removed as per studio refactor */}
+            {/* <div className="neo-card" style={{ padding: '0', overflow: 'hidden', border: '3px solid black', marginBottom: '20px', background: '#ddd' }}>
+                 <div style={{ padding: '10px 16px', background: 'black', color: 'white', fontSize: '12px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                     <Zap size={12} fill="yellow" color="yellow" /> {displayName.toUpperCase()}'S ROOM
+                 </div>
+                 <RoomRenderer items={roomItems} />
+            </div> */}
 
             {/* Like button */}
             {!isSelf && session && (

@@ -8,6 +8,7 @@ import { ToastProvider, useToast } from './components/ToastNotification';
 import { LiveBanner, LiveHeaderBadge } from './components/LiveBanner';
 import ZarulijamChatbot from './components/ZarulijamChatbot';
 import MobileNavSidebar from './components/MobileNavSidebar';
+import { Download } from 'lucide-react';
 import SprintAssistant from './components/SprintAssistant';
 import MobileBottomNav from './components/MobileBottomNav';
 import BuilderStudioPage from './pages/BuilderStudioPage';
@@ -102,6 +103,35 @@ const App = () => {
         if (!currentUser?.id) return 0;
         return submissions.filter((item) => item?.user_id === currentUser.id).length;
     }, [submissions, currentUser?.id]);
+
+    // PWA Install Prompt State
+    const [deferredPrompt, setDeferredPrompt] = useState(null);
+
+    useEffect(() => {
+        const handleBeforeInstallPrompt = (e) => {
+            // Prevent the mini-infobar from appearing on mobile
+            e.preventDefault();
+            // Stash the event so it can be triggered later.
+            setDeferredPrompt(e);
+        };
+
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+        return () => {
+            window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        };
+    }, []);
+
+    const handleInstallClick = async () => {
+        if (!deferredPrompt) return;
+        // Show the install prompt
+        deferredPrompt.prompt();
+        // Wait for the user to respond to the prompt
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`User response to the install prompt: ${outcome}`);
+        // We've used the prompt, and can't use it again, throw it away
+        setDeferredPrompt(null);
+    };
 
 
     const handleHeaderBrandClick = () => {
@@ -572,6 +602,22 @@ const App = () => {
     return (
         <ToastProvider>
             <div className="vibe-selangor">
+                <MobileNavSidebar
+                    isOpen={isSidebarOpen}
+                    onClose={() => setIsSidebarOpen(false)}
+                    session={session}
+                    currentUser={currentUser}
+                    publicPage={publicPage}
+                    handleHeaderNavClick={handleHeaderNavClick}
+                    handleJoinClick={handleJoinClick}
+                    handleSignOut={handleSignOut}
+                    setPublicPage={setPublicPage}
+                    showChatbot={chatbotRef.current?.isOpen} // Weak ref check
+                    onOpenChatbot={() => chatbotRef.current?.openChat()}
+                    isMobileView={isMobileView}
+                    installPrompt={deferredPrompt}
+                    onInstallClick={handleInstallClick}
+                />
                 <AuthModal
                     isOpen={isAuthModalOpen}
                     onClose={() => setIsAuthModalOpen(false)}
@@ -624,6 +670,7 @@ const App = () => {
                         onJoinClick={handleJoinClick}
                     />
                 )}
+
                 <header className="glass-header">
                     <div className="container header-container" style={{
                         display: 'flex',

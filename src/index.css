@@ -329,9 +329,23 @@ section {
   width: max-content;
 }
 
+
+
 .builder-card {
   min-width: 330px;
   max-width: 330px;
+  min-height: 480px;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Progress Wall specific card adjustments */
+.project-card-container {
+  width: 330px;
+  flex-shrink: 0;
+  min-height: 480px;
+  /* Match showcase card height */
+  display: flex !important;
 }
 
 @media (max-width: 991px) {
@@ -1192,11 +1206,23 @@ section {
     overflow-y: auto;
   }
 }
+
 /* Greeting Animation */
 @keyframes greetingPulse {
-  0% { transform: scale(1); opacity: 0.9; }
-  50% { transform: scale(1.05); opacity: 1; }
-  100% { transform: scale(1); opacity: 0.9; }
+  0% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
 }
 
 .greeting-anim {

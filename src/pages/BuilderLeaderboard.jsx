@@ -433,7 +433,7 @@ export default function BuilderLeaderboard({ isMobileView }) {
                 )}
 
                 {/* Builder List — scrollable card list on mobile, table on desktop */}
-                <div className="neo-card no-jitter" style={{ overflow: 'hidden', border: '2px solid black', background: 'white' }}>
+                <div className="neo-card no-jitter" style={{ maxHeight: '70vh', overflowY: 'auto', border: '2px solid black', background: 'white' }}>
                     {isMobileView ? (
                         /* Mobile: Compact card list */
                         <div>

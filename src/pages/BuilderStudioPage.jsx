@@ -1,20 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../components/ToastNotification';
-import RoomRenderer from '../components/game/RoomRenderer';
-import ItemShop from '../components/game/ItemShop';
+import { Bug, Zap, RefreshCw, Star, Trophy } from 'lucide-react';
 import BugSquash from '../components/game/BugSquash';
-import { calculateIdleVibes, getLevelFromXP, canAfford, processPurchase, calculateBuildRate } from '../lib/gameEngine';
-import { ShoppingBag, Zap, Clock, X, AlertCircle, RefreshCw, Star } from 'lucide-react';
 import { GAME_LEVELS } from '../constants';
 
 export default function BuilderStudioPage({ session }) {
     const { addToast } = useToast();
     const [gameState, setGameState] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [showShop, setShowShop] = useState(false);
     const [playingBugSquash, setPlayingBugSquash] = useState(false);
-    const [idleEarnings, setIdleEarnings] = useState(0);
 
     useEffect(() => {
         if (session?.user?.id) {
@@ -35,8 +30,6 @@ export default function BuilderStudioPage({ session }) {
 
             if (data) {
                 setGameState(data);
-                const earnings = calculateIdleVibes(data.last_idle_claim, data.build_rate);
-                setIdleEarnings(earnings);
             } else {
                 // No row yet — try to insert a new one
                 const newGame = {
@@ -45,8 +38,6 @@ export default function BuilderStudioPage({ session }) {
                     total_vibes_earned: 0,
                     level: 1,
                     xp: 0,
-                    build_rate: 1,
-                    room_items: ['desk_basic'],
                     last_idle_claim: new Date().toISOString()
                 };
                 const { data: inserted, error: insertError } = await supabase
@@ -74,8 +65,6 @@ export default function BuilderStudioPage({ session }) {
                 total_vibes_earned: 0,
                 level: 1,
                 xp: 0,
-                build_rate: 1,
-                room_items: ['desk_basic'],
                 last_idle_claim: new Date().toISOString()
             });
         } finally {
@@ -93,39 +82,7 @@ export default function BuilderStudioPage({ session }) {
         if (error) throw error;
     };
 
-    const handleClaimIdle = async () => {
-        if (idleEarnings <= 0) return;
-        const newVibes = (gameState.vibes || 0) + idleEarnings;
-        const newTotal = (gameState.total_vibes_earned || 0) + idleEarnings;
-        const now = new Date().toISOString();
-        try {
-            await saveToDb({ vibes: newVibes, total_vibes_earned: newTotal, last_idle_claim: now });
-            setGameState(prev => ({ ...prev, vibes: newVibes, total_vibes_earned: newTotal, last_idle_claim: now }));
-            addToast(`Collected ${idleEarnings} Vibes from idle coding!`, 'success');
-            setIdleEarnings(0);
-        } catch (err) {
-            addToast('Failed to claim vibes: ' + err.message, 'error');
-        }
-    };
 
-    const handlePurchaseItem = async (item) => {
-        const { success, error, newVibes } = processPurchase(item.id, gameState.vibes, gameState.room_items || []);
-        if (!success) { addToast(error, 'error'); return; }
-
-        const newItems = [...(gameState.room_items || []), item.id];
-        const newBuildRate = calculateBuildRate(newItems);
-        const newXP = (gameState.xp || 0) + 10;
-        const newLevel = getLevelFromXP(newXP);
-
-        try {
-            await saveToDb({ vibes: newVibes, room_items: newItems, build_rate: newBuildRate, xp: newXP, level: newLevel });
-            setGameState(prev => ({ ...prev, vibes: newVibes, room_items: newItems, build_rate: newBuildRate, xp: newXP, level: newLevel }));
-            addToast(`Bought ${item.name}!`, 'success');
-            if (newLevel > gameState.level) addToast(`LEVEL UP! You are now Level ${newLevel}!`, 'success');
-        } catch (err) {
-            addToast('Purchase failed: ' + err.message, 'error');
-        }
-    };
 
     const handleBugSquashComplete = async (score) => {
         setPlayingBugSquash(false);
@@ -164,8 +121,7 @@ export default function BuilderStudioPage({ session }) {
                     &nbsp;&nbsp;total_vibes_earned int default 0,<br />
                     &nbsp;&nbsp;level int default 1,<br />
                     &nbsp;&nbsp;xp int default 0,<br />
-                    &nbsp;&nbsp;build_rate int default 1,<br />
-                    &nbsp;&nbsp;room_items text[] default ARRAY['desk_basic'],<br />
+                    &nbsp;&nbsp;xp int default 0,<br />
                     &nbsp;&nbsp;last_idle_claim timestamptz default now()<br />
                     );
                 </code>
@@ -241,64 +197,45 @@ export default function BuilderStudioPage({ session }) {
                 </div>
             </header>
 
-            {/* Arcade Hero Area */}
-            <div className="neo-card" style={{
-                padding: '40px 20px',
-                textAlign: 'center',
-                border: '3px solid black',
-                boxShadow: '8px 8px 0 black',
-                background: '#fff',
-                borderRadius: '16px'
-            }}>
-                <div style={{ fontSize: '64px', marginBottom: '20px' }}>🐛</div>
-                <h3 style={{ fontSize: '24px', fontWeight: '900', marginBottom: '12px' }}>Bug Squash Mini-Game</h3>
-                <p style={{ color: '#666', fontSize: '15px', marginBottom: '32px', lineHeight: 1.6 }}>
-                    Squash as many bugs as you can in 30 seconds! <br />
-                    Each bug earns you Vibes to level up your builder rank.
+            <div style={{ padding: '20px 20px', textAlign: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+                    <div style={{
+                        width: '120px', height: '120px', borderRadius: '50%', background: '#f3f4f6',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        border: '4px solid black', boxShadow: '0 0 0 4px white, 0 0 0 7px black'
+                    }}>
+                        <Bug size={64} className="text-black" />
+                    </div>
+                </div>
+                <h3 style={{ fontSize: '28px', fontWeight: '900', marginBottom: '8px' }}>BUG SQUASH CHALLENGE</h3>
+                <p style={{ color: '#666', fontSize: '16px', maxWidth: '400px', margin: '0 auto 20px', lineHeight: 1.4 }}>
+                    Test your reflexes! Squash bugs before time runs out to earn pure Vibes.
                 </p>
 
                 <button
                     className="btn btn-red"
                     onClick={() => setPlayingBugSquash(true)}
                     style={{
-                        width: '100%',
-                        maxWidth: '280px',
-                        padding: '18px',
-                        fontSize: '18px',
+                        padding: '16px 32px',
+                        fontSize: '20px',
                         display: 'inline-flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '12px',
+                        gap: '16px',
+                        boxShadow: '8px 8px 0 black',
+                        transform: 'translate(-4px, -4px)',
+                        border: '3px solid black'
                     }}
                 >
-                    <Zap size={20} fill="currentColor" color="gold" /> START SQUASHING
+                    <Zap size={28} fill="currentColor" color="gold" strokeWidth={2.5} />
+                    PLAY NOW
                 </button>
-            </div>
 
-            {/* Info Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '20px' }}>
-                <div className="neo-card" style={{ border: '2px solid black', padding: '15px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '20px', marginBottom: '5px' }}>📈</div>
-                    <div style={{ fontSize: '11px', fontWeight: '800', opacity: 0.6 }}>BUILD RATE</div>
-                    <div style={{ fontSize: '16px', fontWeight: '900' }}>{gameState.build_rate} V/hr</div>
-                </div>
-                <div className="neo-card" style={{ border: '2px solid black', padding: '15px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '20px', marginBottom: '5px' }}>📅</div>
-                    <div style={{ fontSize: '11px', fontWeight: '800', opacity: 0.6 }}>IDLE CLAIM</div>
-                    <div style={{ fontSize: '16px', fontWeight: '900' }}>Ready</div>
+                <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'center', gap: '30px', opacity: 0.6 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: 700 }}>
+                        <Trophy size={18} /> LEADERBOARD COMING SOON
+                    </div>
                 </div>
             </div>
-
-            {/* Idle Claim */}
-            {idleEarnings > 0 && (
-                <button
-                    onClick={handleClaimIdle}
-                    className="btn btn-outline"
-                    style={{ width: '100%', marginTop: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '16px', fontSize: '15px', border: '2px solid black' }}
-                >
-                    <Clock size={18} /> CLAIM {idleEarnings} IDLE VIBES
-                </button>
-            )}
         </div>
     );
 }

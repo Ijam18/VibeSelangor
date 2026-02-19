@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { X, MessageCircle, Zap, User, ExternalLink } from 'lucide-react';
+import { X, MessageCircle, Zap, User, ExternalLink, Download } from 'lucide-react';
 import { HEADER_LINKS } from '../constants';
 import { getCurrentHolidayTheme, getHolidayThemeConfig } from '../utils/holidayUtils';
 
@@ -15,7 +15,9 @@ export default function MobileNavSidebar({
     setPublicPage,
     showChatbot,
     onOpenChatbot,
-    isMobileView = true
+    isMobileView = true,
+    installPrompt,
+    onInstallClick
 }) {
     // Lock body scroll when sidebar is open
     useEffect(() => {
@@ -200,6 +202,32 @@ export default function MobileNavSidebar({
                         <MessageCircle size={12} />
                         {showChatbot ? 'Active' : 'Open Ijam Bot'}
                     </button>
+
+                    {/* PWA Install Button */}
+                    {installPrompt && (
+                        <button
+                            onClick={() => { onInstallClick(); onClose(); }}
+                            style={{
+                                width: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '6px',
+                                padding: '4px 8px',
+                                background: '#eff6ff',
+                                border: '1.5px solid #3b82f6',
+                                borderRadius: '5px',
+                                cursor: 'pointer',
+                                fontWeight: '800',
+                                fontSize: '12px',
+                                color: '#2563eb',
+                                transition: 'all 0.1s',
+                            }}
+                        >
+                            <Download size={12} />
+                            Install App
+                        </button>
+                    )}
 
                     {!session && (
                         <div style={{ display: 'flex', gap: '4px' }}>

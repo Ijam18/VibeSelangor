@@ -82,15 +82,7 @@ export default function BuilderDetailModal({
                                             <ThreadsIcon size={22} /> Threads Profile
                                         </a>
                                     )}
-                                    {onVisitStudio && (
-                                        <button
-                                            onClick={() => { onClose(); onVisitStudio(builder); }}
-                                            className="btn btn-red"
-                                            style={{ padding: '14px', fontSize: '13px', textTransform: 'none', justifyContent: 'flex-start', gap: '12px', width: '100%', borderRadius: '12px', display: 'flex', alignItems: 'center' }}
-                                        >
-                                            <Gamepad2 size={22} /> Visit Studio 🎮
-                                        </button>
-                                    )}
+
                                     {(currentUser?.type === 'admin' || currentUser?.type === 'owner') && builder.whatsapp_contact && (
                                         <a href={formatWhatsAppLink(builder.whatsapp_contact)} target="_blank" rel="noreferrer" className="btn btn-outline" style={{ padding: '14px', fontSize: '13px', textTransform: 'none', justifyContent: 'flex-start', gap: '12px', width: '100%', borderRadius: '12px', borderColor: '#25D366' }}>
                                             <WhatsAppIcon size={22} /> WhatsApp (Admin)
@@ -101,7 +93,7 @@ export default function BuilderDetailModal({
 
                             <div>
                                 <h4 style={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#666', borderBottom: '2px solid #eee', paddingBottom: '6px', marginBottom: '16px' }}>Project Evolution</h4>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0px', position: 'relative' }}>
+                                <div className="scroll-box-timeline" style={{ display: 'flex', flexDirection: 'column', gap: '0px', position: 'relative', maxHeight: '300px', overflowY: 'auto', paddingRight: '8px' }}>
                                     {/* Vertical Journey Line */}
                                     {submissions.filter(s => s.user_id === builder.id).length > 0 && (
                                         <div style={{ position: 'absolute', left: '21px', top: '24px', bottom: '24px', width: '2px', background: 'black', zIndex: 0 }}></div>

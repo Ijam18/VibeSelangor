@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight, Sparkles, MapPin, MessageCircle } from 'lucide-react';
+import ThreadsIcon from './ThreadsIcon';
 import { SPRINT_MODULE_STEPS } from '../constants';
 import { truncateText } from '../utils';
 
@@ -12,15 +13,14 @@ const GalleryShowcase = ({
     limit,
     setPublicPage
 }) => {
-    const scrollRef = useRef(null);
-    const [isAutoScrolling, setIsAutoScrolling] = useState(true);
+
 
     let buildersToShow = profiles
         .filter(p => {
-            const hasSubmission = submissions.some(s => s.user_id === p.id);
             const isSelf = session?.user && p.id === session.user.id;
             const isInternal = p.role === 'owner' || p.role === 'admin';
-            return hasSubmission && !isSelf && !isInternal;
+            // Show if they have an idea title or a submission, even if day 0
+            return (p.idea_title || submissions.some(s => s.user_id === p.id)) && !isSelf && !isInternal;
         })
         .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
 
@@ -28,6 +28,9 @@ const GalleryShowcase = ({
 
     // Triplicate for seamless loop
     const loopedBuilders = [...buildersToShow, ...buildersToShow, ...buildersToShow];
+
+    const scrollRef = useRef(null);
+    const [isAutoScrolling, setIsAutoScrolling] = useState(true);
 
     useEffect(() => {
         if (scrollRef.current && buildersToShow.length > 0) {
@@ -38,13 +41,11 @@ const GalleryShowcase = ({
         }
     }, [buildersToShow.length]);
 
-    // Loop logic: when hitting the start/end of the cloned sections, jump back to middle
     const handleScroll = () => {
         if (!scrollRef.current || buildersToShow.length === 0) return;
         const container = scrollRef.current;
         const singleSectionWidth = container.scrollWidth / 3;
 
-        // Using a 10px buffer to ensure smooth wrap-around even with momentum scrolling
         if (container.scrollLeft <= 10) {
             container.scrollLeft = singleSectionWidth + container.scrollLeft;
         } else if (container.scrollLeft >= singleSectionWidth * 2 - 10) {
@@ -52,7 +53,6 @@ const GalleryShowcase = ({
         }
     };
 
-    // Slow auto-scroll effect
     useEffect(() => {
         let interval;
         if (isAutoScrolling && scrollRef.current && buildersToShow.length > 0) {
@@ -60,19 +60,39 @@ const GalleryShowcase = ({
                 if (scrollRef.current) {
                     scrollRef.current.scrollLeft += 1;
                 }
-            }, 30); // Move 1px every 30ms for a smooth drift
+            }, 30);
         }
         return () => clearInterval(interval);
     }, [isAutoScrolling, buildersToShow.length]);
 
+
+
     return (
-        <section id="gallery" style={{ borderTop: '3px solid black', padding: '24px 0 12px', background: '#fff' }}>
+        <section id="gallery" style={{ borderTop: '3px solid black', padding: '24px 0 12px', background: '#fff', overflow: 'hidden' }}>
             <div className="container">
                 <div style={{ marginBottom: '24px', textAlign: 'center' }}>
                     <div className="pill pill-red" style={{ marginBottom: '10px' }}>THE SHOWCASE</div>
                     <h2 style={{ fontSize: 'clamp(32px, 7vw, 52px)', letterSpacing: '-2px' }}>Meet the Builders</h2>
                     <p className="text-sub" style={{ maxWidth: '600px', margin: '4px auto 0' }}>Discover the innovative apps and startups being built right here in Selangor.</p>
                 </div>
+            </div>
+
+            <div style={{ position: 'relative', width: '100%' }}>
+                {/* Manual Scroll Controls */}
+                <button
+                    onClick={() => scrollRef.current && (scrollRef.current.scrollLeft -= 300)}
+                    style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', zIndex: 10, background: 'white', border: '2px solid black', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '2px 2px 0px black' }}
+                    className="scroll-btn"
+                >
+                    <ArrowRight size={20} style={{ transform: 'rotate(180deg)' }} />
+                </button>
+                <button
+                    onClick={() => scrollRef.current && (scrollRef.current.scrollLeft += 300)}
+                    style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', zIndex: 10, background: 'white', border: '2px solid black', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '2px 2px 0px black' }}
+                    className="scroll-btn"
+                >
+                    <ArrowRight size={20} />
+                </button>
 
                 <div
                     className="builders-scroll-container"
@@ -81,6 +101,10 @@ const GalleryShowcase = ({
                     onMouseEnter={() => setIsAutoScrolling(false)}
                     onMouseLeave={() => setIsAutoScrolling(true)}
                     onTouchStart={() => setIsAutoScrolling(false)}
+                    style={{
+                        width: '100%',
+                        paddingLeft: 'max(16px, calc((100vw - 1200px) / 2))', // Dynamic padding to align first item with container
+                    }}
                 >
                     <div className="builders-grid">
                         {buildersToShow.length === 0 ? (
@@ -108,7 +132,8 @@ const GalleryShowcase = ({
                                             flexDirection: 'column',
                                             gap: '12px',
                                             padding: '24px',
-                                            background: 'white'
+                                            background: 'white',
+                                            height: '100%',
                                         }}
                                         onMouseEnter={(e) => {
                                             if (!isMobileView) {
@@ -134,7 +159,7 @@ const GalleryShowcase = ({
                                             </div>
 
                                             {latest?.submission_url && (
-                                                <div style={{ height: '140px', background: '#eee', borderRadius: '8px', overflow: 'hidden', marginBottom: '12px', border: '2px solid black', position: 'relative' }}>
+                                                <div style={{ height: '120px', background: '#eee', borderRadius: '8px', overflow: 'hidden', marginBottom: '12px', border: '2px solid black', position: 'relative' }}>
                                                     <img
                                                         src={`https://api.microlink.io?url=${encodeURIComponent(latest.submission_url)}&screenshot=true&meta=false&embed=screenshot.url`}
                                                         alt="Preview"
@@ -146,11 +171,19 @@ const GalleryShowcase = ({
                                                 </div>
                                             )}
 
-                                            <h4 style={{ fontSize: '20px', marginBottom: '12px', lineHeight: 1.1 }}>{latest?.project_name || p.idea_title || 'Untitled Project'}</h4>
-                                            <div style={{ fontSize: '12px', lineHeight: '1.5', color: '#444' }}>
-                                                <div style={{ fontWeight: '900', fontSize: '10px', color: '#888', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Vision & Mission</div>
-                                                {truncateText(latest?.one_liner || p.problem_statement, 120)}
+                                            <h4 style={{ fontSize: '18px', marginBottom: '8px', lineHeight: 1.1, fontWeight: '900' }}>{latest?.project_name || p.idea_title || 'Untitled Project'}</h4>
+
+                                            <div style={{ fontSize: '11px', lineHeight: '1.45', color: '#444', marginBottom: '14px', minHeight: '60px' }}>
+                                                <div style={{ fontWeight: '900', fontSize: '9px', color: '#888', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Vision & Mission</div>
+                                                {truncateText(latest?.one_liner || p.problem_statement, 160)}
                                             </div>
+
+                                            {(p.about_yourself || p.program_goal) && (
+                                                <div style={{ fontSize: '10px', lineHeight: '1.45', color: '#666', background: '#f9f9f9', padding: '10px', borderRadius: '8px', border: '1px dashed #ccc', marginBottom: '16px', minHeight: '50px' }}>
+                                                    <div style={{ fontWeight: '900', fontSize: '8px', color: '#999', marginBottom: '4px', textTransform: 'uppercase' }}>Builder Note</div>
+                                                    {truncateText(p.about_yourself || p.program_goal, 120)}
+                                                </div>
+                                            )}
                                         </div>
 
                                         {/* Sprint Progress Bar */}
@@ -175,15 +208,26 @@ const GalleryShowcase = ({
                                                     );
                                                 })}
                                             </div>
-                                            <div style={{ fontSize: '9px', fontWeight: '700', color: stepIndex === 7 ? '#FFD700' : '#888', letterSpacing: '0.05em' }}>
-                                                {stepIndex === 0 ? 'NOT STARTED' : stepIndex === 7 ? '⭐ SPRINT COMPLETE' : `DAY ${stepIndex} / 7`}
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '9px', fontWeight: '700', letterSpacing: '0.05em', marginTop: '2px' }}>
+                                                <div style={{ color: stepIndex === 7 ? '#FFD700' : '#888' }}>
+                                                    {stepIndex === 0 ? 'NOT STARTED' : stepIndex === 7 ? '⭐ SPRINT COMPLETE' : `DAY ${stepIndex} / 7`}
+                                                </div>
+                                                {p.threads_handle && (
+                                                    <a href={`https://www.threads.net/@${p.threads_handle.replace('@', '')}`} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'black', textDecoration: 'none', opacity: 0.7 }}>
+                                                        <ThreadsIcon size={10} />
+                                                        <span>@{p.threads_handle.replace('@', '')}</span>
+                                                    </a>
+                                                )}
                                             </div>
                                         </div>
 
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderTop: '2px solid #eee', paddingTop: '12px', marginTop: '4px' }}>
-                                            <div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderTop: '2px solid #eee', paddingTop: '10px', marginTop: '4px' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column' }}>
                                                 <div style={{ fontSize: '12px', fontWeight: '900' }}>{p.full_name}</div>
-                                                <div style={{ fontSize: '10px', opacity: 0.5 }}>{p.district || 'Selangor'}</div>
+                                                <div style={{ fontSize: '10px', opacity: 0.6, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                                    <MapPin size={10} />
+                                                    {p.district || 'Selangor'}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -192,7 +236,28 @@ const GalleryShowcase = ({
                         )}
                     </div>
                 </div>
+            </div>
 
+            <style>{`
+                .builders-scroll-container::-webkit-scrollbar {
+                    height: 6px;
+                }
+                .builders-scroll-container::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .builders-scroll-container::-webkit-scrollbar-thumb {
+                    background: rgba(0,0,0,0.1);
+                    border-radius: 10px;
+                }
+                .builders-scroll-container::-webkit-scrollbar-thumb:hover {
+                    background: rgba(0,0,0,0.2);
+                }
+                @media (max-width: 768px) {
+                    .scroll-btn { display: none !important; }
+                }
+            `}</style>
+
+            <div className="container">
                 {limit && profiles.filter(p => !session?.user || p.id !== session.user.id).length > limit && (
                     <div style={{ marginTop: '28px', textAlign: 'center' }}>
                         <button

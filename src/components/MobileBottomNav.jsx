@@ -12,7 +12,7 @@ const NAV_ITEMS = [
     { id: 'home', icon: Home, label: 'Home' },
     { id: 'showcase', icon: Star, label: 'Showcase' },
     { id: 'forum', icon: MessageSquare, label: 'Forum' },
-    { id: 'studio', icon: Gamepad2, label: 'Studio', authRequired: true },
+    { id: 'studio', icon: Gamepad2, label: 'Arcade', authRequired: true },
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard', authRequired: true },
 ];
 
