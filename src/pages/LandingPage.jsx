@@ -337,17 +337,40 @@ const LandingPage = ({
         <>
             <section id="how-it-works" className="hero" style={{ paddingTop: '8px', paddingBottom: '40px' }}>
                 <div className="container grid-12">
-                    <div style={{ gridColumn: 'span 7' }}>
+                    <div style={{ gridColumn: 'span 6' }}>
                         <div className="pill pill-red" style={{ marginBottom: '12px' }}>SELANGOR BUILDER SPRINT 2026</div>
                         <h1 className="text-huge">Built for <span style={{ color: 'var(--selangor-red)' }}>Selangor</span>. Connecting and growing the builder community.</h1>
                         <button className="btn btn-red" style={{ marginTop: '12px' }} onClick={handleJoinClick}>Join the Cohort</button>
                     </div>
-                    <div style={{ gridColumn: 'span 5' }}>
-                        <div className="neo-card no-jitter" style={{ border: '3px solid black', boxShadow: '12px 12px 0px black' }}>
-                            <span className="pill" style={{ background: 'black', color: 'white', cursor: 'pointer' }} onClick={handleJoinClick}>PORTAL_ACCESS</span>
-                            <div className="terminal-shell" style={{ background: '#000', borderRadius: '12px', padding: '32px', marginTop: '24px' }}>
-                                <div className="terminal-prompt" style={{ color: 'var(--selangor-red)', fontFamily: 'monospace', fontSize: '24px', lineHeight: 1 }}>{TERMINAL_CONTEXT}</div>
-                                <p className="terminal-line" style={{ color: 'white', fontFamily: 'monospace', fontSize: '14px', marginTop: '10px' }}>
+                    <div style={{ gridColumn: 'span 6' }}>
+                        <div className="neo-card no-jitter" style={{ border: '3px solid black', boxShadow: '12px 12px 0px black', padding: '32px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                                <span className="pill" style={{ background: 'black', color: 'white', cursor: 'pointer', fontSize: '12px' }} onClick={handleJoinClick}>PORTAL_ACCESS</span>
+                                <span style={{ fontFamily: 'monospace', fontWeight: '800', fontSize: '14px' }}>
+                                    {(() => {
+                                        const now = new Date();
+                                        const hour = now.getHours();
+                                        const date = now.getDate();
+                                        const month = now.getMonth() + 1; // 0-indexed
+
+                                        // Malaysia Public Holidays (Simples)
+                                        if (month === 8 && date === 31) return "SELAMAT HARI MERDEKA! 🇲🇾";
+                                        if (month === 9 && date === 16) return "SELAMAT HARI MALAYSIA! 🇲🇾";
+                                        if (month === 5 && date === 1) return "SELAMAT HARI PEKERJA! 🛠️";
+                                        if (month === 12 && date === 25) return "MERRY CHRISTMAS! 🎄";
+                                        if (month === 1 && date === 1) return "HAPPY NEW YEAR! 🎉";
+
+                                        // Time of Day
+                                        if (hour >= 5 && hour < 12) return "SELAMAT PAGI! ☀️";
+                                        if (hour >= 12 && hour < 15) return "SELAMAT TENGAHARI! 🌤️";
+                                        if (hour >= 15 && hour < 19) return "SELAMAT PETANG! ☕";
+                                        return "SELAMAT MALAM! 🌙";
+                                    })()}
+                                </span>
+                            </div>
+                            <div className="terminal-shell" style={{ background: '#000', borderRadius: '12px', padding: '40px' }}>
+                                <div className="terminal-prompt" style={{ color: 'var(--selangor-red)', fontFamily: 'monospace', fontSize: '32px', lineHeight: 1.1 }}>{TERMINAL_CONTEXT}</div>
+                                <p className="terminal-line" style={{ color: 'white', fontFamily: 'monospace', fontSize: '16px', marginTop: '16px' }}>
                                     {DEPLOY_COMMAND}
                                     <span className="terminal-caret">|</span>
                                 </p>
