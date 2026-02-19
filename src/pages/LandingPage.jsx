@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Users, Folder, Sunrise, Sun, Moon, Coffee, Flag, PartyPopper, Gift, Hammer, Zap, Cpu, MessageSquare, Bot, Cloud, CloudRain, CloudLightning, Wind } from 'lucide-react';
+import { Users, Folder, Sunrise, Sun, Moon, Coffee, Flag, PartyPopper, Gift, Hammer, Zap, Cpu, MessageSquare, Bot, Cloud, CloudRain, CloudLightning, Wind, Maximize2, Minimize2, X } from 'lucide-react';
 import GalleryShowcase from '../components/GalleryShowcase';
 import {
     DISTRICT_INFO,
@@ -40,6 +40,19 @@ const LandingPage = ({
     // Mascot & Weather State
     const [showMascotModal, setShowMascotModal] = useState(false);
     const [weatherData, setWeatherData] = useState({ temp: '--', condition: 'Loading...' });
+    const [isTerminalEnlarged, setIsTerminalEnlarged] = useState(false);
+    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+    // Mouse Tracking for Mascot Eyes
+    useEffect(() => {
+        const handleMouseMove = (e) => {
+            if (isTerminalEnlarged || showMascotModal) {
+                setMousePos({ x: e.clientX, y: e.clientY });
+            }
+        };
+        window.addEventListener('mousemove', handleMouseMove);
+        return () => window.removeEventListener('mousemove', handleMouseMove);
+    }, [isTerminalEnlarged, showMascotModal]);
 
     // Sequential Animation State
     const [currentTime, setCurrentTime] = useState(new Date());
@@ -79,6 +92,26 @@ const LandingPage = ({
         if (condition.includes('Storm')) return <CloudLightning size={size} color="#fbbf24" />;
         if (condition.includes('Cloud')) return <Cloud size={size} color="#64748b" />;
         return <Sun size={size} color="#f59e0b" fill="#f59e0b" />;
+    };
+
+    const IjamBotMascot = ({ size = 24, mousePos }) => {
+        // Calculate eye position based on mousePos
+        const eyeX = (mousePos.x / window.innerWidth - 0.5) * 4;
+        const eyeY = (mousePos.y / window.innerHeight - 0.5) * 4;
+
+        return (
+            <div style={{ position: 'relative', width: size, height: size }}>
+                <div style={{ background: 'var(--selangor-red)', padding: '4px', borderRadius: '6px', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg viewBox="0 0 24 24" width={size * 0.75} height={size * 0.75} fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="11" width="18" height="10" rx="2" />
+                        <circle cx="12" cy="5" r="2" />
+                        <path d="M12 7v4" />
+                        <line x1="8" y1="16" x2="8" y2="16.01" style={{ transform: `translate(${eyeX}px, ${eyeY}px)` }} strokeWidth="3" />
+                        <line x1="16" y1="16" x2="16" y2="16.01" style={{ transform: `translate(${eyeX}px, ${eyeY}px)` }} strokeWidth="3" />
+                    </svg>
+                </div>
+            </div>
+        );
     };
 
     // Ticking Clock for Prompt
@@ -531,7 +564,17 @@ const LandingPage = ({
                             <div className="terminal-shell" style={{ background: '#000', borderRadius: '12px', padding: '16px 20px', marginTop: '20px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '210px' }}>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                     <div className="terminal-prompt" style={{ color: 'var(--selangor-red)', fontFamily: 'monospace', fontSize: '13px', lineHeight: 1.4, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-                                        <span style={{ wordBreak: 'break-all' }}>{TERMINAL_CONTEXT}</span>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                            <span style={{ wordBreak: 'break-all' }}>{TERMINAL_CONTEXT}</span>
+                                            <button
+                                                onClick={() => setIsTerminalEnlarged(true)}
+                                                style={{ background: 'none', border: 'none', padding: 0.2, color: 'inherit', cursor: 'pointer', opacity: 0.6 }}
+                                                onMouseEnter={e => e.currentTarget.style.opacity = 1}
+                                                onMouseLeave={e => e.currentTarget.style.opacity = 0.6}
+                                            >
+                                                <Maximize2 size={14} />
+                                            </button>
+                                        </div>
                                         <span style={{ opacity: 0.7, marginLeft: 'auto' }}>{currentTime.toLocaleTimeString()}</span>
                                     </div>
 
@@ -542,14 +585,14 @@ const LandingPage = ({
                                 </div>
 
                                 <div style={{ marginTop: 'auto', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                                    <div
+                                    <button
                                         onClick={() => setShowMascotModal(true)}
-                                        style={{ background: 'var(--selangor-red)', padding: '6px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.2s' }}
+                                        style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', transition: 'transform 0.2s' }}
                                         onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
                                         onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
                                     >
-                                        <Bot size={18} color="white" />
-                                    </div>
+                                        <IjamBotMascot size={28} mousePos={mousePos} />
+                                    </button>
                                     <div style={{ flex: 1 }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px', marginBottom: '2px' }}>
                                             <span style={{ color: 'var(--selangor-red)', fontSize: '10px', fontWeight: '950', fontFamily: 'monospace', letterSpacing: '1px' }}>IJAM_BOT</span>
@@ -574,11 +617,40 @@ const LandingPage = ({
                                         onClick={e => e.stopPropagation()}
                                     >
                                         <div style={{ background: 'var(--selangor-red)', width: '80px', height: '80px', margin: '0 auto 24px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <Bot size={48} color="white" />
+                                            <IjamBotMascot size={64} mousePos={mousePos} />
                                         </div>
                                         <h2 style={{ fontSize: '28px', marginBottom: '16px' }}>Hello! I'm IJAM_BOT</h2>
                                         <p style={{ marginBottom: '24px', fontSize: '16px', lineHeight: 1.6 }}>"The digital guardian of Selangor's builder community. I help track progress, connect districts, and ensure every launch is a vibe!"</p>
                                         <button className="btn btn-red w-full" onClick={() => setShowMascotModal(false)}>Back to Portal</button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Enlarged Terminal View */}
+                            {isTerminalEnlarged && (
+                                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 10000, padding: '20px', display: 'flex', flexDirection: 'column' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                                        <h2 style={{ color: 'white', fontFamily: 'monospace' }}>ENLARGED_LOG_VIEW</h2>
+                                        <button
+                                            onClick={() => setIsTerminalEnlarged(false)}
+                                            style={{ background: 'white', color: 'black', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                                        >
+                                            <Minimize2 size={16} /> Exit View
+                                        </button>
+                                    </div>
+                                    <div style={{ flex: 1, background: '#111', border: '2px solid #333', borderRadius: '12px', padding: '40px', overflowY: 'auto', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                                        <div style={{ fontSize: '20px', color: 'white' }}>
+                                            <div style={{ color: 'var(--selangor-red)', marginBottom: '32px' }}>{TERMINAL_CONTEXT} {currentTime.toLocaleTimeString()}</div>
+                                            <p style={{ marginBottom: '40px' }}>{typedCommand}_</p>
+                                        </div>
+
+                                        <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-end', opacity: 0.9 }}>
+                                            <IjamBotMascot size={80} mousePos={mousePos} />
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ color: 'var(--selangor-red)', fontSize: '14px', fontWeight: '950', marginBottom: '8px' }}>IJAM_BOT @ {typedTimestamp}</div>
+                                                <p style={{ color: '#22c55e', fontSize: '24px', fontWeight: 'bold' }}>{typedGreeting}</p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             )}
