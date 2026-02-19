@@ -337,16 +337,16 @@ const LandingPage = ({
         <>
             <section id="how-it-works" className="hero" style={{ paddingTop: '8px', paddingBottom: '40px' }}>
                 <div className="container grid-12">
-                    <div style={{ gridColumn: 'span 6' }}>
+                    <div style={{ gridColumn: 'span 7' }}>
                         <div className="pill pill-red" style={{ marginBottom: '12px' }}>SELANGOR BUILDER SPRINT 2026</div>
                         <h1 className="text-huge">Built for <span style={{ color: 'var(--selangor-red)' }}>Selangor</span>. Connecting and growing the builder community.</h1>
                         <button className="btn btn-red" style={{ marginTop: '12px' }} onClick={handleJoinClick}>Join the Cohort</button>
                     </div>
-                    <div style={{ gridColumn: 'span 6' }}>
-                        <div className="neo-card no-jitter" style={{ border: '3px solid black', boxShadow: '12px 12px 0px black', padding: '32px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                    <div style={{ gridColumn: 'span 5' }}>
+                        <div className="neo-card no-jitter" style={{ border: '3px solid black', boxShadow: '12px 12px 0px black', padding: '32px', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'auto' }}>
                                 <span className="pill" style={{ background: 'black', color: 'white', cursor: 'pointer', fontSize: '12px' }} onClick={handleJoinClick}>PORTAL_ACCESS</span>
-                                <span style={{ fontFamily: 'monospace', fontWeight: '800', fontSize: '14px' }}>
+                                <span style={{ fontFamily: 'monospace', fontWeight: '800', fontSize: '14px', textAlign: 'right' }}>
                                     {(() => {
                                         const now = new Date();
                                         const hour = now.getHours();
@@ -368,7 +368,7 @@ const LandingPage = ({
                                     })()}
                                 </span>
                             </div>
-                            <div className="terminal-shell" style={{ background: '#000', borderRadius: '12px', padding: '40px' }}>
+                            <div className="terminal-shell" style={{ background: '#000', borderRadius: '12px', padding: '40px', marginTop: '20px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                                 <div className="terminal-prompt" style={{ color: 'var(--selangor-red)', fontFamily: 'monospace', fontSize: '32px', lineHeight: 1.1 }}>{TERMINAL_CONTEXT}</div>
                                 <p className="terminal-line" style={{ color: 'white', fontFamily: 'monospace', fontSize: '16px', marginTop: '16px' }}>
                                     {DEPLOY_COMMAND}
