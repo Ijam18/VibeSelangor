@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Users, Folder, Sunrise, Sun, Moon, Coffee, Flag, PartyPopper, Gift, Hammer, Zap } from 'lucide-react';
+import { Users, Folder, Sunrise, Sun, Moon, Coffee, Flag, PartyPopper, Gift, Hammer, Zap, Cpu, MessageSquare } from 'lucide-react';
 import GalleryShowcase from '../components/GalleryShowcase';
 import {
     DISTRICT_INFO,
@@ -39,10 +39,10 @@ const LandingPage = ({
 
     // Sequential Animation State
     const [currentTime, setCurrentTime] = useState(new Date());
+    const [typedCommand, setTypedCommand] = useState('');
     const [typedTimestamp, setTypedTimestamp] = useState('');
     const [typedGreeting, setTypedGreeting] = useState('');
-    const [typedCommand, setTypedCommand] = useState('');
-    const [typingPhase, setTypingPhase] = useState('timestamp'); // timestamp -> greeting -> command
+    const [typingPhase, setTypingPhase] = useState('command'); // command -> timestamp -> greeting
 
     // Ticking Clock for Prompt
     useEffect(() => {
@@ -72,7 +72,7 @@ const LandingPage = ({
         else greeting = { text: "SELAMAT MALAM!", icon: "🌙" };
 
         return {
-            timestamp: `[${year}-${String(month).padStart(2, '0')}-${String(date).padStart(2, '0')} ${String(hour).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}]`,
+            timestamp: `${year}-${String(month).padStart(2, '0')}-${String(date).padStart(2, '0')} ${String(hour).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`,
             text: `${greeting.icon} ${greeting.text}`
         };
     }, []);
@@ -81,7 +81,17 @@ const LandingPage = ({
     useEffect(() => {
         let index = 0;
         const typingTimer = setInterval(() => {
-            if (typingPhase === 'timestamp') {
+            if (typingPhase === 'command') {
+                if (index < DEPLOY_COMMAND.length) {
+                    setTypedCommand(DEPLOY_COMMAND.substring(0, index + 1));
+                    index++;
+                } else {
+                    clearInterval(typingTimer);
+                    setTimeout(() => {
+                        setTypingPhase('timestamp');
+                    }, 400);
+                }
+            } else if (typingPhase === 'timestamp') {
                 if (index < staticGreeting.timestamp.length) {
                     setTypedTimestamp(staticGreeting.timestamp.substring(0, index + 1));
                     index++;
@@ -94,16 +104,6 @@ const LandingPage = ({
             } else if (typingPhase === 'greeting') {
                 if (index < staticGreeting.text.length) {
                     setTypedGreeting(staticGreeting.text.substring(0, index + 1));
-                    index++;
-                } else {
-                    clearInterval(typingTimer);
-                    setTimeout(() => {
-                        setTypingPhase('command');
-                    }, 500);
-                }
-            } else if (typingPhase === 'command') {
-                if (index < DEPLOY_COMMAND.length) {
-                    setTypedCommand(DEPLOY_COMMAND.substring(0, index + 1));
                     index++;
                 } else {
                     clearInterval(typingTimer);
@@ -487,24 +487,33 @@ const LandingPage = ({
                                     SYSTEM_INITIALIZED
                                 </span>
                             </div>
-                            <div className="terminal-shell" style={{ background: '#000', borderRadius: '12px', padding: '24px', marginTop: '20px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '180px' }}>
-                                <div className="terminal-prompt" style={{ color: 'var(--selangor-red)', fontFamily: 'monospace', fontSize: '14px', lineHeight: 1.4, display: 'flex', justifyContent: 'space-between' }}>
-                                    <span>{TERMINAL_CONTEXT}</span>
-                                    <span style={{ opacity: 0.7 }}>{currentTime.toLocaleTimeString()}</span>
-                                </div>
-
-                                <div style={{ marginTop: 'auto' }}>
-                                    <p style={{ color: '#22c55e', opacity: 0.8, fontFamily: 'monospace', fontSize: '12px', marginBottom: '2px', minHeight: '1.2em' }}>
-                                        {typedTimestamp}
-                                    </p>
-                                    <p style={{ color: '#22c55e', fontWeight: 'bold', fontFamily: 'monospace', fontSize: '13px', marginBottom: '8px', minHeight: '1.2em' }}>
-                                        {typedGreeting}
-                                    </p>
+                            <div className="terminal-shell" style={{ background: '#000', borderRadius: '12px', padding: '24px', marginTop: '20px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '190px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <div className="terminal-prompt" style={{ color: 'var(--selangor-red)', fontFamily: 'monospace', fontSize: '14px', lineHeight: 1.4, display: 'flex', justifyContent: 'space-between' }}>
+                                        <span>{TERMINAL_CONTEXT}</span>
+                                        <span style={{ opacity: 0.7 }}>{currentTime.toLocaleTimeString()}</span>
+                                    </div>
 
                                     <p className="terminal-line" style={{ color: 'white', fontFamily: 'monospace', fontSize: '14px', marginTop: '0', width: 'auto', animation: 'none' }}>
                                         {typedCommand}
                                         {typingPhase === 'command' && <span className="terminal-caret">|</span>}
                                     </p>
+                                </div>
+
+                                <div style={{ marginTop: 'auto', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                                    <div style={{ background: 'var(--selangor-red)', padding: '6px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Cpu size={18} color="white" />
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                                            <span style={{ color: 'var(--selangor-red)', fontSize: '11px', fontWeight: 'bold', fontFamily: 'monospace' }}>MASCOT_VIBE</span>
+                                            <span style={{ color: '#666', fontSize: '10px', fontFamily: 'monospace' }}>{typedTimestamp}</span>
+                                        </div>
+                                        <p style={{ color: '#22c55e', fontWeight: 'bold', fontFamily: 'monospace', fontSize: '13px', lineHeight: 1.4, minHeight: '1.2em' }}>
+                                            {typedGreeting}
+                                            {typingPhase === 'greeting' && <span className="terminal-caret" style={{ background: '#22c55e' }}>|</span>}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
