@@ -42,6 +42,41 @@ const LandingPage = ({
     const [weatherData, setWeatherData] = useState({ temp: '--', condition: 'Loading...' });
     const [isTerminalEnlarged, setIsTerminalEnlarged] = useState(false);
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+    const [chatMessages, setChatMessages] = useState([]);
+    const [chatInput, setChatInput] = useState('');
+    const chatEndRef = React.useRef(null);
+
+    // Auto-scroll chat
+    useEffect(() => {
+        if (chatEndRef.current) {
+            chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [chatMessages]);
+
+    // Mascot Responses
+    const getBotResponse = (input) => {
+        const lower = input.toLowerCase();
+        if (lower.includes('hello') || lower.includes('hi')) return "Hello Builder! IJAM_BOT here. Ready to vibe in Selangor?";
+        if (lower.includes('weather')) return `Shah Alam is currently ${weatherData.temp}°C and ${weatherData.condition}. Perfect for building!`;
+        if (lower.includes('project') || lower.includes('build')) return "We have amazing projects across Selangor! Check out the District Showcases for the latest vibes.";
+        if (lower.includes('selangor')) return "Selangor is where the magic happens. 9 districts, endless possibilities.";
+        if (lower.includes('ijam')) return "I'm the digital guardian of this community. Ijam created me to help you navigate the Selangor vibe!";
+        return "That's a vibe! Tell me more about your journey in Selangor.";
+    };
+
+    const handleSendMessage = (e) => {
+        e.preventDefault();
+        if (!chatInput.trim()) return;
+
+        const userMsg = { role: 'user', text: chatInput };
+        setChatMessages(prev => [...prev, userMsg]);
+        setChatInput('');
+
+        setTimeout(() => {
+            const botMsg = { role: 'bot', text: getBotResponse(chatInput) };
+            setChatMessages(prev => [...prev, botMsg]);
+        }, 800);
+    };
 
     // Mouse Tracking for Mascot Eyes
     useEffect(() => {
@@ -552,7 +587,15 @@ const LandingPage = ({
                     <div style={{ gridColumn: 'span 5' }}>
                         <div className="neo-card no-jitter" style={{ border: '3px solid black', boxShadow: '12px 12px 0px black', padding: '32px', height: '100%', display: 'flex', flexDirection: 'column' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'auto', gap: '12px' }}>
-                                <span className="pill" style={{ background: 'black', color: 'white', cursor: 'pointer', fontSize: '11px', whiteSpace: 'nowrap' }} onClick={handleJoinClick}>PORTAL_ACCESS</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <button
+                                        onClick={() => setIsTerminalEnlarged(true)}
+                                        style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                    >
+                                        <Maximize2 size={18} />
+                                    </button>
+                                    <span className="pill" style={{ background: 'black', color: 'white', cursor: 'pointer', fontSize: '11px', whiteSpace: 'nowrap' }} onClick={handleJoinClick}>PORTAL_ACCESS</span>
+                                </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'monospace', fontWeight: '800', fontSize: '12px', color: '#444' }}>
                                     <span style={{ opacity: 0.6 }}>SELANGOR:</span>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -566,14 +609,6 @@ const LandingPage = ({
                                     <div className="terminal-prompt" style={{ color: 'var(--selangor-red)', fontFamily: 'monospace', fontSize: '13px', lineHeight: 1.4, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                             <span style={{ wordBreak: 'break-all' }}>{TERMINAL_CONTEXT}</span>
-                                            <button
-                                                onClick={() => setIsTerminalEnlarged(true)}
-                                                style={{ background: 'none', border: 'none', padding: 0.2, color: 'inherit', cursor: 'pointer', opacity: 0.6 }}
-                                                onMouseEnter={e => e.currentTarget.style.opacity = 1}
-                                                onMouseLeave={e => e.currentTarget.style.opacity = 0.6}
-                                            >
-                                                <Maximize2 size={14} />
-                                            </button>
                                         </div>
                                         <span style={{ opacity: 0.7, marginLeft: 'auto' }}>{currentTime.toLocaleTimeString()}</span>
                                     </div>
@@ -626,31 +661,71 @@ const LandingPage = ({
                                 </div>
                             )}
 
-                            {/* Enlarged Terminal View */}
+                            {/* Enlarged Terminal View with Chat */}
                             {isTerminalEnlarged && (
-                                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 10000, padding: '20px', display: 'flex', flexDirection: 'column' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                                        <h2 style={{ color: 'white', fontFamily: 'monospace' }}>ENLARGED_LOG_VIEW</h2>
+                                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)', zIndex: 10000, padding: '20px', display: 'flex', flexDirection: 'column' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', padding: '0 20px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                            <Bot size={24} color="var(--selangor-red)" />
+                                            <h2 style={{ color: 'white', fontFamily: 'monospace', margin: 0 }}>IJAM_BOT_CONSOLE v1.0</h2>
+                                        </div>
                                         <button
                                             onClick={() => setIsTerminalEnlarged(false)}
-                                            style={{ background: 'white', color: 'black', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                                            style={{ background: 'var(--selangor-red)', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}
                                         >
-                                            <Minimize2 size={16} /> Exit View
+                                            <Minimize2 size={18} /> CLOSE_TERMINAL
                                         </button>
                                     </div>
-                                    <div style={{ flex: 1, background: '#111', border: '2px solid #333', borderRadius: '12px', padding: '40px', overflowY: 'auto', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                                        <div style={{ fontSize: '20px', color: 'white' }}>
-                                            <div style={{ color: 'var(--selangor-red)', marginBottom: '32px' }}>{TERMINAL_CONTEXT} {currentTime.toLocaleTimeString()}</div>
-                                            <p style={{ marginBottom: '40px' }}>{typedCommand}_</p>
+
+                                    <div style={{ flex: 1, background: '#0a0a0a', border: '2px solid #333', borderRadius: '12px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                                        {/* Boot Logs */}
+                                        <div style={{ padding: '24px 40px', background: '#000', borderBottom: '1px solid #222' }}>
+                                            <div style={{ color: 'var(--selangor-red)', fontFamily: 'monospace', fontSize: '14px', marginBottom: '8px' }}>{TERMINAL_CONTEXT} {currentTime.toLocaleTimeString()}</div>
+                                            <p style={{ color: 'white', fontFamily: 'monospace', margin: 0 }}>{typedCommand}</p>
                                         </div>
 
-                                        <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-end', opacity: 0.9 }}>
-                                            <IjamBotMascot size={80} mousePos={mousePos} />
-                                            <div style={{ flex: 1 }}>
-                                                <div style={{ color: 'var(--selangor-red)', fontSize: '14px', fontWeight: '950', marginBottom: '8px' }}>IJAM_BOT @ {typedTimestamp}</div>
-                                                <p style={{ color: '#22c55e', fontSize: '24px', fontWeight: 'bold' }}>{typedGreeting}</p>
+                                        {/* Chat Area */}
+                                        <div style={{ flex: 1, padding: '20px 40px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                                            {/* IJAM_BOT Initial Greeting */}
+                                            <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
+                                                <IjamBotMascot size={48} mousePos={mousePos} />
+                                                <div style={{ flex: 1 }}>
+                                                    <div style={{ color: 'var(--selangor-red)', fontSize: '12px', fontWeight: '950', marginBottom: '4px' }}>IJAM_BOT @ {staticGreeting.timestamp}</div>
+                                                    <p style={{ color: '#22c55e', fontSize: '20px', fontWeight: 'bold', margin: 0 }}>{staticGreeting.text}</p>
+                                                </div>
                                             </div>
+
+                                            {/* Chat History */}
+                                            {chatMessages.map((msg, i) => (
+                                                <div key={i} style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                                                    {msg.role === 'bot' && <IjamBotMascot size={48} mousePos={mousePos} />}
+                                                    <div style={{ flex: 1, background: msg.role === 'user' ? 'var(--selangor-red)' : '#111', padding: '16px 20px', borderRadius: '12px', border: msg.role === 'bot' ? '1px solid #333' : 'none', maxWidth: '600px' }}>
+                                                        <div style={{ color: msg.role === 'user' ? 'white' : 'var(--selangor-red)', fontSize: '11px', fontWeight: '950', marginBottom: '8px' }}>
+                                                            {msg.role === 'user' ? 'YOU' : 'IJAM_BOT'}
+                                                        </div>
+                                                        <p style={{ color: 'white', margin: 0, fontSize: '18px', fontFamily: 'monospace' }}>{msg.text}</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            <div ref={chatEndRef} />
                                         </div>
+
+                                        {/* Input Area */}
+                                        <form onSubmit={handleSendMessage} style={{ padding: '20px 40px', background: '#000', borderTop: '2px solid #222', display: 'flex', gap: '20px' }}>
+                                            <input
+                                                type="text"
+                                                value={chatInput}
+                                                onChange={(e) => setChatInput(e.target.value)}
+                                                placeholder="Type a message to IJAM_BOT..."
+                                                style={{ flex: 1, background: '#0a0a0a', border: '1px solid #333', color: 'white', padding: '16px 24px', borderRadius: '8px', outline: 'none', fontFamily: 'monospace', fontSize: '16px' }}
+                                            />
+                                            <button
+                                                type="submit"
+                                                style={{ background: 'var(--selangor-red)', color: 'white', border: 'none', padding: '16px 32px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+                                            >
+                                                SEND_VIBE
+                                            </button>
+                                        </form>
                                     </div>
                                 </div>
                             )}
