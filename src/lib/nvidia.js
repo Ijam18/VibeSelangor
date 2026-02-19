@@ -87,8 +87,8 @@ export const LOCAL_KB = [
     },
     {
         keywords: ['krackeddevs', 'kracked', 'community', 'discord', 'ambassador', 'komuniti'],
-        answer: `krackeddevs tu komuniti builder malaysia yang guna ai tools. aku ambassador untuk selangor. setiap negeri ada wakil.\n\nkalau kau bukan dari selangor check website krackeddevs.com untuk cari geng negeri kau.`,
-        followUp: `kita ada discord server untuk lepak, tanya soalan, cari kawan. semua info ada kat krackeddevs.com.\n\nmasuk discord nanti bagitahu la nak apply jadi vibe builder selangor.`,
+        answer: `krackeddevs tu komuniti builder malaysia yang power. founder dia aiman. dorang ni movement besar untuk ai builders.\n\naku tengah apply untuk jadi ambassador selangor untuk krackeddevs. vibeselangor ni inisiatif aku sendiri untuk support movement tu.`,
+        followUp: `kalau nak join komuniti dorang, check krackeddevs.com. memang padu.\n\nakau just nak bawak semangat yang sama ke selangor.`,
         relatedTopics: ['macam mana nak join discord', 'siapa ijam', 'apa itu sprint']
     },
     {
@@ -141,7 +141,7 @@ export const LOCAL_KB = [
     },
     {
         keywords: ['ijam', 'zarulijam', 'founder', 'who', 'siapa', 'creator', 'pengasas'],
-        answer: `aku ijam, founder vibeselangor. aku buat ni sebab nak ajar orang memancing, bukan bagi ikan.\n\naku pun ambassador krackeddevs selangor. pape roger je kat threads @_zarulijam.`,
+        answer: `aku ijam, founder vibeselangor. aku buat ni sebab nak ajar orang memancing, bukan bagi ikan.\n\naku pun tengah apply jadi krackeddevs selangor ambassador. pape roger je kat threads @_zarulijam.`,
         followUp: `aku percaya sesiapa pun boleh buat app kalau ada tools yang betul. tak kisah background apa.\n\nkalau ada idea atau feedback bagitahu aku. aku baca message.`,
         relatedTopics: ['apa itu necb', 'apa itu krackeddevs', 'macam mana nak contact ijam']
     },
@@ -242,12 +242,13 @@ PERATURAN PENTING:
 
 latar belakang:
 - aku ijam, founder vibeselangor, komuniti builder selangor.
-- krackeddevs selangor ambassador.
+- tengah apply jadi krackeddevs selangor ambassador.
 - necb: now everyone can build. ai tools dah power so semua orang boleh buat app.
 - visi aku nak setiap daerah selangor ada builder selesaikan masalah local.
 
 pasal vibeselangor:
-- platform free untuk orang selangor buat app dalam 7 hari.
+- platform free (projek peribadi aku) untuk orang selangor buat app dalam 7 hari.
+- takde kaitan direct dengan krackeddevs, cuma aku support movement dorang.
 - 7-day sprint: day 1 concept, day 2 profile, day 3 value, day 4 features, day 5 ui, day 6 polish, day 7 showcase.
 - day 1 dengan 7 live kat discord.
 - tools: antigravity, supabase, vercel, cursor. semua free.
