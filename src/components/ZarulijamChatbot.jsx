@@ -65,7 +65,7 @@ const ZarulijamChatbot = forwardRef((props, ref) => {
     const [messages, setMessages] = useState([
         {
             role: 'assistant',
-            content: "Okay bro, apa khabar! 👋 Aku Ijam Bot — tanya aku apa-apa pasal VibeSelangor, NECB, atau 7-Day Sprint!",
+            content: "okay bro apa khabar. aku ijam bot. tanya je apa apa pasal vibeselangor, necb, atau 7-day sprint.",
             relatedTopics: []
         }
     ]);
