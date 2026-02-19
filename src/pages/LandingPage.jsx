@@ -36,13 +36,11 @@ const LandingPage = ({
     const [selectedDistrictKey, setSelectedDistrictKey] = useState(null);
     const [mapRegions, setMapRegions] = useState([]);
     const [mapViewMode, setMapViewMode] = useState('builders'); // 'builders' or 'projects'
-    const [selectedDetailProfile, setSelectedDetailProfile] = useState(null);
 
     // Sequential Animation State
     const [greetingTextDisplay, setGreetingTextDisplay] = useState('');
     const [terminalTextDisplay, setTerminalTextDisplay] = useState('');
     const [showGreetingIcon, setShowGreetingIcon] = useState(false);
-
     const greetingInfo = useMemo(() => {
         const now = new Date();
         const hour = now.getHours();
@@ -51,11 +49,13 @@ const LandingPage = ({
 
         let greeting = { text: "SELAMAT DATANG!", icon: <Zap size={18} fill="yellow" /> };
 
+        // Malaysia Public Holidays 2026
         if (month === 8 && date === 31) greeting = { text: "SELAMAT HARI MERDEKA!", icon: <Flag size={18} fill="#ef4444" /> };
         else if (month === 9 && date === 16) greeting = { text: "SELAMAT HARI MALAYSIA!", icon: <Flag size={18} fill="#ef4444" /> };
         else if (month === 5 && date === 1) greeting = { text: "SELAMAT HARI PEKERJA!", icon: <Hammer size={18} fill="#888" /> };
         else if (month === 12 && date === 25) greeting = { text: "MERRY CHRISTMAS!", icon: <Gift size={18} fill="#ef4444" /> };
         else if (month === 1 && date === 1) greeting = { text: "HAPPY NEW YEAR!", icon: <PartyPopper size={18} fill="#f97316" /> };
+        else if (month === 2 && (date >= 17 && date <= 19)) greeting = { text: "SELAMAT TAHUN BARU CINA!", icon: <PartyPopper size={18} fill="#ef4444" /> };
         else if (hour >= 5 && hour < 12) greeting = { text: "SELAMAT PAGI!", icon: <Sunrise size={18} color="#f97316" /> };
         else if (hour >= 12 && hour < 15) greeting = { text: "SELAMAT TENGAHARI!", icon: <Sun size={18} fill="#facc15" color="#ca8a04" /> };
         else if (hour >= 15 && hour < 19) greeting = { text: "SELAMAT PETANG!", icon: <Coffee size={18} color="#92400e" /> };
