@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Users, Folder, Sunrise, Sun, Moon, Coffee, Flag, PartyPopper, Gift, Hammer } from 'lucide-react';
+import { Users, Folder, Sunrise, Sun, Moon, Coffee, Flag, PartyPopper, Gift, Hammer, Zap } from 'lucide-react';
 import GalleryShowcase from '../components/GalleryShowcase';
 import {
     DISTRICT_INFO,
