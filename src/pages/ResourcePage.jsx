@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     Globe, Server,
     Sparkles,
@@ -22,14 +22,104 @@ import {
     Power,
     Trash2,
     Gamepad2,
-    Search
+    Search,
+    Activity,
+    Waypoints,
+    Wand2
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { callNvidiaLLM, localIntelligence, ZARULIJAM_SYSTEM_PROMPT } from '../lib/nvidia';
 import BuilderStudioPage from './BuilderStudioPage';
+import VibeSimulator from '../components/simulator/VibeSimulator';
+import MindMapperApp from '../components/mindmapper/MindMapperApp';
+import PromptForgeApp from '../components/promptforge/PromptForgeApp';
 import { useWeather } from '../utils/useWeather';
+import { useSoundEffects } from '../utils/useSoundEffects';
+import { motion, AnimatePresence } from 'framer-motion';
+import IjamBotMascot from '../components/IjamBotMascot';
 
 const LESSONS_IJAM = [
+    {
+        id: "function-over-form",
+        icon: Activity,
+        title: "Buat App Berfungsi Dulu, Cantik Kemudian",
+        stage: "Builder Mindset",
+        summary: "Jangan buang masa 10 jam pilih warna kalau tiang utama app tu belum wujud. Fokus pada Core Feature.",
+        eli5: "Macam bina rumah, pastikan tapak kukuh dan bumbung tak bocor dulu. Bab warna cat dinding dan langsir tu boleh fikir kemudian.",
+        steps: [
+            "Tentukan 1 Core Problem yang app kau nak selesaikan.",
+            "Bina Core Feature (Minimum Viable Product).",
+            "Guna layout default/hitam putih dulu masa tengah buat logic.",
+            "Pastikan flow (klik -> loading -> masuk database) berjaya.",
+            "Selepas logic 100% jalan, baru masukkan \"Vibe\" (animasi, Neo-brutalist style, warna)."
+        ],
+        linkLabel: "Buka Mind Mapper",
+        linkUrl: ""
+    },
+    {
+        id: "app-vibe-quality",
+        icon: Sparkles,
+        title: "Resipi App Yang Sedap & \"Vibey\"",
+        stage: "Builder Mindset",
+        summary: "App yang baik bukan sekadar cantik, tapi responsif, laju, dan bagi maklum balas jelas kat user.",
+        eli5: "Pernah tekan butang bas tapi loceng tak bunyi? Mesti kau tekan banyak kali kan? App pun sama, kena ada feedback bila ditekan.",
+        steps: [
+            "Feedback Cepat: Setiap butang mesti ada \"Hover\" state dan \"Loading\" state.",
+            "Kurangkan Klik: Kalau boleh settle dalam 1 screen, jangan paksa user lalu 3 page.",
+            "Error Handling: Jangan bagi screen putih. Kalau error, tunjuk mesej mesra.",
+            "Konsistensi UI: Guna sistem warna dan font yang selaras di semua page."
+        ],
+        linkLabel: "Buka Simulator",
+        linkUrl: ""
+    },
+    {
+        id: "system-thinking",
+        icon: Brain,
+        title: "Pecahkan Idea Besar Jadi Sistem Kecil",
+        stage: "Builder Mindset",
+        summary: "Bila nampak idea tu besar sangat, kau akan jam. Seninya adalah pecahkan idea tu kepada bahagian-bahagian kecil.",
+        eli5: "Nak makan pizza sebiji besar sekaligus memang tercekik. Kena potong 8 slice, makan satu-satu. App pun sama, potong ikut jadual.",
+        steps: [
+            "Asingkan Frontend (Apa user nampak: UI, Warna, Butang).",
+            "Asingkan Backend/Logic (Apa sistem buat: Save profile, kira markah).",
+            "Asingkan Database (Di mana data disimpan: Supabase / Storage).",
+            "Selesaikan satu persatu masa prompt AI nanti. Jangan campur adukkan frontend dan backend dalam satu prompt minta AI buat semua."
+        ],
+        linkLabel: "Buka Simulator",
+        linkUrl: ""
+    },
+    {
+        id: "user-centric-empathy",
+        icon: Users,
+        title: "Bina Untuk User, Bukan Untuk Ego Sendiri",
+        stage: "Builder Mindset",
+        summary: "Ramai builder syok sendiri letak 100 features yang user tak peduli pun. Kenal pasti siapa guna app kau.",
+        eli5: "Kalau kau buat kasut untuk budak main bola, jangan pasang roda kat kasut tu sebab kau rasa cool. Buat benda yang diorang betul-betul perlukan.",
+        steps: [
+            "Letakkan diri kau di tempat pengguna. Adakah app ni menyenangkan diorang?",
+            "Pastikan teks boleh dibaca (kontras warna yang tinggi).",
+            "Kurangkan borang yang panjang. Tanya apa yang penting sahaja.",
+            "Test app kat handphone sendiri sebab 80% user guna mobile."
+        ],
+        linkLabel: "Buka Simulator",
+        linkUrl: ""
+    },
+    {
+        id: "creativity-constraints",
+        icon: BookOpen,
+        title: "Jadi Kreatif Dalam Keterbatasan",
+        stage: "Builder Mindset",
+        summary: "Kau tak perlukan bajet bebilion atau kemahiran coding 10 tahun untuk buat app yang power. Guna AI sebagai lever.",
+        eli5: "Orang yang power masak boleh hasilkan makanan sedap walaupun cuma ada telur dan kicap. Builder yang power guna limitasi AI sebagai peluang.",
+        steps: [
+            "Guna aset open-source (Lucide Icons, Tailwind UI).",
+            "Bila ChatGPT \"lupa\" kod kau, ingatkan dia atau bagi \"Master Prompt\" semula.",
+            "Jangan mengalah bila naik error merah; itu tandanya kau \"on the right track\".",
+            "Kalau feature susah nak buat, tukar ke feature mudah yang capai matlamat sama."
+        ],
+        linkLabel: "Buka Prompt Forge",
+        linkUrl: ""
+    },
     {
         id: "setup-environment",
         icon: Sparkles,
@@ -253,7 +343,7 @@ const LESSONS_IJAM = [
         linkUrl: 'https://nodejs.org/en/download'
     },
     {
-        id: 'setup-ai-api-key',
+        id: 'setup-ai-api-key-v2',
         icon: Brain,
         title: 'Dapatkan API Key AI & Pasang di Antigravity',
         stage: 'Extended Toolkit',
@@ -857,6 +947,87 @@ const LESSONS_IJAM = [
 
 const LESSONS_FORMAL = [
     {
+        id: "function-over-form",
+        icon: Activity,
+        title: "Functionality First, Aesthetics Later",
+        stage: "Builder Mindset",
+        summary: "Focus on the Core Features before spending 10 hours selecting colors.",
+        eli5: "Like building a house, ensure the foundation is strong before choosing the wall color.",
+        steps: [
+            "Identify 1 Core Problem your app solves.",
+            "Build the Core Feature (Minimum Viable Product).",
+            "Use default layout/black and white while building logic.",
+            "Ensure the flow (click -> load -> save to database) succeeds.",
+            "After logic is 100% complete, inject the \"Vibe\" (animations, colors)."
+        ],
+        linkLabel: "Open Mind Mapper",
+        linkUrl: ""
+    },
+    {
+        id: "app-vibe-quality",
+        icon: Sparkles,
+        title: "The Recipe for a Premium \"Vibey\" App",
+        stage: "Builder Mindset",
+        summary: "A great app is responsive, fast, and provides clear feedback to the user.",
+        eli5: "If you press a doorbell and it doesn't ring, you press it again. Apps are the same; they need feedback states.",
+        steps: [
+            "Instant Feedback: Every button must have a \"Hover\" state and \"Loading\" state.",
+            "Reduce Clicks: If you can solve it in 1 screen, don't force users through 3 pages.",
+            "Error Handling: Don't show white screens. If an error occurs, show a friendly message.",
+            "UI Consistency: Use a consistent color and font system across all pages."
+        ],
+        linkLabel: "Open Simulator",
+        linkUrl: ""
+    },
+    {
+        id: "system-thinking",
+        icon: Brain,
+        title: "Break Huge Ideas Into Small Systems",
+        stage: "Builder Mindset",
+        summary: "When an idea is too big, you freeze. The art is deconstructing it into small parts.",
+        eli5: "You can't eat a whole pizza in one bite. Slice it into 8 pieces. Apps work the same way.",
+        steps: [
+            "Isolate Frontend (UI, Colors, Buttons).",
+            "Isolate Backend/Logic (Saving profiles, calculating scores).",
+            "Isolate Database (Where data lives: Supabase).",
+            "Solve them one by one when prompting AI. Do not mix frontend and backend in a single prompt."
+        ],
+        linkLabel: "Open Simulator",
+        linkUrl: ""
+    },
+    {
+        id: "user-centric-empathy",
+        icon: Users,
+        title: "Build for the User, Not Your Ego",
+        stage: "Builder Mindset",
+        summary: "Identify exactly who will use your app and solve their problem, cutting out useless features.",
+        eli5: "If you make soccer cleats for a child, don't add wheels because you think it's cool. Build what they need.",
+        steps: [
+            "Put yourself in the user's shoes. Is this app pleasant to use?",
+            "Ensure text is legible (high color contrast).",
+            "Reduce long forms. Only ask what is strictly necessary.",
+            "Test the app on your own mobile phone, as 80% of users use mobile."
+        ],
+        linkLabel: "Open Simulator",
+        linkUrl: ""
+    },
+    {
+        id: "creativity-constraints",
+        icon: BookOpen,
+        title: "Finding Creativity in Constraints",
+        stage: "Builder Mindset",
+        summary: "You don't need billions in budget or 10 years of coding skill. Use AI as leverage.",
+        eli5: "A great chef can make a delicious meal with just eggs and soy sauce. A great builder uses AI limitations as an opportunity.",
+        steps: [
+            "Use open-source assets (Lucide Icons, Tailwind UI).",
+            "When ChatGPT \"forgets\" your code, remind it or paste the \"Master Prompt\" again.",
+            "Do not give up when you see red errors; it signifies you are on the right track.",
+            "If a feature is too hard to build, pivot to an easier feature that achieves the same goal."
+        ],
+        linkLabel: "Open Prompt Forge",
+        linkUrl: ""
+    },
+    {
         id: "setup-environment",
         icon: Sparkles,
         title: "Install Node.js + Antigravity (First Setup)",
@@ -1079,7 +1250,7 @@ const LESSONS_FORMAL = [
         linkUrl: 'https://nodejs.org/en/download'
     },
     {
-        id: 'setup-ai-api-key',
+        id: 'setup-ai-api-key-v2',
         icon: Brain,
         title: 'Obtain an AI API Key & Configure Antigravity',
         stage: 'Extended Toolkit',
@@ -1698,6 +1869,11 @@ const COPY_BY_TONE = {
 
 const LESSON_TIPS_BY_TONE = {
     ijam: {
+        'function-over-form': ['Jangan gatal pergi adjust warna butang selagi data tak simpan dalam DB!', 'Biar app nampak buruk asalkan berfungsi dulu.', 'Tulis logic, lepas tu baru fikir pasal style.'],
+        'app-vibe-quality': ['Loading state tu wajib. Kalau tak user ingat app kau hang.', 'Warna hover button tu biar terang.'],
+        'system-thinking': ['Jangan prompt 10 muka surat kat ChatGPT. Satu-satu.', 'Siapkan frontend, pastu move on to database schema.'],
+        'user-centric-empathy': ['Uji guna telefon sendiri dulu sebelum suruh kawan test.', 'Simpan satu list benda yang kau sendiri menyampah pakai kat web orang lain.'],
+        'creativity-constraints': ['Copy kod error merah kat terminal dan lempar kat AI.', 'Guna Tailwind classes kalau tak reti CSS module.'],
         'setup-environment': ['Guna Node LTS, elak version experimental.', 'Lepas install, restart terminal sebelum check `node -v`.', 'Kalau ada error, screenshot terus untuk debug cepat.'],
         'setup-ai-api-key': ['Groq API sangat pantas kalau nak test feature.', 'Simpan key kat tempat selamat, bukan hardcode.', 'OpenRouter paling chill sebab satu wallet cover semua.'],
         'chatgpt-personality': ['Tulis role dia, bagi contoh.', 'Bincang panjang lebar kat ChatGPT dulu, sebelum sentuh code.', 'Bagi dia critique idea kau.'],
@@ -1744,6 +1920,11 @@ const LESSON_TIPS_BY_TONE = {
         'ai-imagination': ['Mulakan idea kecil tapi unik.', 'Uji dengan user sebenar.', 'Iterate ikut feedback, bukan ego.']
     },
     formal: {
+        'function-over-form': ['Focus purely on data and state first.', 'Inject styles only when the flow is flawless.'],
+        'app-vibe-quality': ['Enforce strict loading and disabled states.', 'Maintain a unified design token system.'],
+        'system-thinking': ['Deconstruct before querying the AI.', 'Build frontend shells, then connect data stores.'],
+        'user-centric-empathy': ['Validate assumptions via mobile layout.', 'Eliminate friction points in forms.'],
+        'creativity-constraints': ['Leverage constraints to enforce simplicity.', 'Lean into component libraries heavily.'],
         'setup-environment': ['Use Node LTS.', 'Restart your terminal.'],
         'setup-ai-api-key': ['Groq API is fast.', 'Keep keys secure.'],
         'chatgpt-personality': ['Set explicit persona context first.'],
@@ -2061,6 +2242,15 @@ const sectionStyle = {
     background: 'radial-gradient(circle at 10% 10%, #fff8dc 0%, #fff0b3 40%, #ffe6d5 100%)'
 };
 
+const BOT_CLICK_RESPONSES = [
+    { text: 'Eh! Jangan kacau aku! 😤', emotion: 'frustrated' },
+    { text: 'You are making me angry! 🔴', emotion: 'frustrated' },
+    { text: 'Okay okay... chill! 😅', emotion: 'surprised' },
+    { text: "Let's START the journey! 🚀", emotion: 'excited' },
+    { text: "Siap ke? Let's VIBE! ✨", emotion: 'motivated' },
+    { text: 'Assalamualaikum Builder! 👋', emotion: 'celebrating' },
+];
+
 const panelStyle = {
     border: '3px solid black',
     boxShadow: '8px 8px 0 black',
@@ -2202,43 +2392,162 @@ const buildIjamBotLessonBrief = ({ lesson, tips, tone }) => {
     ].join('\n');
 };
 
-const WindowFrame = ({ title, onClose, children, icon: Icon }) => (
-    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: '48px', background: '#111827', border: 'none', display: 'flex', flexDirection: 'column', zIndex: 50, overflow: 'hidden' }}>
-        <div style={{ background: '#f5d000', padding: '10px 16px', borderBottom: '3px solid #0b1220', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#0b1220', fontWeight: 900, fontFamily: 'monospace', fontSize: '14px' }}>
-                {Icon && <Icon size={16} />}
-                {title}
-            </div>
-            <button
-                onClick={onClose}
-                style={{ background: '#c8102e', border: '2px solid #0b1220', color: '#fff', padding: '4px 12px', fontWeight: 900, cursor: 'pointer', borderRadius: '4px', fontSize: '12px', fontFamily: 'monospace' }}
-            >
-                CLOSE [X]
-            </button>
-        </div>
-        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            {children}
-        </div>
-    </div>
-);
+// ─── IjamOS v3 App Registry ─────────────────────────────────────────────────
+const APP_REGISTRY = [
+    { type: 'terminal',     label: 'TERMINAL',     icon: Bot,      color: '#bfdbfe', defaultW: 860, defaultH: 560, title: 'IJAM_TERMINAL // IjamOS v3' },
+    { type: 'files',        label: 'FILES',        icon: Folder,   color: '#f5d000', defaultW: 820, defaultH: 540, title: 'FILE_EXPLORER // IjamOS v3' },
+    { type: 'progress',     label: 'STATS',        icon: User,     color: '#86efac', defaultW: 700, defaultH: 580, title: 'BUILDER_STATS // PROGRESS' },
+    { type: 'settings',     label: 'SETTINGS',     icon: Settings, color: '#94a3b8', defaultW: 660, defaultH: 520, title: 'SYSTEM_SETTINGS // CONFIG' },
+    { type: 'arcade',       label: 'ARCADE',       icon: Gamepad2, color: '#f5d000', defaultW: 600, defaultH: 460, title: 'BUILDER_ARCADE // STUDIO' },
+    { type: 'mind_mapper',  label: 'MIND_MAP',     icon: Waypoints,color: '#fef08a', defaultW: 920, defaultH: 620, title: 'MIND_MAPPER // IDEATION' },
+    { type: 'prompt_forge', label: 'PROMPT_FORGE', icon: Wand2,    color: '#fb923c', defaultW: 860, defaultH: 580, title: 'PROMPT_FORGE // MASTER PROMPT' },
+    { type: 'simulator',    label: 'SIMULATOR',    icon: Activity, color: '#86efac', defaultW: 820, defaultH: 580, title: 'VIBE_SIMULATOR // ARCHITECTURE' },
+    { type: 'trash',        label: 'RECYCLE',      icon: Trash2,   color: '#ef4444', defaultW: 500, defaultH: 320, title: 'RECYCLE_BIN // DELETED CONTENT' },
+];
 
-const DesktopIcon = ({ label, icon: Icon, onClick, color = "#f5d000" }) => (
-    <button
-        onClick={onClick}
-        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'transparent', border: 'none', cursor: 'pointer', padding: '12px', borderRadius: '8px', transition: 'background 0.2s' }}
-        onMouseOver={(e) => e.currentTarget.style.background = 'rgba(245, 208, 0, 0.1)'}
+// ─── IjamOS v3 Draggable Window Frame ───────────────────────────────────────
+const WindowFrame = ({ winState, title, AppIcon, onClose, onMinimize, onMaximize, onFocus, onMove, children }) => {
+    const frameRef = useRef(null);
+    const dragRef  = useRef(null);
+
+    useEffect(() => {
+        const onMM = (e) => {
+            if (!dragRef.current) return;
+            const dx = e.clientX - dragRef.current.sx;
+            const dy = e.clientY - dragRef.current.sy;
+            if (frameRef.current) {
+                frameRef.current.style.left = `${dragRef.current.wx + dx}px`;
+                frameRef.current.style.top  = `${dragRef.current.wy + dy}px`;
+            }
+        };
+        const onMU = (e) => {
+            if (!dragRef.current) return;
+            const dx = e.clientX - dragRef.current.sx;
+            const dy = e.clientY - dragRef.current.sy;
+            onMove(dragRef.current.wx + dx, dragRef.current.wy + dy);
+            dragRef.current = null;
+        };
+        document.addEventListener('mousemove', onMM);
+        document.addEventListener('mouseup', onMU);
+        return () => { document.removeEventListener('mousemove', onMM); document.removeEventListener('mouseup', onMU); };
+    }, [onMove]);
+
+    if (!winState?.isOpen || winState?.isMinimized) return null;
+    const isMax = !!winState.isMaximized;
+
+    const boxStyle = isMax
+        ? { position: 'absolute', inset: '0 0 130px 0', zIndex: winState.zIndex, borderRadius: 0 }
+        : { position: 'absolute', left: winState.x, top: winState.y, width: winState.w, height: winState.h, zIndex: winState.zIndex, borderRadius: '10px' };
+
+    return (
+        <div ref={frameRef} onMouseDown={onFocus}
+            style={{ ...boxStyle, display: 'flex', flexDirection: 'column', background: '#111827', overflow: 'hidden', boxShadow: '0 28px 80px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,0.06)' }}>
+            {/* ── Title bar ── */}
+            <div
+                onMouseDown={(e) => { if (isMax) return; e.stopPropagation(); dragRef.current = { sx: e.clientX, sy: e.clientY, wx: winState.x, wy: winState.y }; }}
+                onDoubleClick={onMaximize}
+                style={{ background: '#f5d000', padding: '7px 12px', display: 'flex', alignItems: 'center', cursor: isMax ? 'default' : 'grab', userSelect: 'none', flexShrink: 0, position: 'relative', borderBottom: '2px solid rgba(0,0,0,0.15)' }}
+            >
+                {/* Traffic lights */}
+                <div style={{ display: 'flex', gap: '6px', zIndex: 1 }}>
+                    {[['#ef4444','✕', onClose], ['#f59e0b','─', onMinimize], ['#22c55e', isMax ? '⊡' : '⊞', onMaximize]].map(([bg, sym, fn]) => (
+                        <button key={sym} onClick={(e) => { e.stopPropagation(); fn(); }}
+                            style={{ width: 13, height: 13, borderRadius: '50%', background: bg, border: '1px solid rgba(0,0,0,0.2)', cursor: 'pointer', fontSize: '8px', color: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, fontWeight: 900, transition: 'color 0.1s' }}
+                            onMouseEnter={e => e.currentTarget.style.color = '#000'}
+                            onMouseLeave={e => e.currentTarget.style.color = 'transparent'}
+                        >{sym}</button>
+                    ))}
+                </div>
+                {/* Centered title */}
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', fontFamily: 'monospace', fontWeight: 900, fontSize: '13px', color: '#0b1220', pointerEvents: 'none' }}>
+                    {AppIcon && <AppIcon size={14} />}
+                    {title}
+                </div>
+            </div>
+            <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>{children}</div>
+        </div>
+    );
+};
+
+// ─── IjamOS v3 iOS-style Dock ────────────────────────────────────────────────
+const IjamDock = ({ dockOrder, windowStates, onOpen, onReorder }) => {
+    const [mouseX, setMouseX]   = useState(null);
+    const [hoverIdx, setHoverIdx] = useState(null);
+    const [dragIdx, setDragIdx] = useState(null);
+    const dockRef = useRef(null);
+
+    const ICON_W = 52, GAP = 10, MAG_R = 100;
+
+    const getScale = (i) => {
+        if (mouseX === null || !dockRef.current) return 1;
+        const rect = dockRef.current.getBoundingClientRect();
+        const center = rect.left + i * (ICON_W + GAP) + (ICON_W + GAP) / 2;
+        const dist = Math.abs(mouseX - center);
+        if (dist > MAG_R) return 1;
+        return 1 + (1 - dist / MAG_R) * 0.7; // max 1.7×
+    };
+
+    return (
+        <div style={{ position: 'absolute', bottom: '46px', left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 500, pointerEvents: 'none' }}>
+            <div ref={dockRef}
+                onMouseMove={(e) => setMouseX(e.clientX)}
+                onMouseLeave={() => { setMouseX(null); setHoverIdx(null); }}
+                style={{ display: 'flex', alignItems: 'flex-end', gap: `${GAP}px`, background: 'rgba(11,18,32,0.70)', backdropFilter: 'blur(28px) saturate(1.6)', WebkitBackdropFilter: 'blur(28px) saturate(1.6)', border: '1px solid rgba(245,208,0,0.18)', borderRadius: '22px', padding: '8px 18px 10px', pointerEvents: 'all', maxWidth: 'calc(100vw - 32px)', overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+                {dockOrder.map((type, i) => {
+                    const app = APP_REGISTRY.find(a => a.type === type);
+                    if (!app) return null;
+                    const ws = windowStates[type];
+                    const isOpen = !!ws?.isOpen;
+                    const isVisible = isOpen && !ws?.isMinimized;
+                    const scale = getScale(i);
+                    const isHov = hoverIdx === i;
+
+                    return (
+                        <div key={type}
+                            draggable
+                            onDragStart={(e) => { setDragIdx(i); e.dataTransfer.effectAllowed = 'move'; }}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => { e.preventDefault(); if (dragIdx !== null && dragIdx !== i) onReorder(dragIdx, i); setDragIdx(null); }}
+                            onDragEnd={() => setDragIdx(null)}
+                            onMouseEnter={() => setHoverIdx(i)}
+                            onMouseLeave={() => setHoverIdx(null)}
+                            onClick={() => onOpen(type)}
+                            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', cursor: 'pointer', opacity: dragIdx === i ? 0.35 : 1, transition: 'opacity 0.15s' }}
+                        >
+                            {/* Tooltip */}
+                            <div style={{ fontFamily: 'monospace', fontSize: '11px', fontWeight: 900, color: '#f5d000', background: 'rgba(0,0,0,0.85)', padding: '3px 9px', borderRadius: '6px', whiteSpace: 'nowrap', opacity: isHov ? 1 : 0, transition: 'opacity 0.12s', pointerEvents: 'none', marginBottom: '2px' }}>
+                                {app.label}
+                            </div>
+                            {/* Icon */}
+                            <div style={{ width: ICON_W, height: ICON_W, background: '#0b1220', border: `2px solid ${isVisible ? app.color : 'rgba(255,255,255,0.12)'}`, borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', transform: `scale(${scale})`, transformOrigin: 'bottom center', transition: 'transform 0.1s ease, border-color 0.2s', boxShadow: isVisible ? `0 0 18px ${app.color}40` : '0 4px 14px rgba(0,0,0,0.4)' }}>
+                                <app.icon size={26} color={app.color} />
+                            </div>
+                            {/* Running dot */}
+                            <div style={{ width: 4, height: 4, borderRadius: '50%', background: isOpen ? app.color : 'transparent', transition: 'background 0.2s', flexShrink: 0 }} />
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
+const DesktopIcon = ({ label, icon: Icon, onClick, color = '#f5d000' }) => (
+    <button onClick={onClick}
+        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'transparent', border: 'none', cursor: 'pointer', padding: '12px', borderRadius: '12px', transition: 'background 0.2s' }}
+        onMouseOver={(e) => e.currentTarget.style.background = 'rgba(245,208,0,0.12)'}
         onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
     >
-        <div style={{ background: '#0b1220', border: '2px solid #f5d000', color: color, padding: '12px', borderRadius: '12px', boxShadow: '4px 4px 0 #0b1220' }}>
+        <div style={{ background: '#0b1220', border: `2px solid ${color}`, color, padding: '12px', borderRadius: '14px', boxShadow: '4px 4px 0 rgba(0,0,0,0.4)' }}>
             <Icon size={32} />
         </div>
-        <span style={{ color: '#fff', fontSize: '11px', fontWeight: 900, fontFamily: 'monospace', textShadow: '2px 2px 2px #000' }}>{label}</span>
+        <span style={{ color: '#fff', fontSize: '11px', fontWeight: 900, fontFamily: 'monospace', textShadow: '1px 1px 4px #000' }}>{label}</span>
     </button>
 );
 
 const StartMenuApp = ({ icon: Icon, label, onClick }) => (
-    <button
-        onClick={onClick}
+    <button onClick={onClick}
         style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'transparent', border: 'none', cursor: 'pointer', padding: '12px', borderRadius: '8px', transition: 'background 0.2s' }}
         onMouseOver={(e) => e.currentTarget.style.background = '#1e293b'}
         onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
@@ -2266,9 +2575,70 @@ const ResourcePage = ({ session, currentUser }) => {
 
     const [activeTab, setActiveTab] = useState('lessons'); // 'lessons', 'ai', 'cloud', 'social'
     const [searchQuery, setSearchQuery] = useState('');
-    const [activeWindow, setActiveWindow] = useState(null); // 'terminal', 'files', 'stats', null
+    // ── IjamOS v3 Window & Dock State ────────────────────────────────────────
+    const [windowStates, setWindowStates] = useState({});      // { [type]: { isOpen, isMinimized, isMaximized, x, y, w, h, zIndex } }
+    const [focusedWindow, setFocusedWindow] = useState(null);
+    const [zCounter, setZCounter] = useState(100);
+    const [dockOrder, setDockOrder] = useState(APP_REGISTRY.map(a => a.type));
     const [isStartMenuOpen, setIsStartMenuOpen] = useState(false);
     const [startMenuSearch, setStartMenuSearch] = useState('');
+
+    const openApp = useCallback((type) => {
+        const appCfg = APP_REGISTRY.find(a => a.type === type);
+        if (!appCfg) return;
+        setZCounter(z => {
+            const newZ = z + 1;
+            setWindowStates(prev => {
+                if (prev[type]?.isOpen) {
+                    return { ...prev, [type]: { ...prev[type], isMinimized: false, zIndex: newZ } };
+                }
+                const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
+                const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+                const openCount = Object.values(prev).filter(w => w.isOpen).length;
+                const w = Math.min(appCfg.defaultW, vw - 60);
+                const h = Math.min(appCfg.defaultH, vh - 140);
+                return { ...prev, [type]: { isOpen: true, isMinimized: false, isMaximized: false, x: Math.max(16, (vw - w) / 2 + openCount * 22 - 44), y: Math.max(10, 30 + openCount * 22), w, h, zIndex: newZ } };
+            });
+            setFocusedWindow(type);
+            return newZ;
+        });
+    }, []);
+
+    const closeApp = useCallback((type) => {
+        setWindowStates(prev => ({ ...prev, [type]: { ...(prev[type] || {}), isOpen: false } }));
+        setFocusedWindow(f => f === type ? null : f);
+    }, []);
+
+    const minimizeApp = useCallback((type) => {
+        setWindowStates(prev => ({ ...prev, [type]: { ...prev[type], isMinimized: true } }));
+        setFocusedWindow(f => f === type ? null : f);
+    }, []);
+
+    const maximizeApp = useCallback((type) => {
+        setWindowStates(prev => ({ ...prev, [type]: { ...prev[type], isMaximized: !prev[type]?.isMaximized } }));
+    }, []);
+
+    const focusApp = useCallback((type) => {
+        setZCounter(z => {
+            const newZ = z + 1;
+            setWindowStates(prev => ({ ...prev, [type]: { ...prev[type], zIndex: newZ } }));
+            setFocusedWindow(type);
+            return newZ;
+        });
+    }, []);
+
+    const moveApp = useCallback((type, x, y) => {
+        const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
+        const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+        setWindowStates(prev => ({ ...prev, [type]: { ...prev[type], x: Math.max(0, Math.min(x, vw - 100)), y: Math.max(0, Math.min(y, vh - 60)) } }));
+    }, []);
+
+    const reorderDock = useCallback((from, to) => {
+        setDockOrder(prev => { const next = [...prev]; const [m] = next.splice(from, 1); next.splice(to, 0, m); return next; });
+    }, []);
+
+    // Convenience: which type is currently open/focused (for backward compat in content)
+    const activeWindow = focusedWindow;
 
     const [chatMessages, setChatMessages] = useState([
         { role: 'bot', text: 'IJAM_OS_INITIALIZED: Greetings, Builder. I am Antigravity. Type your command or click on the lessons above to begin.' }
@@ -2279,19 +2649,53 @@ const ResourcePage = ({ session, currentUser }) => {
     const [isOnboarding, setIsOnboarding] = useState(false);
     const [onboardingStep, setOnboardingStep] = useState(0);
     const [sidebarVisible, setSidebarVisible] = useState(true);
+    const [collapsedStages, setCollapsedStages] = useState(new Set());
+    // File Explorer state
+    const [explorerPath, setExplorerPath] = useState([]);
+    const [explorerSearch, setExplorerSearch] = useState('');
+    const [explorerSelected, setExplorerSelected] = useState(null);
+    const [explorerView, setExplorerView] = useState('icons');
+    const toggleStage = (stageName) => setCollapsedStages(prev => {
+        const next = new Set(prev);
+        next.has(stageName) ? next.delete(stageName) : next.add(stageName);
+        return next;
+    });
     const [bootText, setBootText] = useState('');
     const [isBooting, setIsBooting] = useState(false);
+    const [bootPhase, setBootPhase] = useState('idle'); // 'idle' | 'waking' | 'booting' | 'welcome' | 'ready'
+    const [botEmotion, setBotEmotion] = useState('sleepy');
+    const [bootLines, setBootLines] = useState([]);
+    const [bootProgress, setBootProgress] = useState(0);
+    const [bootMousePos, setBootMousePos] = useState(null);
+    const [speechBubble, setSpeechBubble] = useState('');
+    // Bot free-roaming state
+    const [botPos, setBotPos] = useState({ x: 40, y: 260, duration: 0 });
+    const [botWalking, setBotWalking] = useState(false);
+    const [botFacing, setBotFacing] = useState(1);
+    const [botClickIdx, setBotClickIdx] = useState(0);
+    const walkTimerRef = useRef(null);
     const [systemTime, setSystemTime] = useState('');
     const [systemDate, setSystemDate] = useState('');
 
-    // --- Profile/Settings Form States ---
     const [profileForm, setProfileForm] = useState({
         username: '',
         district: '',
         ideaTitle: '',
-        problemStatement: ''
+        problemStatement: '',
+        threadsHandle: '',
+        whatsappContact: '',
+        discordTag: '',
+        aboutYourself: '',
+        programGoal: ''
     });
     const [isSavingSettings, setIsSavingSettings] = useState(false);
+
+    // --- Stats Showcase States ---
+    const [isUploading, setIsUploading] = useState(false);
+    const [showcaseUrl, setShowcaseUrl] = useState('');
+    const [websiteUrl, setWebsiteUrl] = useState('');
+
+    const { speakText, playKeystroke, playSuccess, playError } = useSoundEffects();
 
     useEffect(() => {
         if (currentUser) {
@@ -2299,8 +2703,15 @@ const ResourcePage = ({ session, currentUser }) => {
                 username: currentUser.name || '',
                 district: currentUser.district || '',
                 ideaTitle: currentUser.idea_title || '',
-                problemStatement: currentUser.problem_statement || ''
+                problemStatement: currentUser.problem_statement || '',
+                threadsHandle: currentUser.threads_handle || '',
+                whatsappContact: currentUser.whatsapp_contact || '',
+                discordTag: currentUser.discord_tag || '',
+                aboutYourself: currentUser.about_yourself || '',
+                programGoal: currentUser.program_goal || ''
             });
+            setShowcaseUrl(currentUser.showcase_image || '');
+            setWebsiteUrl(currentUser.website_url || '');
         }
     }, [currentUser]);
 
@@ -2316,6 +2727,11 @@ const ResourcePage = ({ session, currentUser }) => {
                 district: profileForm.district,
                 idea_title: profileForm.ideaTitle,
                 problem_statement: profileForm.problemStatement,
+                threads_handle: profileForm.threadsHandle,
+                whatsapp_contact: profileForm.whatsappContact,
+                discord_tag: profileForm.discordTag,
+                about_yourself: profileForm.aboutYourself,
+                program_goal: profileForm.programGoal,
                 updated_at: new Date().toISOString()
             });
 
@@ -2328,6 +2744,55 @@ const ResourcePage = ({ session, currentUser }) => {
             alert('Save failed: ' + err.message);
         } finally {
             setIsSavingSettings(false);
+        }
+    };
+
+    const handleImageUpload = async (event) => {
+        try {
+            if (!event.target.files || event.target.files.length === 0) return;
+            setIsUploading(true);
+            const file = event.target.files[0];
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${session.user.id}-${Math.random()}.${fileExt}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('builder_showcase')
+                .upload(fileName, file);
+
+            if (uploadError) throw uploadError;
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('builder_showcase')
+                .getPublicUrl(fileName);
+
+            setShowcaseUrl(publicUrl);
+
+            await supabase.from('profiles').upsert({
+                id: session.user.id,
+                showcase_image: publicUrl,
+                updated_at: new Date().toISOString()
+            });
+
+            appendTerminal('system', '[✓] Showcase image uploaded to cloud array.');
+        } catch (error) {
+            console.error('Upload Error:', error);
+            alert('Error uploading image: ' + error.message + '\n\nMake sure the "builder_showcase" storage bucket exists in Supabase.');
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const handleSaveWebsiteUrl = async () => {
+        try {
+            const { error } = await supabase.from('profiles').upsert({
+                id: session.user.id,
+                website_url: websiteUrl,
+                updated_at: new Date().toISOString()
+            });
+            if (error) throw error;
+            alert('Website URL saved!');
+        } catch (e) {
+            alert('Error saving URL: ' + e.message);
         }
     };
 
@@ -2565,20 +3030,58 @@ const ResourcePage = ({ session, currentUser }) => {
 
     const handleBoot = async () => {
         setIsBooting(true);
-        setBootText("");
+        setBootText('');
+        setBootLines([]);
+        setBootProgress(0);
+
+        // Phase 1 — Wake up IJAM_BOT
+        setBootPhase('waking');
+        setBotEmotion('sleepy');
+        setSpeechBubble('zzz...');
+        playKeystroke();
+        speakText('Initializing IJAM OS version 3', { isSystem: true });
+        await new Promise(r => setTimeout(r, 900));
+
+        setBotEmotion('surprised');
+        setSpeechBubble('Wh— huh?! OH! A new builder!');
+        await new Promise(r => setTimeout(r, 1000));
+
+        // Phase 2 — Boot sequence with IJAM_BOT reacting
+        setBootPhase('booting');
+        setBotEmotion('focused');
+        setSpeechBubble('Let me boot up the system...');
+
         const seq = [
-            "> INITIALIZING VIBE_OS v2.0...",
-            "> LOADING CURRICULUM MODULES...",
-            "> SYNCING WITH ANTIGRAVITY CO-PILOT...",
-            "> CHECKING BUILDER CREDENTIALS...",
-            "> WELCOME, BUILDER.",
-            "> READY TO START YOUR JOURNEY?"
+            { text: '> IJAM_OS v3.0 — KERNEL LOADED', emotion: 'focused', progress: 12, bubble: 'Kernel... check ✓' },
+            { text: '> LOADING CURRICULUM MODULES [7/7]', emotion: 'thinking', progress: 28, bubble: 'Pulling in the lessons...' },
+            { text: '> SYNCING ANTIGRAVITY CO-PILOT', emotion: 'thinking', progress: 44, bubble: 'AI co-pilot coming online!' },
+            { text: '> VERIFYING BUILDER CREDENTIALS', emotion: 'focused', progress: 60, bubble: 'Who are you? Oh wait—', delay: 700 },
+            { text: '> CALIBRATING VIBE ENGINE ████████', emotion: 'excited', progress: 76, bubble: 'The vibe is strong with this one 🔥' },
+            { text: '> DEPLOYING IJAM_BOT INSTANCE', emotion: 'motivated', progress: 90, bubble: "That's me! I'm awake!", delay: 600 },
+            { text: '> ALL SYSTEMS NOMINAL. READY.', emotion: 'happy', progress: 100, bubble: null },
         ];
 
-        for (const line of seq) {
-            setBootText(prev => prev + line + "\n");
-            await new Promise(r => setTimeout(r, 600));
+        for (const step of seq) {
+            setBootLines(prev => [...prev, step.text]);
+            setBootProgress(step.progress);
+            setBotEmotion(step.emotion);
+            if (step.bubble) setSpeechBubble(step.bubble);
+            playKeystroke();
+            await new Promise(r => setTimeout(r, step.delay || 560));
         }
+
+        // Phase 3 — Welcome
+        setBootPhase('welcome');
+        setBotEmotion('celebrating');
+        setSpeechBubble(`Assalamualaikum, Builder! 👋\nIjamOS v3.0 is ready.\nLet's build something awesome!`);
+        speakText('Assalamualaikum! Welcome, Builder! I am IJAM BOT. Let us build something awesome together!', { emotion: 'excited' });
+        await new Promise(r => setTimeout(r, 1800));
+
+        // Phase 4 — Ready
+        setBootPhase('ready');
+        setBotEmotion('excited');
+        setSpeechBubble('Click START MY JOURNEY when ready! 🚀');
+        setBootText('READY TO START');
         setIsBooting(false);
     };
 
@@ -2595,6 +3098,44 @@ const ResourcePage = ({ session, currentUser }) => {
             { role: 'assistant', text: 'QUESTION 1: Kalau nak AI buat UI lawa, kau kena bagi "Master Prompt" yang detail atau suruh dia "buat web lawa" saje?' }
         ]);
     };
+
+    // ── Bot free-roaming interactions ──────────────────────────────────────────
+
+    const moveBotTo = useCallback((tx, ty) => {
+        setBotPos(prev => {
+            const dist = Math.hypot(tx - prev.x, ty - prev.y);
+            if (dist < 20) return prev;
+            const dur = Math.min(Math.max(dist / 280, 0.3), 4);
+            setBotFacing(tx >= prev.x ? 1 : -1);
+            setBotWalking(true);
+            if (walkTimerRef.current) clearTimeout(walkTimerRef.current);
+            walkTimerRef.current = setTimeout(() => setBotWalking(false), dur * 1000 + 150);
+            return { x: tx, y: ty, duration: dur };
+        });
+    }, []);
+
+    const handleBotClick = useCallback((e) => {
+        e.stopPropagation();
+        setBotClickIdx(prev => {
+            const resp = BOT_CLICK_RESPONSES[prev % BOT_CLICK_RESPONSES.length];
+            setBotEmotion(resp.emotion);
+            setSpeechBubble(resp.text);
+            if (walkTimerRef.current) clearTimeout(walkTimerRef.current);
+            setBotWalking(false);
+            setTimeout(() => setSpeechBubble(cur => cur === resp.text ? '' : cur), 2500);
+            return prev + 1;
+        });
+    }, []);
+
+    const handleScreenClick = useCallback((e) => {
+        if (bootPhase === 'idle') return;
+        if (e.target.closest('[data-ijambot]')) return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        const BOT_W = 103, BOT_H = 180; // size=180 → w=round(180*100/175)=103
+        const tx = Math.max(0, Math.min(e.clientX - rect.left - BOT_W / 2, rect.width - BOT_W));
+        const ty = Math.max(0, Math.min(e.clientY - rect.top - BOT_H / 2, rect.height - BOT_H));
+        moveBotTo(tx, ty);
+    }, [bootPhase, moveBotTo]);
 
     const executeTerminalCommand = async (rawCommand) => {
         const raw = rawCommand.trim();
@@ -2671,35 +3212,216 @@ YOU DID IT. APP DEPLOYED!`);
     };
 
     if (!isBooted) {
+        const isIdle = bootPhase === 'idle';
+        const showBot = bootPhase !== 'idle';
+        const isReady = bootPhase === 'ready';
+        const touchHandler = (e) => {
+            const t = e.touches[0];
+            if (t) setBootMousePos({ x: t.clientX, y: t.clientY });
+        };
+
         return (
-            <section id="resources-page" style={{ ...sectionStyle, background: '#090c13', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f8fafc', fontFamily: 'monospace' }}>
-                <div style={{ padding: '40px', background: '#0b1220', border: '4px solid #f5d000', boxShadow: '12px 12px 0 #f5d000', maxWidth: '600px', width: '90%', position: 'relative' }}>
-                    <div style={{ position: 'absolute', top: '-25px', left: '20px', background: '#f5d000', color: '#0b1220', padding: '4px 12px', fontWeight: 900, fontSize: '14px' }}>IjamOS v2.0</div>
-                    <div style={{ whiteSpace: 'pre-wrap', marginBottom: '30px', fontSize: '16px', lineHeight: 1.6, minHeight: '240px', color: '#86efac' }}>
-                        {bootText || "> SYSTEM STATUS: IDLE\n> AWAITING USER COMMAND..."}
+            <section
+                id="resources-page"
+                onMouseMove={e => setBootMousePos({ x: e.clientX, y: e.clientY })}
+                onTouchMove={touchHandler}
+                onTouchStart={touchHandler}
+                onClick={showBot ? handleScreenClick : undefined}
+                style={{ ...sectionStyle, background: '#04070f', height: '100vh', position: 'relative', color: '#f8fafc', fontFamily: 'monospace', overflow: 'hidden', cursor: showBot ? 'crosshair' : 'default' }}
+            >
+                {/* CSS keyframes */}
+                <style>{`
+                    @keyframes ijam-scanline { 0% { transform: translateY(-100%); } 100% { transform: translateY(100vh); } }
+                    @keyframes ijam-blink-cursor { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+                    @keyframes ijam-pulse-glow { 0%, 100% { box-shadow: 0 0 20px rgba(245,208,0,0.2); } 50% { box-shadow: 0 0 40px rgba(245,208,0,0.45); } }
+                    @keyframes ijam-spin-dot { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                `}</style>
+
+                {/* Dot grid wallpaper */}
+                <div style={{ position: 'absolute', inset: 0, opacity: 0.05, backgroundImage: 'radial-gradient(#f5d000 0.5px, transparent 0.5px)', backgroundSize: '28px 28px', pointerEvents: 'none' }} />
+
+                {/* Scanline */}
+                {isBooting && (
+                    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
+                        <div style={{ position: 'absolute', left: 0, right: 0, height: '2px', background: 'linear-gradient(transparent, rgba(245,208,0,0.06), transparent)', animation: 'ijam-scanline 4s linear infinite' }} />
                     </div>
-                    {!isBooting && bootText === "" && (
-                        <button
-                            onClick={handleBoot}
-                            style={{ background: '#c8102e', border: '3px solid #000', color: '#fff', padding: '12px 24px', fontWeight: 900, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '4px 4px 0 #000' }}
+                )}
+
+                {/* ── FREE-ROAMING IJAM_BOT ── */}
+                <AnimatePresence>
+                    {showBot && (
+                        <motion.div
+                            key="free-bot"
+                            data-ijambot="1"
+                            initial={{ opacity: 0, scale: 0.5 }}
+                            animate={{ opacity: 1, scale: 1, x: botPos.x, y: botPos.y }}
+                            exit={{ opacity: 0, scale: 0.4 }}
+                            transition={{
+                                opacity: { duration: 0.4 },
+                                scale: { type: 'spring', stiffness: 180, damping: 20 },
+                                x: { type: 'tween', duration: botPos.duration, ease: 'linear' },
+                                y: { type: 'tween', duration: botPos.duration, ease: 'linear' },
+                            }}
+                            onClick={handleBotClick}
+                            style={{ position: 'absolute', left: 0, top: 0, cursor: 'pointer', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center' }}
                         >
-                            INITIATE SYSTEM BOOT
-                        </button>
+                            {/* Red ambient glow */}
+                            <div style={{ position: 'absolute', top: '60%', left: '50%', transform: 'translate(-50%,-50%)', width: '260px', height: '260px', background: 'radial-gradient(ellipse, rgba(200,16,46,0.25) 0%, transparent 68%)', pointerEvents: 'none', zIndex: -1 }} />
+
+                            {/* Speech bubble */}
+                            <AnimatePresence mode="wait">
+                                {speechBubble && (
+                                    <motion.div
+                                        key={speechBubble}
+                                        initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                                        transition={{ duration: 0.22 }}
+                                        style={{ background: 'rgba(11,18,32,0.96)', border: '2px solid rgba(245,208,0,0.45)', borderRadius: '14px', padding: '10px 16px', maxWidth: '210px', fontSize: '12px', lineHeight: 1.5, color: '#e2e8f0', marginBottom: '10px', position: 'relative', whiteSpace: 'pre-line', boxShadow: '0 8px 24px rgba(0,0,0,0.6)', textAlign: 'center' }}
+                                    >
+                                        {speechBubble}
+                                        <div style={{ position: 'absolute', bottom: '-10px', left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderTop: '10px solid rgba(245,208,0,0.45)' }} />
+                                        <div style={{ position: 'absolute', bottom: '-7px', left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '8px solid rgba(11,18,32,0.96)' }} />
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
+                            {/* Bot — float-bob on celebrate, direction flip only on SVG wrapper */}
+                            <motion.div
+                                animate={['celebrating', 'excited', 'motivated'].includes(botEmotion) && !botWalking ? { y: [0, -10, 0] } : { y: 0 }}
+                                transition={{ duration: 1.3, repeat: Infinity, ease: 'easeInOut' }}
+                                style={{ filter: bootPhase === 'welcome' ? 'drop-shadow(0 0 18px rgba(245,208,0,0.5))' : 'none', transition: 'filter 0.6s' }}
+                            >
+                                <div style={{ transform: botFacing === -1 ? 'scaleX(-1)' : 'none' }}>
+                                    <IjamBotMascot size={180} mousePos={bootMousePos} emotion={botEmotion} isWalking={botWalking} direction={botFacing} />
+                                </div>
+                            </motion.div>
+
+                            {/* Name tag */}
+                            <div style={{ marginTop: '10px', background: 'rgba(245,208,0,0.1)', border: '1px solid rgba(245,208,0,0.35)', borderRadius: '8px', padding: '4px 14px', fontSize: '10px', fontWeight: 900, color: '#f5d000', letterSpacing: '0.1em', pointerEvents: 'none' }}>
+                                IJAM_BOT v3
+                            </div>
+                        </motion.div>
                     )}
-                    {!isBooting && bootText.includes('READY TO START') && (
-                        <button
-                            onClick={confirmBoot}
-                            style={{ background: '#22c55e', border: '3px solid #000', color: '#000', padding: '12px 24px', fontWeight: 900, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '4px 4px 0 #000' }}
-                        >
-                            YES, START MY JOURNEY
-                        </button>
-                    )}
-                    {isBooting && (
-                        <div style={{ color: '#f5d000', fontWeight: 900, fontSize: '14px' }}>
-                            [ LOADING IjamOS... ]
+                </AnimatePresence>
+
+                {/* ── CENTERED TERMINAL WINDOW ── */}
+                <div
+                    onClick={e => e.stopPropagation()}
+                    style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 5, width: '100%', maxWidth: '520px', padding: '0 16px' }}
+                >
+                    <div style={{ background: 'rgba(11,18,32,0.98)', border: '1px solid rgba(245,208,0,0.28)', borderRadius: '14px', overflow: 'hidden', boxShadow: '0 32px 80px rgba(0,0,0,0.8)', animation: isReady ? 'ijam-pulse-glow 2s ease-in-out infinite' : 'none' }}>
+                        {/* Title bar */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'rgba(7,11,20,0.9)', borderBottom: '1px solid rgba(245,208,0,0.1)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#ef4444' }} />
+                                <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#f59e0b' }} />
+                                <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#22c55e' }} />
+                            </div>
+                            <div style={{ fontSize: '11px', fontWeight: 900, color: 'rgba(245,208,0,0.65)', letterSpacing: '0.08em' }}>
+                                IjamOS v3.0 — BOOT SEQUENCE
+                            </div>
+                            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.18)' }}>● ● ●</div>
                         </div>
-                    )}
+
+                        {/* Terminal body */}
+                        <div style={{ padding: '20px 24px', minHeight: '240px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            {isIdle && (
+                                <div style={{ whiteSpace: 'pre-wrap', fontSize: '13px', lineHeight: 1.8, color: '#64748b' }}>
+                                    {'> IJAM_OS v3.0 KERNEL\n> Build: Selangor Builder Sprint 2026\n> Status: IDLE — Awaiting operator command...'}
+                                </div>
+                            )}
+
+                            <AnimatePresence>
+                                {bootLines.map((line, i) => (
+                                    <motion.div
+                                        key={i}
+                                        initial={{ opacity: 0, x: -12 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ duration: 0.2 }}
+                                        style={{ fontSize: '12px', color: i === bootLines.length - 1 ? '#86efac' : '#475569', fontFamily: 'monospace', lineHeight: 1.5, display: 'flex', alignItems: 'center', gap: '8px' }}
+                                    >
+                                        <span style={{ color: i === bootLines.length - 1 ? '#22c55e' : '#1e3a5f', flexShrink: 0 }}>{i === bootLines.length - 1 && isBooting ? '▶' : '✓'}</span>
+                                        {line}
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+
+                            <AnimatePresence>
+                                {bootProgress > 0 && (
+                                    <motion.div key="progress" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: '8px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '10px', color: 'rgba(255,255,255,0.35)', fontWeight: 700 }}>
+                                            <span>BOOT PROGRESS</span>
+                                            <span>{bootProgress}%</span>
+                                        </div>
+                                        <div style={{ height: '4px', background: 'rgba(255,255,255,0.08)', borderRadius: '99px', overflow: 'hidden' }}>
+                                            <motion.div
+                                                initial={{ width: 0 }}
+                                                animate={{ width: `${bootProgress}%` }}
+                                                transition={{ duration: 0.45, ease: 'easeOut' }}
+                                                style={{ height: '100%', background: bootProgress === 100 ? '#22c55e' : '#f5d000', borderRadius: '99px', boxShadow: bootProgress === 100 ? '0 0 8px #22c55e' : '0 0 8px rgba(245,208,0,0.6)' }}
+                                            />
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
+                            {isBooting && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(245,208,0,0.6)', fontSize: '11px', fontWeight: 700, marginTop: '4px' }}>
+                                    <div style={{ width: '12px', height: '12px', border: '2px solid rgba(245,208,0,0.3)', borderTopColor: '#f5d000', borderRadius: '50%', animation: 'ijam-spin-dot 0.7s linear infinite' }} />
+                                    LOADING IJAM_OS...
+                                    <span style={{ animation: 'ijam-blink-cursor 1s step-end infinite' }}>_</span>
+                                </div>
+                            )}
+
+                            <div style={{ flex: 1 }} />
+
+                            <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                {isIdle && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+                                        <button
+                                            onClick={handleBoot}
+                                            style={{ background: '#c8102e', border: 'none', color: '#fff', padding: '13px 28px', fontWeight: 900, cursor: 'pointer', fontFamily: 'inherit', fontSize: '13px', borderRadius: '8px', letterSpacing: '0.06em', boxShadow: '0 4px 20px rgba(200,16,46,0.4)', transition: 'box-shadow 0.2s', display: 'flex', alignItems: 'center', gap: '8px' }}
+                                            onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 32px rgba(200,16,46,0.7)'}
+                                            onMouseLeave={e => e.currentTarget.style.boxShadow = '0 4px 20px rgba(200,16,46,0.4)'}
+                                        >
+                                            <Power size={14} /> INITIATE SYSTEM BOOT
+                                        </button>
+                                        <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.22)', letterSpacing: '0.05em' }}>v3 · Multi-window · iOS Dock</div>
+                                    </div>
+                                )}
+
+                                <AnimatePresence>
+                                    {isReady && (
+                                        <motion.button
+                                            key="start-btn"
+                                            initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                                            transition={{ type: 'spring', stiffness: 260, damping: 18 }}
+                                            onClick={confirmBoot}
+                                            style={{ background: 'rgba(34,197,94,0.12)', border: '2px solid #22c55e', color: '#22c55e', padding: '14px 32px', fontWeight: 900, cursor: 'pointer', fontFamily: 'inherit', fontSize: '14px', borderRadius: '10px', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '10px', width: '100%', justifyContent: 'center', boxShadow: '0 0 24px rgba(34,197,94,0.2)' }}
+                                            whileHover={{ scale: 1.02, boxShadow: '0 0 36px rgba(34,197,94,0.45)' }}
+                                            whileTap={{ scale: 0.97 }}
+                                        >
+                                            ▶&nbsp; YES, START MY JOURNEY
+                                        </motion.button>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style={{ textAlign: 'center', marginTop: '12px', fontSize: '10px', color: 'rgba(255,255,255,0.12)', letterSpacing: '0.08em' }}>
+                        SELANGOR BUILDER SPRINT 2026 · NOW EVERYONE CAN BUILD
+                    </div>
                 </div>
+
+                {/* Click-to-walk hint */}
+                {showBot && (
+                    <div style={{ position: 'absolute', bottom: '16px', left: '50%', transform: 'translateX(-50%)', fontSize: '10px', color: 'rgba(255,255,255,0.2)', letterSpacing: '0.06em', pointerEvents: 'none', whiteSpace: 'nowrap' }}>
+                        Click anywhere to move IJAM_BOT · Click the bot to interact
+                    </div>
+                )}
             </section>
         );
     }
@@ -2711,23 +3433,20 @@ YOU DID IT. APP DEPLOYED!`);
 
             {/* Desktop Icons Container */}
             <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '40px 20px', height: '100%', position: 'relative', zIndex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, 100px)', gap: '24px', alignItems: 'start', contentVisibility: 'auto' }}>
-                <DesktopIcon label="TERMINAL" icon={Terminal} onClick={() => setActiveWindow('terminal')} />
-                <DesktopIcon label="FILES" icon={Folder} onClick={() => setActiveWindow('files')} />
-                <DesktopIcon label="STATS" icon={User} onClick={() => setActiveWindow('progress')} color="#86efac" />
-                <DesktopIcon label="RECYCLE" icon={Trash2} onClick={() => setActiveWindow('trash')} color="#c8102e" />
-                <DesktopIcon label="SETTINGS" icon={Settings} onClick={() => setActiveWindow('settings')} color="#94a3b8" />
-                <DesktopIcon label="ARCADE" icon={Gamepad2} onClick={() => setActiveWindow('arcade')} color="#f5d000" />
+                {APP_REGISTRY.map(app => (
+                    <DesktopIcon key={app.type} label={app.label} icon={app.icon} color={app.color} onClick={() => openApp(app.type)} />
+                ))}
             </div>
 
             {/* Application Windows */}
 
             {/* 1. Terminal Window */}
-            {activeWindow === 'terminal' && (
-                <WindowFrame title="IJAM_TERMINAL // IjamOS" icon={Bot} onClose={() => setActiveWindow(null)}>
+            {windowStates.terminal?.isOpen && (
+                <WindowFrame winState={windowStates.terminal} title="IJAM_TERMINAL // IjamOS v3" AppIcon={Bot} onClose={() => closeApp('terminal')} onMinimize={() => minimizeApp('terminal')} onMaximize={() => maximizeApp('terminal')} onFocus={() => focusApp('terminal')} onMove={(x, y) => moveApp('terminal', x, y)}>
                     <div style={{ display: 'grid', gridTemplateColumns: isNarrowScreen ? '1fr' : (sidebarVisible ? 'minmax(220px, 320px) 1fr' : '0 1fr'), gridTemplateRows: isNarrowScreen ? 'auto minmax(0,1fr)' : 'minmax(0,1fr)', flex: 1, minHeight: 0 }}>
                         <aside style={{ borderRight: (isNarrowScreen || !sidebarVisible) ? 'none' : '3px solid #0b1220', borderBottom: isNarrowScreen ? '3px solid #0b1220' : 'none', padding: sidebarVisible || isNarrowScreen ? '10px' : '0', background: '#0b1220', minHeight: 0, overflow: 'hidden' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                <div style={{ fontFamily: 'monospace', fontWeight: 900, fontSize: '11px', color: '#93c5fd' }}>LESSON TREE</div>
+                                <div style={{ fontFamily: 'monospace', fontWeight: 900, fontSize: '13px', color: '#93c5fd' }}>LESSON TREE</div>
                                 {!isNarrowScreen && (
                                     <button
                                         onClick={() => setSidebarVisible(false)}
@@ -2738,71 +3457,86 @@ YOU DID IT. APP DEPLOYED!`);
                                 )}
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: isNarrowScreen ? '24vh' : '56vh', overflowY: 'auto', paddingRight: '4px' }}>
-                                {Object.entries(groupedLessons).map(([stageName, stageLessons]) => (
-                                    <div key={stageName}>
-                                        <div style={{ color: '#f5d000', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', marginBottom: '6px', borderBottom: '1px solid #334155', paddingBottom: '2px', letterSpacing: '0.05em' }}>
-                                            {stageName}
+                                {Object.entries(groupedLessons).map(([stageName, stageLessons]) => {
+                                    const isCollapsed = collapsedStages.has(stageName);
+                                    return (
+                                        <div key={stageName}>
+                                            <button
+                                                type="button"
+                                                onClick={() => toggleStage(stageName)}
+                                                style={{ width: '100%', textAlign: 'left', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '2px 0', marginBottom: isCollapsed ? '0' : '6px', borderBottom: '1px solid #334155', paddingBottom: '4px' }}
+                                            >
+                                                <span style={{ color: '#f5d000', fontSize: '12px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{stageName}</span>
+                                                <span style={{ color: '#f5d000', fontSize: '11px', fontWeight: 900 }}>{isCollapsed ? '▸' : '▾'}</span>
+                                            </button>
+                                            {!isCollapsed && (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                    {stageLessons.map((lesson) => {
+                                                        const isActive = lesson.id === activeLesson.id;
+                                                        const isDone = completedLessons.includes(lesson.id);
+                                                        return (
+                                                            <button
+                                                                key={lesson.id}
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setActiveIndex(lesson.originalIndex);
+                                                                    setSlideIndex(-1);
+                                                                    setTerminalLog([
+                                                                        { role: 'system', text: 'Terminal cleared for new lesson.' },
+                                                                        { role: 'system', text: `Opened lesson: ${lesson.id}` },
+                                                                        {
+                                                                            role: 'assistant', text: buildIjamBotLessonBrief({
+                                                                                lesson,
+                                                                                tips: LESSON_TIPS_BY_TONE[teachingTone]?.[lesson.id] || [],
+                                                                                tone: teachingTone
+                                                                            })
+                                                                        }
+                                                                    ]);
+                                                                }}
+                                                                style={{
+                                                                    textAlign: 'left',
+                                                                    background: isActive ? '#c8102e' : 'transparent',
+                                                                    border: isActive ? '1px solid #ef4444' : '1px solid transparent',
+                                                                    color: isActive ? '#f8fafc' : isDone ? '#86efac' : '#94a3b8',
+                                                                    borderRadius: '6px',
+                                                                    padding: '6px 8px',
+                                                                    fontFamily: 'monospace',
+                                                                    fontSize: '13px',
+                                                                    fontWeight: isActive ? 800 : 600,
+                                                                    cursor: 'pointer',
+                                                                    transition: 'all 0.15s ease',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '6px',
+                                                                }}
+                                                                onMouseEnter={(e) => {
+                                                                    if (!isActive) {
+                                                                        e.currentTarget.style.background = '#1e293b';
+                                                                        e.currentTarget.style.color = '#e2e8f0';
+                                                                    }
+                                                                }}
+                                                                onMouseLeave={(e) => {
+                                                                    if (!isActive) {
+                                                                        e.currentTarget.style.background = 'transparent';
+                                                                        e.currentTarget.style.color = isDone ? '#86efac' : '#94a3b8';
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <span style={{ fontSize: '10px', flexShrink: 0 }}>{isDone ? '✓' : '○'}</span>
+                                                                {lesson.title}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
                                         </div>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                            {stageLessons.map((lesson, localIdx) => {
-                                                const isActive = lesson.id === activeLesson.id;
-                                                return (
-                                                    <button
-                                                        key={lesson.id}
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setActiveIndex(lesson.originalIndex);
-                                                            setSlideIndex(-1);
-                                                            setTerminalLog([
-                                                                { role: 'system', text: 'Terminal cleared for new lesson.' },
-                                                                { role: 'system', text: `Opened lesson: ${lesson.id}` },
-                                                                {
-                                                                    role: 'assistant', text: buildIjamBotLessonBrief({
-                                                                        lesson,
-                                                                        tips: LESSON_TIPS_BY_TONE[teachingTone]?.[lesson.id] || [],
-                                                                        tone: teachingTone
-                                                                    })
-                                                                }
-                                                            ]);
-                                                        }}
-                                                        style={{
-                                                            textAlign: 'left',
-                                                            background: isActive ? '#c8102e' : 'transparent',
-                                                            border: isActive ? '1px solid #ef4444' : '1px solid transparent',
-                                                            color: isActive ? '#f8fafc' : '#94a3b8',
-                                                            borderRadius: '6px',
-                                                            padding: '4px 6px',
-                                                            fontFamily: 'monospace',
-                                                            fontSize: '11px',
-                                                            fontWeight: isActive ? 800 : 600,
-                                                            cursor: 'pointer',
-                                                            transition: 'all 0.15s ease'
-                                                        }}
-                                                        onMouseEnter={(e) => {
-                                                            if (!isActive) {
-                                                                e.target.style.background = '#1e293b';
-                                                                e.target.style.color = '#e2e8f0';
-                                                            }
-                                                        }}
-                                                        onMouseLeave={(e) => {
-                                                            if (!isActive) {
-                                                                e.target.style.background = 'transparent';
-                                                                e.target.style.color = '#94a3b8';
-                                                            }
-                                                        }}
-                                                    >
-                                                        {lesson.title}
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
-                            <div style={{ marginTop: '10px', fontFamily: 'monospace', fontSize: '11px', color: '#fcd34d' }}>
+                            <div style={{ marginTop: '10px', fontFamily: 'monospace', fontSize: '13px', color: '#fcd34d' }}>
                                 completed: {completedLessons.length}/{lessons.length}
                             </div>
-                            <div style={{ marginTop: '8px', fontFamily: 'monospace', fontSize: '10px', color: '#9ca3af' }}>
+                            <div style={{ marginTop: '8px', fontFamily: 'monospace', fontSize: '12px', color: '#9ca3af' }}>
                                 disclaimer: lessons are co-written with AI
                             </div>
                         </aside>
@@ -2982,33 +3716,261 @@ YOU DID IT. APP DEPLOYED!`);
             )}
 
             {/* 2. Resource Explorer Window */}
-            {activeWindow === 'files' && (
-                <WindowFrame title="FILE_EXPLORER // IjamOS" icon={Folder} onClose={() => setActiveWindow(null)}>
-                    <div style={{ padding: '20px', height: '100%', overflowY: 'auto' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
-                            {libraryItems.map((item, idx) => (
-                                <div key={item.id} style={{ background: '#0b1220', border: '3px solid #f5d000', borderRadius: '12px', padding: '16px', boxShadow: '6px 6px 0 #0b1220', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                                        <div style={{ color: '#f5d000', fontWeight: 900, fontFamily: 'monospace', fontSize: '14px' }}>{item.title}</div>
-                                        <div style={{ background: '#1e293b', padding: '2px 8px', borderRadius: '4px', color: '#bfdbfe', fontSize: '10px', fontWeight: 800 }}>{item.source}</div>
-                                    </div>
-                                    <div style={{ color: '#94a3b8', fontSize: '12px', flex: 1 }}>{item.description}</div>
-                                    <button
-                                        onClick={() => openExternal(item.url)}
-                                        style={{ background: '#f5d000', border: '2px solid #0b1220', color: '#0b1220', padding: '8px', fontWeight: 900, fontFamily: 'monospace', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                                    >
-                                        OPEN_EXTERNAL <ExternalLink size={14} />
-                                    </button>
+            {windowStates.files?.isOpen && (() => {
+                const allStages = [...new Set(lessons.map(l => l.stage).filter(Boolean))];
+
+                const navTo = (path) => { setExplorerPath(path); setExplorerSelected(null); setExplorerSearch(''); };
+
+                const getItems = () => {
+                    if (explorerSearch.trim()) {
+                        const q = explorerSearch.toLowerCase();
+                        return [
+                            ...lessons.filter(l => l.title.toLowerCase().includes(q) || (l.summary || '').toLowerCase().includes(q))
+                                .map(l => ({ id: `lesson-${l.id}`, name: l.title, type: 'lesson', ext: '.lesson', data: l })),
+                            ...dbLibraryItems.filter(r => (r.title || '').toLowerCase().includes(q) || (r.description || '').toLowerCase().includes(q))
+                                .map(r => ({ id: `url-${r.id}`, name: r.title, type: 'url', ext: '.url', data: r }))
+                        ];
+                    }
+                    if (explorerPath.length === 0) return [{ id: 'drive-C', name: 'C:\\', type: 'drive', label: 'IjamOS System Drive' }];
+                    if (explorerPath.length === 1) return [
+                        ...allStages.map(s => ({ id: `folder-${s}`, name: s, type: 'folder' })),
+                        ...(dbLibraryItems.length ? [{ id: 'folder-COMMUNITY', name: 'COMMUNITY_RESOURCES', type: 'folder' }] : [])
+                    ];
+                    if (explorerPath.length === 2) {
+                        const f = explorerPath[1];
+                        if (f === 'COMMUNITY_RESOURCES') return dbLibraryItems.map(r => ({ id: `url-${r.id}`, name: r.title, type: 'url', ext: '.url', data: r }));
+                        return lessons.filter(l => l.stage === f).map(l => ({ id: `lesson-${l.id}`, name: l.title, type: 'lesson', ext: '.lesson', data: l }));
+                    }
+                    return [];
+                };
+
+                const items = getItems();
+
+                const handleClick = (item) => {
+                    if (item.type === 'drive') { navTo(['C:']); return; }
+                    if (item.type === 'folder') { navTo([...explorerPath, item.name]); return; }
+                    setExplorerSelected(prev => prev?.id === item.id ? null : item);
+                };
+
+                const openItem = (item) => {
+                    if (!item) return;
+                    if (item.type === 'lesson') {
+                        const idx = navigableLessons.findIndex(l => l.id === item.data.id);
+                        setActiveIndex(idx >= 0 ? idx : 0);
+                        setSlideIndex(-1);
+                        setTerminalLog([
+                            { role: 'system', text: 'Terminal cleared.' },
+                            { role: 'system', text: `Opened: ${item.data.id}` },
+                            { role: 'assistant', text: buildIjamBotLessonBrief({ lesson: item.data, tips: LESSON_TIPS_BY_TONE[teachingTone]?.[item.data.id] || [], tone: teachingTone }) }
+                        ]);
+                        openApp('terminal');
+                    }
+                    if (item.type === 'url') openExternal(item.data.url);
+                };
+
+                const ICON = { drive: '💾', folder: '📁', lesson: '📄', url: '🔗' };
+                const TYPE_LABEL = { drive: 'Local Disk', folder: 'File Folder', lesson: 'Lesson File', url: 'URL Shortcut' };
+
+                const sidebarBtnStyle = (active) => ({
+                    width: '100%', textAlign: 'left', background: active ? '#1e293b' : 'transparent',
+                    border: 'none', borderRadius: '4px', padding: '5px 8px', cursor: 'pointer',
+                    fontFamily: 'monospace', fontSize: '12px', color: active ? '#f5d000' : '#94a3b8',
+                    display: 'flex', alignItems: 'center', gap: '7px', lineHeight: 1.3
+                });
+
+                const itemIsSelected = (item) => explorerSelected?.id === item.id;
+
+                return (
+                    <WindowFrame winState={windowStates.files} title="FILE_EXPLORER // IjamOS v3" AppIcon={Folder} onClose={() => { closeApp('files'); setExplorerPath([]); setExplorerSearch(''); setExplorerSelected(null); }} onMinimize={() => minimizeApp('files')} onMaximize={() => maximizeApp('files')} onFocus={() => focusApp('files')} onMove={(x, y) => moveApp('files', x, y)}>
+                        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+
+                            {/* ── TOOLBAR ── */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 10px', borderBottom: '2px solid #1e293b', background: '#0b1220', flexShrink: 0, flexWrap: 'wrap' }}>
+                                <div style={{ display: 'flex', gap: '3px' }}>
+                                    <button onClick={() => navTo(explorerPath.slice(0, -1))} disabled={!explorerPath.length}
+                                        style={{ background: 'none', border: '1px solid #1e293b', borderRadius: '4px', padding: '4px 8px', color: explorerPath.length ? '#94a3b8' : '#1e3a5f', cursor: explorerPath.length ? 'pointer' : 'default', fontSize: '14px', lineHeight: 1 }}>←</button>
+                                    <button onClick={() => navTo([])}
+                                        style={{ background: 'none', border: '1px solid #1e293b', borderRadius: '4px', padding: '4px 8px', color: '#f5d000', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>⌂</button>
                                 </div>
-                            ))}
+                                {/* Address bar */}
+                                <div style={{ flex: 1, background: '#1e293b', border: '1px solid #334155', borderRadius: '4px', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: '5px', fontFamily: 'monospace', fontSize: '12px', minWidth: 0, overflow: 'hidden' }}>
+                                    <span style={{ color: '#f5d000', fontWeight: 900, flexShrink: 0 }}>IjamOS</span>
+                                    {explorerPath.map((seg, i) => (
+                                        <React.Fragment key={i}>
+                                            <span style={{ color: '#334155', flexShrink: 0 }}>›</span>
+                                            <button onClick={() => navTo(explorerPath.slice(0, i + 1))}
+                                                style={{ background: 'none', border: 'none', color: '#bfdbfe', cursor: 'pointer', fontFamily: 'monospace', fontSize: '12px', padding: 0, flexShrink: 0 }}>{seg}</button>
+                                        </React.Fragment>
+                                    ))}
+                                </div>
+                                {/* Search */}
+                                <div style={{ display: 'flex', alignItems: 'center', background: '#1e293b', border: '1px solid #334155', borderRadius: '4px', padding: '4px 8px', gap: '5px' }}>
+                                    <Search size={12} color="#64748b" />
+                                    <input value={explorerSearch} onChange={e => { setExplorerSearch(e.target.value); setExplorerSelected(null); }} placeholder="Search files..."
+                                        style={{ background: 'transparent', border: 'none', outline: 'none', color: '#e2e8f0', fontFamily: 'monospace', fontSize: '12px', width: '120px' }} />
+                                    {explorerSearch && <button onClick={() => setExplorerSearch('')} style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer', fontSize: '12px', padding: 0, lineHeight: 1 }}>✕</button>}
+                                </div>
+                                {/* View toggle */}
+                                <div style={{ display: 'flex', border: '1px solid #334155', borderRadius: '4px', overflow: 'hidden' }}>
+                                    {['icons', 'list'].map(v => (
+                                        <button key={v} onClick={() => setExplorerView(v)}
+                                            style={{ background: explorerView === v ? '#334155' : 'transparent', border: 'none', color: explorerView === v ? '#f5d000' : '#475569', padding: '4px 9px', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>
+                                            {v === 'icons' ? '⊞' : '≡'}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* ── BODY ── */}
+                            <div style={{ flex: 1, display: 'flex', minHeight: 0, overflow: 'hidden' }}>
+
+                                {/* Left sidebar */}
+                                {!isNarrowScreen && (
+                                    <aside style={{ width: '168px', flexShrink: 0, borderRight: '2px solid #1e293b', background: '#06111a', padding: '8px 6px', overflowY: 'auto' }}>
+                                        <div style={{ fontSize: '10px', fontWeight: 900, color: '#334155', letterSpacing: '0.12em', padding: '2px 8px 5px', textTransform: 'uppercase' }}>Quick Access</div>
+                                        <button onClick={() => navTo([])} style={sidebarBtnStyle(explorerPath.length === 0 && !explorerSearch)}>⌂ My Computer</button>
+
+                                        <div style={{ fontSize: '10px', fontWeight: 900, color: '#334155', letterSpacing: '0.12em', padding: '10px 8px 4px', textTransform: 'uppercase' }}>Drives</div>
+                                        <button onClick={() => navTo(['C:'])} style={sidebarBtnStyle(explorerPath[0] === 'C:' && explorerPath.length === 1)}>💾 C:\ IjamOS</button>
+
+                                        <div style={{ fontSize: '10px', fontWeight: 900, color: '#334155', letterSpacing: '0.12em', padding: '10px 8px 4px', textTransform: 'uppercase' }}>Folders</div>
+                                        {allStages.map(stage => (
+                                            <button key={stage} onClick={() => navTo(['C:', stage])} style={sidebarBtnStyle(explorerPath[1] === stage)}>
+                                                📁 {stage.length > 15 ? stage.slice(0, 14) + '…' : stage}
+                                            </button>
+                                        ))}
+                                        {dbLibraryItems.length > 0 && (
+                                            <button onClick={() => navTo(['C:', 'COMMUNITY_RESOURCES'])} style={sidebarBtnStyle(explorerPath[1] === 'COMMUNITY_RESOURCES')}>🌐 Community</button>
+                                        )}
+                                    </aside>
+                                )}
+
+                                {/* Main content + detail panel */}
+                                <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minWidth: 0 }}>
+
+                                    {/* File area */}
+                                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                                        {explorerView === 'list' && (
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 90px 130px', borderBottom: '1px solid #1e293b', padding: '4px 14px', background: '#06111a', flexShrink: 0 }}>
+                                                {['Name', 'Type', 'Location'].map(h => (
+                                                    <div key={h} style={{ fontFamily: 'monospace', fontSize: '11px', fontWeight: 900, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</div>
+                                                ))}
+                                            </div>
+                                        )}
+                                        <div style={{ flex: 1, overflowY: 'auto', padding: explorerView === 'icons' ? '14px' : '0' }}>
+                                            {explorerSearch && (
+                                                <div style={{ padding: '6px 14px', fontFamily: 'monospace', fontSize: '11px', color: '#475569', borderBottom: '1px solid #1e293b' }}>
+                                                    Search results for <span style={{ color: '#f5d000' }}>"{explorerSearch}"</span> — {items.length} file{items.length !== 1 ? 's' : ''} found
+                                                </div>
+                                            )}
+                                            {items.length === 0 ? (
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '180px', color: '#1e293b', fontFamily: 'monospace', fontSize: '13px', gap: '10px' }}>
+                                                    <Folder size={48} strokeWidth={1} />
+                                                    {explorerSearch ? 'No files match your search.' : 'This folder is empty.'}
+                                                </div>
+                                            ) : explorerView === 'icons' ? (
+                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(92px, 1fr))', gap: '4px' }}>
+                                                    {items.map(item => (
+                                                        <button key={item.id} onClick={() => handleClick(item)}
+                                                            style={{ background: itemIsSelected(item) ? '#1e3a5f' : 'transparent', border: `1px solid ${itemIsSelected(item) ? '#3b82f6' : 'transparent'}`, borderRadius: '8px', padding: '10px 6px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}
+                                                            onMouseEnter={e => { if (!itemIsSelected(item)) e.currentTarget.style.background = '#0f2039'; }}
+                                                            onMouseLeave={e => { if (!itemIsSelected(item)) e.currentTarget.style.background = 'transparent'; }}>
+                                                            <span style={{ fontSize: '28px', lineHeight: 1 }}>{ICON[item.type]}</span>
+                                                            <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#e2e8f0', textAlign: 'center', wordBreak: 'break-word', lineHeight: 1.3, maxWidth: '80px' }}>
+                                                                {item.name.length > 28 ? item.name.slice(0, 26) + '…' : item.name}
+                                                            </span>
+                                                            {item.ext && <span style={{ fontFamily: 'monospace', fontSize: '9px', color: '#334155' }}>{item.ext}</span>}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div>
+                                                    {items.map((item, i) => (
+                                                        <button key={item.id} onClick={() => handleClick(item)}
+                                                            style={{ width: '100%', textAlign: 'left', background: itemIsSelected(item) ? '#1e3a5f' : i % 2 === 0 ? 'rgba(6,17,26,0.7)' : 'transparent', border: 'none', borderLeft: `3px solid ${itemIsSelected(item) ? '#3b82f6' : 'transparent'}`, padding: '7px 14px', cursor: 'pointer', display: 'grid', gridTemplateColumns: '1fr 90px 130px', alignItems: 'center', gap: '8px' }}
+                                                            onMouseEnter={e => { if (!itemIsSelected(item)) e.currentTarget.style.background = '#0f2039'; }}
+                                                            onMouseLeave={e => { if (!itemIsSelected(item)) e.currentTarget.style.background = i % 2 === 0 ? 'rgba(6,17,26,0.7)' : 'transparent'; }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
+                                                                <span style={{ fontSize: '15px', flexShrink: 0 }}>{ICON[item.type]}</span>
+                                                                <span style={{ fontFamily: 'monospace', fontSize: '13px', color: '#e2e8f0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
+                                                            </div>
+                                                            <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#334155' }}>{TYPE_LABEL[item.type]}</span>
+                                                            <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                {item.data?.stage || (item.type === 'url' ? 'Community' : item.type === 'folder' ? `${lessons.filter(l => l.stage === item.name).length} items` : 'C:\\')}
+                                                            </span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Right detail panel */}
+                                    {explorerSelected && !isNarrowScreen && (
+                                        <aside style={{ width: '210px', flexShrink: 0, borderLeft: '2px solid #1e293b', background: '#06111a', padding: '16px 14px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                                            <div style={{ textAlign: 'center', fontSize: '44px', lineHeight: 1 }}>{ICON[explorerSelected.type]}</div>
+                                            <div>
+                                                <div style={{ fontFamily: 'monospace', fontSize: '13px', fontWeight: 900, color: '#e2e8f0', wordBreak: 'break-word', lineHeight: 1.4 }}>{explorerSelected.name}</div>
+                                                <div style={{ fontFamily: 'monospace', fontSize: '10px', color: '#334155', marginTop: '3px' }}>{explorerSelected.ext || TYPE_LABEL[explorerSelected.type]}</div>
+                                            </div>
+                                            {explorerSelected.data?.stage && (
+                                                <div style={{ padding: '6px 8px', background: '#1e293b', borderRadius: '4px' }}>
+                                                    <div style={{ fontFamily: 'monospace', fontSize: '9px', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '3px' }}>Stage</div>
+                                                    <div style={{ fontFamily: 'monospace', fontSize: '12px', color: '#f5d000', fontWeight: 700 }}>{explorerSelected.data.stage}</div>
+                                                </div>
+                                            )}
+                                            {(explorerSelected.data?.summary || explorerSelected.data?.description) && (
+                                                <div>
+                                                    <div style={{ fontFamily: 'monospace', fontSize: '9px', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '5px' }}>Summary</div>
+                                                    <div style={{ fontFamily: 'monospace', fontSize: '12px', color: '#64748b', lineHeight: 1.6 }}>
+                                                        {((explorerSelected.data.summary || explorerSelected.data.description) ?? '').slice(0, 180)}
+                                                        {((explorerSelected.data.summary || explorerSelected.data.description) ?? '').length > 180 ? '…' : ''}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {explorerSelected.data?.steps && (
+                                                <div style={{ padding: '6px 8px', background: '#1e293b', borderRadius: '4px' }}>
+                                                    <div style={{ fontFamily: 'monospace', fontSize: '9px', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '3px' }}>Contents</div>
+                                                    <div style={{ fontFamily: 'monospace', fontSize: '12px', color: '#86efac' }}>{explorerSelected.data.steps.length} steps</div>
+                                                </div>
+                                            )}
+                                            <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                {explorerSelected.type === 'lesson' && (
+                                                    <button onClick={() => openItem(explorerSelected)}
+                                                        style={{ background: '#f5d000', border: '2px solid #0b1220', color: '#0b1220', padding: '9px', fontWeight: 900, fontFamily: 'monospace', fontSize: '12px', cursor: 'pointer', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                                                        <Terminal size={12} /> OPEN IN TERMINAL
+                                                    </button>
+                                                )}
+                                                {explorerSelected.type === 'url' && explorerSelected.data?.url && (
+                                                    <button onClick={() => openItem(explorerSelected)}
+                                                        style={{ background: '#86efac', border: '2px solid #0b1220', color: '#0b1220', padding: '9px', fontWeight: 900, fontFamily: 'monospace', fontSize: '12px', cursor: 'pointer', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                                                        <ExternalLink size={12} /> OPEN EXTERNAL
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </aside>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* ── STATUS BAR ── */}
+                            <div style={{ borderTop: '2px solid #1e293b', padding: '4px 12px', background: '#06111a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+                                <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#334155' }}>
+                                    {items.length} item{items.length !== 1 ? 's' : ''}
+                                    {explorerSelected ? ` · ${explorerSelected.name}${explorerSelected.ext || ''} selected` : ''}
+                                </span>
+                                <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#1e3a5f' }}>
+                                    IjamOS{explorerPath.length ? '\\' + explorerPath.join('\\') : ''}
+                                </span>
+                            </div>
                         </div>
-                    </div>
-                </WindowFrame>
-            )}
+                    </WindowFrame>
+                );
+            })()}
 
             {/* 3. Settings/Stats Window */}
-            {activeWindow === 'progress' && (
-                <WindowFrame title="BUILDER_STATS // PROGRESS" icon={User} onClose={() => setActiveWindow(null)}>
+            {windowStates.progress?.isOpen && (
+                <WindowFrame winState={windowStates.progress} title="BUILDER_STATS // PROGRESS" AppIcon={User} onClose={() => closeApp('progress')} onMinimize={() => minimizeApp('progress')} onMaximize={() => maximizeApp('progress')} onFocus={() => focusApp('progress')} onMove={(x,y) => moveApp('progress',x,y)}>
                     <div style={{ padding: '24px', color: '#fff', overflowY: 'auto', height: '100%' }}>
                         {/* Builder Identity Card */}
                         <div style={{ background: 'linear-gradient(45deg, #0b1220 0%, #1e293b 100%)', border: '3px solid #f5d000', borderRadius: '16px', padding: '24px', marginBottom: '30px', display: 'flex', alignItems: 'center', gap: '20px', boxShadow: '8px 8px 0 #0b1220' }}>
@@ -3081,12 +4043,67 @@ YOU DID IT. APP DEPLOYED!`);
                                 })}
                             </div>
                         </div>
+
+                        {/* WEBSITE SHOWCASE UPLOADER */}
+                        <div style={{ background: '#0b1220', padding: '24px', borderRadius: '12px', border: '3px solid #f5d000', marginTop: '30px', boxShadow: '8px 8px 0 #0b1220' }}>
+                            <div style={{ fontSize: '14px', fontWeight: 900, color: '#f5d000', marginBottom: '16px', fontFamily: 'monospace' }}>[ WEBSITE_SHOWCASE ]</div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: isNarrowScreen ? '1fr' : '1fr 1fr', gap: '24px' }}>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                    <div style={{ background: '#1e293b', border: '2px dashed #475569', borderRadius: '8px', padding: '20px', textAlign: 'center', position: 'relative' }}>
+                                        {showcaseUrl ? (
+                                            <img src={showcaseUrl} alt="Showcase" style={{ width: '100%', borderRadius: '4px', display: 'block' }} />
+                                        ) : (
+                                            <div style={{ color: '#94a3b8', fontSize: '13px', fontFamily: 'monospace' }}>No image uploaded.</div>
+                                        )}
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleImageUpload}
+                                            disabled={isUploading}
+                                            style={{ opacity: 0, position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', cursor: 'pointer' }}
+                                        />
+                                        <button style={{ marginTop: '12px', background: '#f5d000', color: '#0b1220', border: 'none', padding: '6px 16px', borderRadius: '4px', fontWeight: 900, fontFamily: 'monospace', cursor: 'pointer' }}>
+                                            {isUploading ? 'UPLOADING...' : (showcaseUrl ? 'CHANGE_IMAGE' : 'UPLOAD_IMAGE')}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', justifyContent: 'center' }}>
+                                    <p style={{ color: '#94a3b8', fontSize: '12px', lineHeight: 1.5, margin: 0 }}>
+                                        Upload a screenshot of your website here to show off to the community alongside your rank and vibes.
+                                    </p>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '11px', color: '#f5d000', marginBottom: '8px', fontWeight: 900, fontFamily: 'monospace' }}>LIVE_URL</label>
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <input
+                                                value={websiteUrl}
+                                                onChange={e => setWebsiteUrl(e.target.value)}
+                                                placeholder="https://mywebsite.vercel.app"
+                                                style={{ flex: 1, background: '#111827', border: '2px solid #334155', padding: '10px', color: '#fff', borderRadius: '8px', fontFamily: 'monospace', fontSize: '12px' }}
+                                            />
+                                            <button onClick={handleSaveWebsiteUrl} style={{ background: '#f5d000', color: '#0b1220', border: 'none', padding: '0 16px', borderRadius: '8px', fontWeight: 900, cursor: 'pointer' }}>SAVE</button>
+                                        </div>
+                                    </div>
+                                    {websiteUrl && (
+                                        <button
+                                            onClick={() => openExternal(websiteUrl)}
+                                            style={{ background: 'transparent', border: '2px solid #f5d000', color: '#f5d000', padding: '10px', borderRadius: '8px', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', fontFamily: 'monospace' }}
+                                        >
+                                            OPEN_LIVE_SITE <ExternalLink size={14} />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </WindowFrame>
             )}
 
-            {activeWindow === 'settings' && (
-                <WindowFrame title="SYSTEM_SETTINGS // CONFIG" icon={Settings} onClose={() => setActiveWindow(null)}>
+            {windowStates.settings?.isOpen && (
+                <WindowFrame winState={windowStates.settings} title="SYSTEM_SETTINGS // CONFIG" AppIcon={Settings} onClose={() => closeApp('settings')} onMinimize={() => minimizeApp('settings')} onMaximize={() => maximizeApp('settings')} onFocus={() => focusApp('settings')} onMove={(x,y) => moveApp('settings',x,y)}>
                     <div style={{ padding: '24px', color: '#fff', overflowY: 'auto', height: '100%' }}>
                         <form onSubmit={handleSaveSettings} style={{ maxWidth: '600px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
@@ -3104,7 +4121,7 @@ YOU DID IT. APP DEPLOYED!`);
                             <div>
 
                                 <h3 style={{ fontSize: '14px', color: '#f5d000', marginBottom: '16px', fontWeight: 900, fontFamily: 'monospace' }}>[ USER_PROFILE ]</h3>
-                                <div style={{ display: 'grid', gridTemplateColumns: isMobileView ? '1fr' : '1fr 1fr', gap: '16px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: isNarrowScreen ? '1fr' : '1fr 1fr', gap: '16px' }}>
                                     <div>
                                         <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '8px', fontWeight: 900 }}>FULL_NAME</label>
                                         <input
@@ -3141,8 +4158,59 @@ YOU DID IT. APP DEPLOYED!`);
                                         <textarea
                                             value={profileForm.problemStatement}
                                             onChange={e => setProfileForm(p => ({ ...p, problemStatement: e.target.value }))}
-                                            rows={3}
-                                            style={{ width: '100%', background: '#0b1220', border: '2px solid #334155', padding: '12px', color: '#fff', borderRadius: '8px', fontFamily: 'monospace', resize: 'none' }}
+                                            rows={2}
+                                            style={{ width: '100%', background: '#0b1220', border: '2px solid #334155', padding: '12px', color: '#fff', borderRadius: '8px', fontFamily: 'monospace', resize: 'vertical' }}
+                                        />
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: isNarrowScreen ? '1fr' : '1fr 1fr', gap: '16px' }}>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '8px', fontWeight: 900 }}>ABOUT_YOURSELF</label>
+                                            <textarea
+                                                value={profileForm.aboutYourself}
+                                                onChange={e => setProfileForm(p => ({ ...p, aboutYourself: e.target.value }))}
+                                                rows={2}
+                                                style={{ width: '100%', background: '#0b1220', border: '2px solid #334155', padding: '12px', color: '#fff', borderRadius: '8px', fontFamily: 'monospace', resize: 'vertical' }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '8px', fontWeight: 900 }}>PROGRAM_GOAL</label>
+                                            <textarea
+                                                value={profileForm.programGoal}
+                                                onChange={e => setProfileForm(p => ({ ...p, programGoal: e.target.value }))}
+                                                rows={2}
+                                                style={{ width: '100%', background: '#0b1220', border: '2px solid #334155', padding: '12px', color: '#fff', borderRadius: '8px', fontFamily: 'monospace', resize: 'vertical' }}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Contact Section */}
+                            <div>
+                                <h3 style={{ fontSize: '14px', color: '#f5d000', marginBottom: '16px', fontWeight: 900, fontFamily: 'monospace' }}>[ SOCIAL_CONTACT ]</h3>
+                                <div style={{ display: 'grid', gridTemplateColumns: isNarrowScreen ? '1fr' : '1fr 1fr 1fr', gap: '16px' }}>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '8px', fontWeight: 900 }}>WHATSAPP_NO</label>
+                                        <input
+                                            value={profileForm.whatsappContact}
+                                            onChange={e => setProfileForm(p => ({ ...p, whatsappContact: e.target.value }))}
+                                            style={{ width: '100%', background: '#0b1220', border: '2px solid #334155', padding: '12px', color: '#fff', borderRadius: '8px', fontFamily: 'monospace' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '8px', fontWeight: 900 }}>DISCORD_TAG</label>
+                                        <input
+                                            value={profileForm.discordTag}
+                                            onChange={e => setProfileForm(p => ({ ...p, discordTag: e.target.value }))}
+                                            style={{ width: '100%', background: '#0b1220', border: '2px solid #334155', padding: '12px', color: '#fff', borderRadius: '8px', fontFamily: 'monospace' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '8px', fontWeight: 900 }}>THREADS_HANDLE</label>
+                                        <input
+                                            value={profileForm.threadsHandle}
+                                            onChange={e => setProfileForm(p => ({ ...p, threadsHandle: e.target.value }))}
+                                            style={{ width: '100%', background: '#0b1220', border: '2px solid #334155', padding: '12px', color: '#fff', borderRadius: '8px', fontFamily: 'monospace' }}
                                         />
                                     </div>
                                 </div>
@@ -3186,17 +4254,44 @@ YOU DID IT. APP DEPLOYED!`);
             )}
 
             {/* 6. Arcade Window */}
-            {activeWindow === 'arcade' && (
-                <WindowFrame title="BUILDER_ARCADE // STUDIO" icon={Gamepad2} onClose={() => setActiveWindow(null)}>
+            {windowStates.arcade?.isOpen && (
+                <WindowFrame winState={windowStates.arcade} title="BUILDER_ARCADE // STUDIO" AppIcon={Gamepad2} onClose={() => closeApp('arcade')} onMinimize={() => minimizeApp('arcade')} onMaximize={() => maximizeApp('arcade')} onFocus={() => focusApp('arcade')} onMove={(x,y) => moveApp('arcade',x,y)}>
                     <div style={{ flex: 1, minHeight: 0, background: '#f3f4f6', overflowY: 'auto' }}>
                         <BuilderStudioPage session={session} />
                     </div>
                 </WindowFrame>
             )}
 
+            {/* 7. Simulator Window */}
+            {windowStates.simulator?.isOpen && (
+                <WindowFrame winState={windowStates.simulator} title="VIBE_SIMULATOR // ARCHITECTURE" AppIcon={Activity} onClose={() => closeApp('simulator')} onMinimize={() => minimizeApp('simulator')} onMaximize={() => maximizeApp('simulator')} onFocus={() => focusApp('simulator')} onMove={(x,y) => moveApp('simulator',x,y)}>
+                    <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+                        <VibeSimulator />
+                    </div>
+                </WindowFrame>
+            )}
+
+            {/* 8. Mind Mapper Window */}
+            {windowStates.mind_mapper?.isOpen && (
+                <WindowFrame winState={windowStates.mind_mapper} title="MIND_MAPPER // IDEATION" AppIcon={Waypoints} onClose={() => closeApp('mind_mapper')} onMinimize={() => minimizeApp('mind_mapper')} onMaximize={() => maximizeApp('mind_mapper')} onFocus={() => focusApp('mind_mapper')} onMove={(x,y) => moveApp('mind_mapper',x,y)}>
+                    <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+                        <MindMapperApp />
+                    </div>
+                </WindowFrame>
+            )}
+
+            {/* 9. Prompt Forge Window */}
+            {windowStates.prompt_forge?.isOpen && (
+                <WindowFrame winState={windowStates.prompt_forge} title="PROMPT_FORGE // MASTER PROMPT" AppIcon={Wand2} onClose={() => closeApp('prompt_forge')} onMinimize={() => minimizeApp('prompt_forge')} onMaximize={() => maximizeApp('prompt_forge')} onFocus={() => focusApp('prompt_forge')} onMove={(x,y) => moveApp('prompt_forge',x,y)}>
+                    <div style={{ flex: 1, minHeight: 0, background: '#0b1220', overflow: 'hidden' }}>
+                        <PromptForgeApp />
+                    </div>
+                </WindowFrame>
+            )}
+
             {/* 4. Recycle Bin Window */}
-            {activeWindow === 'trash' && (
-                <WindowFrame title="RECYCLE_BIN // DELETED CONTENT" icon={Trash2} onClose={() => setActiveWindow(null)}>
+            {windowStates.trash?.isOpen && (
+                <WindowFrame winState={windowStates.trash} title="RECYCLE_BIN // DELETED CONTENT" AppIcon={Trash2} onClose={() => closeApp('trash')} onMinimize={() => minimizeApp('trash')} onMaximize={() => maximizeApp('trash')} onFocus={() => focusApp('trash')} onMove={(x,y) => moveApp('trash',x,y)}>
                     <div style={{ padding: '60px 20px', textAlign: 'center', color: '#64748b' }}>
                         <Trash2 size={48} style={{ marginBottom: '20px', opacity: 0.3 }} />
                         <div style={{ fontFamily: 'monospace', fontWeight: 900, fontSize: '14px' }}>BOX IS CURRENTLY EMPTY</div>
@@ -3205,151 +4300,137 @@ YOU DID IT. APP DEPLOYED!`);
                 </WindowFrame>
             )}
 
-            {/* Start Menu Overlay */}
+            {/* App Drawer Overlay (v3) */}
             {isStartMenuOpen && (
-                <div
-                    style={{
+                <>
+                    {/* Backdrop */}
+                    <div onClick={() => setIsStartMenuOpen(false)} style={{ position: 'absolute', inset: 0, zIndex: 9998 }} />
+                    <div style={{
                         position: 'absolute',
-                        bottom: '48px',
-                        left: '0',
-                        width: '380px',
-                        maxWidth: '100%',
-                        height: '520px',
-                        maxHeight: 'calc(100vh - 48px)',
-                        background: '#0b1220',
-                        border: '3px solid #000',
-                        borderBottom: 'none',
-                        boxShadow: '6px 6px 0 rgba(0,0,0,0.5)',
+                        bottom: '148px', /* sits above dock (46px) + dock height (~90px) + 12px gap */
+                        left: '16px',
+                        width: '400px',
+                        maxWidth: 'calc(100vw - 32px)',
+                        maxHeight: 'calc(100vh - 200px)',
+                        background: 'rgba(7,11,20,0.96)',
+                        backdropFilter: 'blur(28px) saturate(1.8)',
+                        WebkitBackdropFilter: 'blur(28px) saturate(1.8)',
+                        border: '1px solid rgba(245,208,0,0.25)',
+                        borderRadius: '16px',
+                        boxShadow: '0 24px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(245,208,0,0.08)',
                         zIndex: 9999,
                         display: 'flex',
                         flexDirection: 'column',
                         fontFamily: 'monospace',
                         color: '#fff',
-                        borderTopRightRadius: '12px'
-                    }}
-                >
-                    {/* Search Bar */}
-                    <div style={{ padding: '20px', borderBottom: '2px solid #1e293b' }}>
-                        <div style={{ position: 'relative' }}>
-                            <input
-                                type="text"
-                                placeholder="Search apps, files, or web..."
-                                value={startMenuSearch}
-                                onChange={(e) => setStartMenuSearch(e.target.value)}
-                                style={{
-                                    width: '100%',
-                                    padding: '12px 12px 12px 40px',
-                                    background: '#1e293b',
-                                    border: '1px solid #334155',
-                                    color: '#fff',
-                                    borderRadius: '6px',
-                                    fontFamily: 'monospace',
-                                    fontSize: '14px'
-                                }}
-                            />
-                            <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: '14px', top: '14px' }} />
-                        </div>
-                    </div>
-
-                    {/* Pinned Apps */}
-                    <div style={{ padding: '20px', flex: 1, overflowY: 'auto' }}>
-                        <h4 style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '16px', fontWeight: 900 }}>PINNED</h4>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-                            <StartMenuApp icon={Terminal} label="Terminal" onClick={() => { setActiveWindow('terminal'); setIsStartMenuOpen(false); }} />
-                            <StartMenuApp icon={Folder} label="Files" onClick={() => { setActiveWindow('files'); setIsStartMenuOpen(false); }} />
-                            <StartMenuApp icon={User} label="Stats" onClick={() => { setActiveWindow('stats'); setIsStartMenuOpen(false); }} />
-                            <StartMenuApp icon={Gamepad2} label="Arcade" onClick={() => { setActiveWindow('arcade'); setIsStartMenuOpen(false); }} />
-                            <StartMenuApp icon={Settings} label="Config" onClick={() => { setActiveWindow('settings'); setIsStartMenuOpen(false); }} />
-                            <StartMenuApp icon={Trash2} label="Recycle" onClick={() => { setActiveWindow('trash'); setIsStartMenuOpen(false); }} />
-                            <StartMenuApp icon={BookOpen} label="Docs" onClick={() => { window.open('https://antigravity.id', '_blank'); setIsStartMenuOpen(false); }} />
-                            <StartMenuApp icon={Github} label="GitHub" onClick={() => { window.open('https://github.com', '_blank'); setIsStartMenuOpen(false); }} />
-                        </div>
-                    </div>
-
-                    {/* Bottom Footer (Weather/Date + Power) */}
-                    <div style={{ padding: '16px 20px', background: '#080d18', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '2px solid #1e293b' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        overflow: 'hidden'
+                    }}>
+                        {/* Header */}
+                        <div style={{ padding: '16px 20px 12px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div>
+                                <div style={{ fontSize: '13px', fontWeight: 900, color: '#f5d000', letterSpacing: '0.06em' }}>IjamOS v3.0</div>
+                                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>{currentUser?.name || 'Administrator'} · Local Session</div>
+                            </div>
                             <button
-                                aria-label="Power Options"
-                                onClick={() => {
-                                    if (window.confirm('Power off IjamOS session?')) {
-                                        localStorage.removeItem('vibe_os_booted');
-                                        window.location.reload();
-                                    }
-                                }}
-                                style={{
-                                    background: '#ef4444',
-                                    border: 'none',
-                                    color: '#fff',
-                                    width: '32px',
-                                    height: '32px',
-                                    borderRadius: '16px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    cursor: 'pointer'
-                                }}
+                                aria-label="Power off"
+                                onClick={() => { if (window.confirm('Power off IjamOS session?')) { localStorage.removeItem('vibe_os_booted'); window.location.reload(); } }}
+                                style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', width: '34px', height: '34px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.15s' }}
+                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.3)'; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.15)'; }}
                             >
-                                <Power size={16} />
+                                <Power size={15} />
                             </button>
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <div style={{ fontWeight: 900, fontSize: '13px' }}>{currentUser?.name || 'Administrator'}</div>
-                                <div style={{ color: '#94a3b8', fontSize: '10px' }}>Local Session</div>
+                        </div>
+
+                        {/* Search */}
+                        <div style={{ padding: '12px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                            <div style={{ position: 'relative' }}>
+                                <Search size={14} color="rgba(255,255,255,0.3)" style={{ position: 'absolute', left: '12px', top: '11px' }} />
+                                <input
+                                    type="text"
+                                    placeholder="Search apps..."
+                                    value={startMenuSearch}
+                                    onChange={(e) => setStartMenuSearch(e.target.value)}
+                                    style={{ width: '100%', padding: '10px 12px 10px 36px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', borderRadius: '8px', fontFamily: 'monospace', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }}
+                                />
                             </div>
                         </div>
 
+                        {/* App Grid */}
+                        <div style={{ padding: '16px 20px', flex: 1, overflowY: 'auto' }}>
+                            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginBottom: '12px', fontWeight: 900, letterSpacing: '0.1em' }}>ALL APPS</div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+                                {APP_REGISTRY.filter(app => !startMenuSearch || app.label.toLowerCase().includes(startMenuSearch.toLowerCase())).map(app => (
+                                    <button key={app.type}
+                                        onClick={() => { openApp(app.type); setIsStartMenuOpen(false); }}
+                                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '12px 6px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '7px', transition: 'all 0.15s' }}
+                                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(245,208,0,0.1)'; e.currentTarget.style.borderColor = 'rgba(245,208,0,0.3)'; }}
+                                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; }}
+                                    >
+                                        <div style={{ width: '38px', height: '38px', background: '#0b1220', border: `1.5px solid ${app.color}`, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <app.icon size={20} color={app.color} />
+                                        </div>
+                                        <span style={{ fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.7)', textAlign: 'center', lineHeight: 1.2 }}>{app.label}</span>
+                                    </button>
+                                ))}
+                                <button
+                                    onClick={() => { window.open('https://antigravity.id', '_blank'); setIsStartMenuOpen(false); }}
+                                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '12px 6px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '7px', transition: 'all 0.15s' }}
+                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(245,208,0,0.1)'; e.currentTarget.style.borderColor = 'rgba(245,208,0,0.3)'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; }}
+                                >
+                                    <div style={{ width: '38px', height: '38px', background: '#0b1220', border: '1.5px solid #a78bfa', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <BookOpen size={20} color="#a78bfa" />
+                                    </div>
+                                    <span style={{ fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.7)', textAlign: 'center', lineHeight: 1.2 }}>DOCS</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                </div>
+                </>
             )}
 
-            {/* Taskbar */}
-            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '48px', background: '#f5d000', borderTop: '3px solid #0b1220', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', zIndex: 100 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                    <button
-                        onClick={() => setIsStartMenuOpen(!isStartMenuOpen)}
-                        style={{
-                            background: isStartMenuOpen ? '#1e293b' : '#0b1220',
-                            color: isStartMenuOpen ? '#fff' : '#f5d000',
-                            border: 'none',
-                            padding: '6px 16px',
-                            fontWeight: 900,
-                            fontFamily: 'monospace',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        <Power size={14} /> START
-                    </button>
-                    {activeWindow && (
-                        <div style={{ background: '#0b1220', color: '#fff', padding: '6px 16px', borderRadius: '4px', fontSize: '11px', fontWeight: 900, border: '1px solid #334155', fontFamily: 'monospace' }}>
-                            {activeWindow.toUpperCase()}
-                        </div>
-                    )}
+            {/* iOS-style Dock */}
+            <IjamDock dockOrder={dockOrder} windowStates={windowStates} onOpen={openApp} onReorder={reorderDock} />
+
+            {/* System Bar */}
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '40px', background: 'rgba(7,11,20,0.96)', borderTop: '1px solid rgba(245,208,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', zIndex: 499, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
+                {/* Left: Start button */}
+                <button
+                    onClick={() => setIsStartMenuOpen(!isStartMenuOpen)}
+                    style={{ background: isStartMenuOpen ? 'rgba(245,208,0,0.15)' : 'transparent', border: `1px solid ${isStartMenuOpen ? 'rgba(245,208,0,0.4)' : 'transparent'}`, borderRadius: '6px', color: isStartMenuOpen ? '#f5d000' : 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '7px', fontFamily: 'monospace', fontSize: '11px', fontWeight: 900, padding: '5px 12px', transition: 'all 0.15s', letterSpacing: '0.06em' }}
+                >
+                    <Power size={13} /> APPS
+                </button>
+
+                {/* Center: open windows as pills */}
+                <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: '6px', maxWidth: '60vw', overflow: 'hidden' }}>
+                    {Object.entries(windowStates).filter(([, ws]) => ws?.isOpen && !ws?.isMinimized).map(([type]) => {
+                        const app = APP_REGISTRY.find(a => a.type === type);
+                        if (!app) return null;
+                        const isFocused = focusedWindow === type;
+                        return (
+                            <button key={type} onClick={() => focusApp(type)}
+                                style={{ background: isFocused ? 'rgba(245,208,0,0.18)' : 'rgba(255,255,255,0.06)', border: `1px solid ${isFocused ? 'rgba(245,208,0,0.5)' : 'rgba(255,255,255,0.08)'}`, borderRadius: '5px', color: isFocused ? '#f5d000' : 'rgba(255,255,255,0.5)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontFamily: 'monospace', fontSize: '10px', fontWeight: 900, padding: '3px 9px', letterSpacing: '0.04em', whiteSpace: 'nowrap', maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                <app.icon size={10} />
+                                {app.label}
+                            </button>
+                        );
+                    })}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0px', marginRight: '4px' }}>
-                        <div style={{ fontSize: '10px', color: '#000', fontWeight: 600 }}>{systemDate}</div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 900, color: '#c8102e' }}>
-                            {isWeatherLoading ? (
-                                <span>Syncing...</span>
-                            ) : weather ? (
-                                <>
-                                    <span>{weather.temperature}°C</span>
-                                    <span style={{ fontSize: '10px', color: '#0b1220' }}>({weather.description})</span>
-                                </>
-                            ) : (
-                                <span>Selangor</span>
-                            )}
-                        </div>
+                {/* Right: weather + clock */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                    <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.38)', fontFamily: 'monospace' }}>
+                        {isWeatherLoading ? '●●●' : weather ? `${weather.temperature}°C · ${weather.description}` : 'SELANGOR'}
                     </div>
-
-                    <div style={{ fontFamily: 'monospace', fontSize: '14px', fontWeight: 900, color: '#0b1220' }}>
-                        {systemTime}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                        <div style={{ fontFamily: 'monospace', fontSize: '12px', fontWeight: 900, color: 'rgba(255,255,255,0.8)', letterSpacing: '0.08em' }}>
+                            {systemTime}
+                        </div>
+                        <div style={{ fontFamily: 'monospace', fontSize: '9px', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.04em' }}>
+                            {systemDate}
+                        </div>
                     </div>
                 </div>
             </div>
