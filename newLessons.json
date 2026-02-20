@@ -1,0 +1,205 @@
+[
+    {
+        "id": "setup-environment",
+        "icon": "Sparkles",
+        "title": "Install Node.js + Antigravity (First Setup)",
+        "stage": "Foundation",
+        "summary": "Ni setup paling basic sebelum mula vibe coding dengan lancar.",
+        "eli5": "Node.js ni macam enjin kereta. Antigravity pula co-pilot AI kau. Kalau enjin takde, kereta tak jalan.",
+        "steps": [
+            "Install Node.js LTS dari website rasmi.",
+            "Buka terminal, check `node -v` dan `npm -v`.",
+            "Install/open Antigravity ikut panduan platform kau.",
+            "Dalam project folder, run `npm install`.",
+            "Run `npm run dev` dan pastikan website boleh hidup."
+        ],
+        "linkLabel": "Buka Node.js Download",
+        "linkUrl": "https://nodejs.org/en/download"
+    },
+    {
+        "id": "setup-ai-api-key",
+        "icon": "Brain",
+        "title": "Dapatkan API Key AI & Pasang di Antigravity",
+        "stage": "Foundation",
+        "summary": "Penting: Manage token API korang supaya tak mahal. OpenRouter paling jimat untuk guna semua model.",
+        "eli5": "API Key ni macam kad pengenalan. Korang boleh guna Groq (laju & murah) atau NVIDIA LLM. OpenRouter pula act macam wallet prepaid untuk bayar semua model.",
+        "steps": [
+            "Buka platform pilihan: Groq (Percuma/Murah), NVIDIA LLM, atau OpenRouter (Jimat).",
+            "Register akaun dan ambil 'API Keys'.",
+            "Buka VSCode/Cursor, pergi bahagian settings Antigravity.",
+            "Paste API key dan pilih model.",
+            "Elakkan guna Opus/Sonnet untuk benda simple sebab mahal token."
+        ],
+        "linkLabel": "Dapatkan Groq API Key",
+        "linkUrl": "https://console.groq.com/keys"
+    },
+    {
+        "id": "chatgpt-personality",
+        "icon": "Users",
+        "title": "Set Up Personality ChatGPT",
+        "stage": "Ideation",
+        "summary": "Ajar ChatGPT jadi pakar sebelum kau tanya teknikal.",
+        "eli5": "Macam kau lantik Manager. Mula-mula bagi dia title 'Senior UI Engineer & PM', baru instruction dia mantap.",
+        "steps": [
+            "Buka ChatGPT.",
+            "Tulis prompt: 'You are an expert React UI Engineer and Product Manager...'",
+            "Ceritakan idea app kau secara ringkas.",
+            "Minta dia suggest features dan UX flow sebelum buat apa-apa.",
+            "Bincang sampai idea tu solid."
+        ],
+        "linkLabel": "Buka ChatGPT",
+        "linkUrl": "https://chat.openai.com"
+    },
+    {
+        "id": "chatgpt-master-prompt",
+        "icon": "BookOpen",
+        "title": "Generate The Master Prompt",
+        "stage": "Ideation",
+        "summary": "Tukar idea jadi satu arahan lengkap untuk Antigravity.",
+        "eli5": "Bila idea dah confirm, kau suruh ChatGPT rumuskan jadi satu pelan tindakan (blueprint) yang lengkap untuk AI lain baca.",
+        "steps": [
+            "Bila brainstorm dah siap di ChatGPT.",
+            "Minta ChatGPT: 'Summarize everything we discussed into ONE single master prompt for an AI coding assistant (like Claude 3) to build this app.'",
+            "Pastikan prompt tu ada details UI, warna, layout, dan data structure.",
+            "Copy Master Prompt tu."
+        ],
+        "linkLabel": "Buka ChatGPT",
+        "linkUrl": "https://chat.openai.com"
+    },
+    {
+        "id": "antigravity-sonnet",
+        "icon": "Rocket",
+        "title": "Paste Master Prompt ke Antigravity",
+        "stage": "Vibe Coding",
+        "summary": "Pilih model yang tepat dan mula bina aplikasi. Sonnet untuk architect, Gemini untuk visual.",
+        "eli5": "Antigravity ada banyak AI. Claude 3.5 Sonnet = Senior Engineer (steady). Opus = KrackedDev (power gila). Gemini Flash = UI Designer. Gemini 3.1 = High-Performance All Rounder.",
+        "steps": [
+            "Buka Antigravity dalam project folder.",
+            "Pilih AI model yang sesuai: Claude 3.5 Sonnet atau Gemini 3.1 (all-rounder).",
+            "Paste Master Prompt dari ChatGPT tadi.",
+            "Tekan Enter dan tunggu AI siapkan struktur website dan component.",
+            "Kalau nak tukar warna/padding UI, switch ke Gemini Flash (Designer)."
+        ],
+        "linkLabel": "Buka Antigravity Docs",
+        "linkUrl": "https://antigravity.id"
+    },
+    {
+        "id": "github-repo-setup",
+        "icon": "Github",
+        "title": "Push Code ke GitHub",
+        "stage": "Versioning",
+        "summary": "Save code secara cloud supaya tak hilang dan boleh deploy.",
+        "eli5": "GitHub ni macam Google Drive tapi khas untuk code. Kau 'push' code ke sana untuk simpan secara kekal.",
+        "steps": [
+            "Buka browser dan create GitHub repo baru.",
+            "Dalam terminal VSCode, run: `git init`.",
+            "Run: `git add .` lepas tu `git commit -m 'initial commit'`.",
+            "Penting: Belajar beza `git pull` (tarik code turun) dan `git fetch`.",
+            "Run command `git push -u origin main` untuk upload semua code asal ke branch utama (main)."
+        ],
+        "linkLabel": "Buka GitHub",
+        "linkUrl": "https://github.com"
+    },
+    {
+        "id": "vercel-deploy",
+        "icon": "Rocket",
+        "title": "Deploy ke Vercel",
+        "stage": "Launch",
+        "summary": "Pancarkan website kau ke internet. Paste Vercel URL dalam terminal ni untuk dapat Trophy!",
+        "eli5": "Dalam local, kau je nampak website tu. Vercel akan ambil code dari GitHub dan letak kat server awam.",
+        "steps": [
+            "Create akaun Vercel guna GitHub.",
+            "Import repo yang kau baru push tadi.",
+            "Biarkan settings default dan tekan Deploy.",
+            "Bila dah siap, copy URL `.vercel.app` tu.",
+            "PASTE URL TU DALAM TERMINAL INI tekan ENTER untuk complete task!"
+        ],
+        "linkLabel": "Buka Vercel",
+        "linkUrl": "https://vercel.com"
+    },
+    {
+        "id": "vercel-analytics",
+        "icon": "Users",
+        "title": "Pasang Vercel Analytics",
+        "stage": "Launch",
+        "summary": "Track visitor website secara percuma dan mudah.",
+        "eli5": "Macam pasang CCTV kat kedai, kau boleh nampak berapa orang masuk dan dari mana diorang datang.",
+        "steps": [
+            "Dalam Vercel dashboard, pergi tab Analytics dan klik Enable.",
+            "Dalam terminal VSCode, run: `npm i @vercel/analytics`.",
+            "Import dan letak component `<Analytics />` dalam fail utama app (contoh: `App.jsx` atau `main.jsx`).",
+            "Commit dan push ke GitHub (Vercel akan auto-deploy).",
+            "Sekarang kau boleh tengok graf traffic kat Vercel dashboard."
+        ],
+        "linkLabel": "Vercel Analytics Guide",
+        "linkUrl": "https://vercel.com/docs/analytics/quickstart"
+    },
+    {
+        "id": "supabase-setup",
+        "icon": "Database",
+        "title": "Cipta Database Supabase",
+        "stage": "Database",
+        "summary": "Bina database cloud. PENTING: Faham beza Anon Key dan Service Role Key.",
+        "eli5": "Bila buat akaun login atau simpan data form, kau perlukan backend database. Supabase paling senang untuk mula.",
+        "steps": [
+            "Buat project kat Supabase, tunggu 2-3 minit server setup.",
+            "Pergi ke Project Settings > API.",
+            "Copy `Project URL` dan `anon - public` key.",
+            "AMARAN: Jangan sekali-kali expose `service_role` key! Berbahaya!",
+            "Buat file `.env.local` dan masukkan keys tersebut."
+        ],
+        "linkLabel": "Buka Supabase",
+        "linkUrl": "https://supabase.com"
+    },
+    {
+        "id": "supabase-sql",
+        "icon": "Database",
+        "title": "Run SQL Query & Bina Table",
+        "stage": "Database",
+        "summary": "Cara paling cepat cipta struktur kotak data guna AI dan SQL.",
+        "eli5": "Dari buat table satu per satu pakai mouse, suruh AI generate script SQL, paste dalam Supabase, dan siap sepenip mata.",
+        "steps": [
+            "Minta Antigravity: 'Generate a Supabase SQL query to create a users table with name and email'.",
+            "Dalam Supabase dashboard, pergi ke SQL Editor (icon terminal kilat).",
+            "Klik New Query, paste code tadi dan tekan RUN.",
+            "Pergi ke Table Editor untuk confirm table tu dah wujud.",
+            "Disable RLS buat masa ni kalau kau sekadar prototype."
+        ],
+        "linkLabel": "Buka Supabase SQL Editor Guide",
+        "linkUrl": "https://supabase.com/docs/guides/database/sql-editor"
+    },
+    {
+        "id": "supabase-connect",
+        "icon": "Database",
+        "title": "Sambung Database ke Vercel & UI",
+        "stage": "Database",
+        "summary": "Panggil data dari cloud masuk ke UI website korang.",
+        "eli5": "Wayar dah sambung kat local, tapi Vercel tak tau password Supabase. Kena setting environment variable.",
+        "steps": [
+            "Masukkan credentials Supabase dalam `.env` ke dalam Vercel Dashboard > Settings > Environment Variables.",
+            "Suruh Antigravity tulis logic fetchData untuk panggil data dari table.",
+            "Minta Antigravity map data tu kat atas UI table atau cards.",
+            "Push code ke GitHub, tunggu Vercel deploy.",
+            "Boom! Website dah bersambung dengan database live."
+        ],
+        "linkLabel": "Environment Variables Supabase",
+        "linkUrl": "https://vercel.com/docs/environment-variables"
+    },
+    {
+        "id": "custom-domain",
+        "icon": "Rocket",
+        "title": "Bonus: Beli & Pasang Custom Domain",
+        "stage": "Bonus",
+        "summary": "Buang hujung .vercel.app dan nampak professional dengan domain .com.",
+        "eli5": "Beli nama rumah unik, lepastu sambung letrik ke Vercel.",
+        "steps": [
+            "Beli domain (contoh dari Namecheap atau Porkbun).",
+            "Dalam Vercel dashboard > Settings > Domains, add domain yang baru dibeli.",
+            "Vercel akan bagi setting A Record dan CNAME.",
+            "Copy settings tu dan paste dekat DNS settings di tempat beli domain tu.",
+            "Tunggu propagate (kadang cepat, kadang beberapa jam)."
+        ],
+        "linkLabel": "Vercel Domains Guide",
+        "linkUrl": "https://vercel.com/docs/custom-domains"
+    }
+]

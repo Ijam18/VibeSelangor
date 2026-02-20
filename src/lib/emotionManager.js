@@ -6,13 +6,22 @@
 export class EmotionManager {
     constructor() {
         this.emotions = {
-            neutral: { weight: 0.1, duration: 0 },
-            happy: { weight: 0.8, duration: 2000 },
-            excited: { weight: 1.0, duration: 3000 },
-            thinking: { weight: 0.6, duration: 2500 },
-            confused: { weight: 0.4, duration: 1500 },
-            sleepy: { weight: 0.3, duration: 4000 },
-            sad: { weight: 0.2, duration: 1000 }
+            // Original 7 emotions
+            neutral: { weight: 0.1, duration: 0, color: '#ef4444' },
+            happy: { weight: 0.8, duration: 2000, color: '#f59e0b' },
+            excited: { weight: 1.0, duration: 3000, color: '#22c55e' },
+            thinking: { weight: 0.6, duration: 2500, color: '#60a5fa' },
+            confused: { weight: 0.4, duration: 1500, color: '#f97316' },
+            sleepy: { weight: 0.3, duration: 4000, color: '#64748b' },
+            sad: { weight: 0.2, duration: 1000, color: '#3b82f6' },
+
+            // New 6 emotions
+            frustrated: { weight: 0.5, duration: 2000, color: '#dc2626' },
+            motivated: { weight: 0.9, duration: 3500, color: '#10b981' },
+            celebrating: { weight: 1.0, duration: 4000, color: '#fbbf24' },
+            surprised: { weight: 0.7, duration: 1500, color: '#a855f7' },
+            bored: { weight: 0.2, duration: 3000, color: '#6b7280' },
+            focused: { weight: 0.8, duration: 5000, color: '#0ea5e9' }
         };
 
         this.currentEmotion = 'neutral';
@@ -75,6 +84,13 @@ export class EmotionManager {
             'macam mana', 'apa', 'kenapa', 'bila', 'siapa', 'mana', 'boleh', 'boleh tak'
         ];
 
+        const frustratedWords = ['error', 'fail', 'failed', 'broken', 'not working', 'stuck', 'payah', 'teruk', 'rosak', 'tak jadi'];
+        const motivatedWords = ['let\'s go', 'ready', 'build', 'create', 'start', 'jom', 'mula', 'buat', 'cipta'];
+        const celebratingWords = ['success', 'deployed', 'finished', 'complete', 'works', 'siap', 'berjaya', 'jadi'];
+        const surprisedWords = ['wow', 'amazing', 'what', 'really', 'wah', 'serius', 'power'];
+        const boredWords = ['again', 'same', 'repeat', 'boring', 'lagi', 'sama', 'membosan'];
+        const focusedWords = ['building', 'coding', 'working on', 'developing', 'tengah buat', 'kerja'];
+
         let score = 0;
 
         positiveWords.forEach(word => {
@@ -136,9 +152,33 @@ export class EmotionManager {
     }
 
     /**
+     * Helper method to check if message contains any words from array
+     */
+    containsAny(message, words) {
+        return words.some(word => message.includes(word));
+    }
+
+    /**
      * Determine appropriate emotion based on analysis
      */
     determineEmotion(sentiment, intent, context) {
+        const msg = context.lastMessage?.toLowerCase() || '';
+
+        // NEW: Priority 0 - Check specific emotion triggers first
+        const frustratedWords = ['error', 'fail', 'failed', 'broken', 'not working', 'stuck', 'payah', 'teruk', 'rosak', 'tak jadi'];
+        const motivatedWords = ['let\'s go', 'ready', 'build', 'create', 'start', 'jom', 'mula', 'buat', 'cipta'];
+        const celebratingWords = ['success', 'deployed', 'finished', 'complete', 'works', 'siap', 'berjaya', 'jadi'];
+        const surprisedWords = ['wow', 'amazing', 'what', 'really', 'wah', 'serius', 'power'];
+        const boredWords = ['again', 'same', 'repeat', 'boring', 'lagi', 'sama', 'membosan'];
+        const focusedWords = ['building', 'coding', 'working on', 'developing', 'tengah buat', 'kerja'];
+
+        if (this.containsAny(msg, frustratedWords)) return 'frustrated';
+        if (this.containsAny(msg, celebratingWords)) return 'celebrating';
+        if (this.containsAny(msg, surprisedWords)) return 'surprised';
+        if (this.containsAny(msg, motivatedWords)) return 'motivated';
+        if (this.containsAny(msg, focusedWords)) return 'focused';
+        if (this.containsAny(msg, boredWords)) return 'bored';
+
         // Priority 1: User sentiment
         if (sentiment === 'positive') {
             if (intent === 'excited') return 'excited';

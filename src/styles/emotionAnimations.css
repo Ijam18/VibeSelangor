@@ -127,6 +127,77 @@
     }
 }
 
+/* NEW: Additional Emotion Animations */
+@keyframes frustrated {
+    0%, 100% {
+        transform: rotate(0deg);
+    }
+    25% {
+        transform: rotate(-8deg);
+    }
+    75% {
+        transform: rotate(8deg);
+    }
+}
+
+@keyframes motivated {
+    0%, 100% {
+        transform: translateY(0px) scale(1);
+    }
+    50% {
+        transform: translateY(-8px) scale(1.08);
+    }
+}
+
+@keyframes celebrating {
+    0%, 100% {
+        transform: rotate(0deg) scale(1);
+    }
+    25% {
+        transform: rotate(-10deg) scale(1.1);
+    }
+    50% {
+        transform: rotate(10deg) scale(1.15);
+    }
+    75% {
+        transform: rotate(-10deg) scale(1.1);
+    }
+}
+
+@keyframes surprised {
+    0% {
+        transform: scale(0.95);
+    }
+    50% {
+        transform: scale(1.15);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes bored {
+    0%, 100% {
+        opacity: 0.6;
+        transform: translateX(0);
+    }
+    50% {
+        opacity: 0.3;
+        transform: translateX(2px);
+    }
+}
+
+@keyframes focused {
+    0%, 100% {
+        transform: scale(1);
+        filter: brightness(1);
+    }
+    50% {
+        transform: scale(1.02);
+        filter: brightness(1.1);
+    }
+}
+
 /* Emotion-Specific Animations */
 .ijam-bot-happy {
     animation: bounce 0.5s ease-in-out;
@@ -155,6 +226,31 @@
 
 .ijam-bot-neutral {
     animation: none;
+}
+
+/* NEW: Additional Emotion Classes */
+.ijam-bot-frustrated {
+    animation: frustrated 0.8s ease-in-out 3;
+}
+
+.ijam-bot-motivated {
+    animation: motivated 0.6s ease-in-out infinite;
+}
+
+.ijam-bot-celebrating {
+    animation: celebrating 0.5s ease-in-out infinite;
+}
+
+.ijam-bot-surprised {
+    animation: surprised 0.4s ease-out;
+}
+
+.ijam-bot-bored {
+    animation: bored 4s ease-in-out infinite;
+}
+
+.ijam-bot-focused {
+    animation: focused 2s ease-in-out infinite;
 }
 
 /* Eye Animations */
@@ -385,6 +481,14 @@
     --emotion-sad-color: #3b82f6;
     --emotion-neutral-color: #ef4444;
 
+    /* NEW: Additional emotion colors */
+    --emotion-frustrated-color: #dc2626;
+    --emotion-motivated-color: #10b981;
+    --emotion-celebrating-color: #fbbf24;
+    --emotion-surprised-color: #a855f7;
+    --emotion-bored-color: #6b7280;
+    --emotion-focused-color: #0ea5e9;
+
     --emotion-animation-duration: 0.3s;
     --emotion-transition-duration: 0.3s;
 }
@@ -416,4 +520,29 @@
 
 .ijam-bot-color-neutral {
     fill: var(--emotion-neutral-color);
+}
+
+/* NEW: Additional emotion color classes */
+.ijam-bot-color-frustrated {
+    fill: var(--emotion-frustrated-color);
+}
+
+.ijam-bot-color-motivated {
+    fill: var(--emotion-motivated-color);
+}
+
+.ijam-bot-color-celebrating {
+    fill: var(--emotion-celebrating-color);
+}
+
+.ijam-bot-color-surprised {
+    fill: var(--emotion-surprised-color);
+}
+
+.ijam-bot-color-bored {
+    fill: var(--emotion-bored-color);
+}
+
+.ijam-bot-color-focused {
+    fill: var(--emotion-focused-color);
 }

@@ -2,6 +2,48 @@
 // Advanced conversational AI with memory, context awareness, and dynamic responses
 
 /**
+ * FAQ Categories for Smart Fallback
+ */
+const FAQ_CATEGORIES = {
+    SETUP: [
+        "macam mana install node.js?",
+        "nak setup antigravity?",
+        "api key kat mana?",
+        "error npm install?"
+    ],
+    DEPLOYMENT: [
+        "deploy ke vercel?",
+        "github repo setup?",
+        "custom domain?",
+        "analytics setup?"
+    ],
+    DATABASE: [
+        "supabase setup?",
+        "sql query error?",
+        "connect database?",
+        "rls apa tu?"
+    ],
+    TOOLS: [
+        "antigravity vs cursor?",
+        "model mana bagus?",
+        "chatgpt macam mana?",
+        "groq vs nvidia?"
+    ],
+    TROUBLESHOOTING: [
+        "error deployment?",
+        "build failed?",
+        "database tak connect?",
+        "api key tak jalan?"
+    ],
+    PROGRAM: [
+        "macam mana nak join?",
+        "apa itu sprint 7 hari?",
+        "tools apa perlu?",
+        "betul ke percuma?"
+    ]
+};
+
+/**
  * Conversation State Manager
  * Tracks user context, preferences, and conversation history
  */
@@ -345,6 +387,103 @@ export class EnhancedLocalIntelligence {
                 answer: `app ni boleh jalan offline kalau dah install PWA. boleh baca sprint guide, library, dengan tengok dashboard.\n\nbenda live macam chat dengan forum je kena ada internet. yang lain caching jalan.`,
                 followUp: `elok install PWA kalau internet tak kuat sangat. sekurang-kurangnya boleh baca content kat rumah.\n\nnanti ada line, dia sync balik.`,
                 relatedTopics: ['macam mana nak install sebagai pwa', 'apa itu skills library', 'macam mana dashboard berfungsi']
+            },
+            // LESSONS: Setup & Environment
+            {
+                keywords: ['node', 'nodejs', 'install', 'npm', 'setup', 'environment', 'first setup', 'install node'],
+                answer: `setup ni step pertama sebelum boleh code. kau kena install node.js untuk run javascript kat computer (o^▽^o).\n\nnode.js ni macam enjin kereta. antigravity pula co-pilot ai kau. kalau enjin takde, kereta tak jalan.`,
+                followUp: `lepas install node.js lts dari website rasmi, buka terminal check \`node -v\` dan \`npm -v\`.\n\npastu run \`npm install\` dalam project folder, lepas tu \`npm run dev\`. kalau website boleh hidup, setup kau dah betul (b ᵔ▽ᵔ)b.`,
+                relatedTopics: ['api key setup', 'antigravity tools', 'troubleshooting npm'],
+                linkUrl: 'https://nodejs.org/en/download'
+            },
+            {
+                keywords: ['api key', 'groq', 'nvidia', 'openrouter', 'token', 'model', 'llm', 'ai key'],
+                answer: `api key ni macam kad pengenalan untuk guna ai. korang boleh guna groq (laju & murah), nvidia llm, atau openrouter (jimat).\n\nelakkan guna opus/sonnet untuk benda simple sebab mahal token (¬‿¬).`,
+                followUp: `buka platform pilihan, register dan ambil 'api keys'. buka vscode/cursor settings antigravity, paste api key.\n\nguna gemini flash untuk ui design, sonnet untuk architecture. openrouter paling jimat kalau nak guna semua model.`,
+                relatedTopics: ['antigravity setup', 'model selection', 'cost optimization'],
+                linkUrl: 'https://console.groq.com/keys'
+            },
+            // LESSONS: Ideation
+            {
+                keywords: ['chatgpt', 'personality', 'ideation', 'brainstorm', 'planning', 'idea', 'prompt engineer'],
+                answer: `chatgpt ni kau kena ajar jadi pakar dulu. macam kau lantik manager - bagi dia title 'senior ui engineer & pm' (✿◠‿◠).\n\nmula-mula bagi role, baru instruction dia mantap.`,
+                followUp: `tulis prompt: 'you are an expert react ui engineer and product manager...'. ceritakan idea app kau.\n\nminta dia suggest features dan ux flow. bincang sampai idea solid. chatgpt bagus untuk validate idea sebelum buat.`,
+                relatedTopics: ['master prompt', 'antigravity coding', 'product planning'],
+                linkUrl: 'https://chat.openai.com'
+            },
+            {
+                keywords: ['master prompt', 'blueprint', 'specification', 'claude', 'prompt', 'arahan lengkap'],
+                answer: `master prompt ni satu arahan lengkap untuk antigravity. suruh chatgpt rumuskan jadi blueprint (ﾉ^ヮ^)ﾉ*:・ﾟ✧.\n\nbila idea dah confirm, kau transform jadi one-shot instruction.`,
+                followUp: `minta chatgpt: 'summarize everything into ONE master prompt for claude 3 to build this app'.\n\npastikan ada details ui, warna, layout, data structure. copy dan paste dalam antigravity. sekali shot terus.`,
+                relatedTopics: ['chatgpt setup', 'vibe coding', 'antigravity'],
+                linkUrl: 'https://chat.openai.com'
+            },
+            // LESSONS: Vibe Coding
+            {
+                keywords: ['vibe coding', 'antigravity sonnet', 'claude', 'gemini', 'model', 'ai coding', 'which model'],
+                answer: `claude 3.5 sonnet = senior engineer (steady). opus = krackeddev (power gila). gemini flash = ui designer. gemini 3.1 = all-rounder (☆▽☆).\n\npilih ikut kerja. jangan guna nuke untuk bunuh nyamuk.`,
+                followUp: `pilih model sesuai: sonnet atau gemini 3.1 untuk architecture. paste master prompt.\n\nkalau nak tukar warna/padding UI, switch ke gemini flash sebab dia fokus visual (b ᵔ▽ᵔ)b.`,
+                relatedTopics: ['master prompt', 'model comparison', 'api key'],
+                linkUrl: 'https://antigravity.id'
+            },
+            // LESSONS: Version Control
+            {
+                keywords: ['github', 'git', 'push', 'commit', 'repository', 'version control', 'code', 'simpan code'],
+                answer: `github ni macam google drive tapi khas untuk code. kau 'push' code untuk simpan kekal (o^▽^o).\n\nversion control penting kalau nak collaborate atau nak deploy.`,
+                followUp: `create github repo. run: \`git init\`, \`git add .\`, \`git commit -m 'initial commit'\`.\n\nbelajar beza \`git pull\` (tarik code turun) dan \`git fetch\`. run \`git push -u origin main\` untuk upload ke branch utama.`,
+                relatedTopics: ['vercel deployment', 'git commands', 'collaboration'],
+                linkUrl: 'https://github.com'
+            },
+            // LESSONS: Deployment
+            {
+                keywords: ['vercel', 'deploy', 'deployment', 'hosting', 'launch', 'live', 'production', 'url'],
+                answer: `vercel ambil code dari github dan letak kat server awam (ง •̀_•́)ง.\n\ndalam local, kau je nampak website tu. vercel buat semua orang boleh access.`,
+                followUp: `create akaun vercel guna github. import repo yang kau push tadi. settings default tekan deploy.\n\nbila siap, copy url \`.vercel.app\`. paste dalam terminal vibeselangor ni untuk dapat trophy!`,
+                relatedTopics: ['github setup', 'analytics', 'custom domain'],
+                linkUrl: 'https://vercel.com'
+            },
+            {
+                keywords: ['analytics', 'tracking', 'visitor', 'traffic', 'stats', 'vercel analytics', 'data'],
+                answer: `analytics ni macam cctv - nampak berapa orang masuk website dari mana ( ˙꒳​˙ ).\n\nvercel analytics percuma dan mudah setup.`,
+                followUp: `vercel dashboard > analytics > enable. dalam terminal vscode run: \`npm i @vercel/analytics\`.\n\nimport \`<Analytics />\` dalam app.jsx atau main.jsx. commit push github, auto deploy. lepas tu boleh tengok graf traffic.`,
+                relatedTopics: ['vercel deployment', 'metrics', 'user behavior'],
+                linkUrl: 'https://vercel.com/docs/analytics/quickstart'
+            },
+            {
+                keywords: ['domain', 'custom domain', 'dns', '.com', 'url sendiri', 'nama domain'],
+                answer: `buang .vercel.app, nampak professional dengan domain .com (✿◠‿◠).\n\nbeli nama sendiri, lepastu sambung ke vercel.`,
+                followUp: `beli domain (namecheap, porkbun). vercel dashboard > domains > add domain.\n\ncopy a record dan cname ke dns settings tempat beli domain. tunggu propagate (kadang cepat, kadang beberapa jam).`,
+                relatedTopics: ['vercel deployment', 'branding', 'seo'],
+                linkUrl: 'https://vercel.com/docs/custom-domains'
+            },
+            // LESSONS: Database
+            {
+                keywords: ['supabase', 'database', 'backend', 'data', 'storage', 'db', 'simpan data'],
+                answer: `supabase paling senang untuk database. faham beza anon key dan service role key! (⌐■_■)\n\nbila buat login atau simpan form data, kau perlukan backend database.`,
+                followUp: `buat project supabase, tunggu 2-3 minit server setup. settings > api > copy url dan anon key.\n\nAMARAN: jangan expose service_role key! berbahaya! buat \`.env.local\` untuk simpan credentials.`,
+                relatedTopics: ['sql queries', 'security', 'env variables'],
+                linkUrl: 'https://supabase.com'
+            },
+            {
+                keywords: ['sql', 'query', 'table', 'create table', 'schema', 'database structure'],
+                answer: `suruh ai generate sql script, paste supabase, siap sepenip mata (ﾉ^ヮ^)ﾉ*:・ﾟ✧.\n\ntakyah buat table manual satu-satu.`,
+                followUp: `minta antigravity: 'generate supabase sql query to create users table with name and email'.\n\nsupabase dashboard > sql editor (icon terminal kilat) > new query > paste > run. table editor confirm wujud. disable rls kalau prototype je.`,
+                relatedTopics: ['supabase setup', 'database design', 'rls security'],
+                linkUrl: 'https://supabase.com/docs/guides/database/sql-editor'
+            },
+            {
+                keywords: ['connect database', 'fetch data', 'api call', 'environment variables', 'env', 'supabase client'],
+                answer: `vercel tak tau password supabase. kena set environment variable (o_ _)o.\n\nwayar dah sambung local, tapi vercel perlukan credentials.`,
+                followUp: `vercel settings > environment variables > paste supabase url dan anon key.\n\nsuruh antigravity tulis fetchdata logic untuk panggil data. map data kat ui table atau cards. push github, vercel auto deploy. boom website dah live dengan database!`,
+                relatedTopics: ['supabase setup', 'api integration', 'vercel env'],
+                linkUrl: 'https://vercel.com/docs/environment-variables'
+            },
+            // LESSONS: Troubleshooting
+            {
+                keywords: ['error', 'bug', 'tidak jalan', 'broken', 'fail', 'stuck', 'troubleshoot', 'debug'],
+                answer: `kalau stuck, follow ni: 1) check console error dulu. 2) google exact error message. 3) tanya ai explain error tu ( ˙꒳​˙ ).\n\njangan panic. semua builder mesti jumpa error.`,
+                followUp: `kalau npm install error, cuba delete node_modules dan package-lock.json, pastu run lagi.\n\nkalau build error, check syntax. kalau deployment error, check env variables. satu persatu troubleshoot.`,
+                relatedTopics: ['supabase setup', 'vercel deployment', 'github push']
             }
         ];
     }
@@ -484,6 +623,30 @@ export class EnhancedLocalIntelligence {
     generateFallbackResponse(userMessage, context, analysis) {
         const lowerMsg = userMessage.toLowerCase();
         const msgLength = userMessage.trim().length;
+
+        // NEW: Detect FAQ category and suggest relevant questions
+        let category = null;
+        if (lowerMsg.includes('setup') || lowerMsg.includes('install') || lowerMsg.includes('npm')) {
+            category = 'SETUP';
+        } else if (lowerMsg.includes('deploy') || lowerMsg.includes('vercel') || lowerMsg.includes('host')) {
+            category = 'DEPLOYMENT';
+        } else if (lowerMsg.includes('database') || lowerMsg.includes('supabase') || lowerMsg.includes('data')) {
+            category = 'DATABASE';
+        } else if (lowerMsg.includes('tool') || lowerMsg.includes('ai') || lowerMsg.includes('model') || lowerMsg.includes('antigravity')) {
+            category = 'TOOLS';
+        } else if (lowerMsg.includes('error') || lowerMsg.includes('fail') || lowerMsg.includes('stuck') || lowerMsg.includes('broken')) {
+            category = 'TROUBLESHOOTING';
+        } else if (lowerMsg.includes('join') || lowerMsg.includes('sprint') || lowerMsg.includes('program') || lowerMsg.includes('free')) {
+            category = 'PROGRAM';
+        }
+
+        if (category && FAQ_CATEGORIES[category]) {
+            const suggestions = FAQ_CATEGORIES[category];
+            return this.responseGenerator.generateResponse(
+                `aku detect kau nak tanya pasal ${category.toLowerCase()} (o^▽^o)\n\nni beberapa soalan popular:\n\n${suggestions.map((q, i) => `${i + 1}. "${q}"`).join('\n')}\n\ncuba tanya salah satu! atau type keyword lagi spesifik.`,
+                context, 'neutral', 'informational'
+            );
+        }
 
         // Handle very short or random inputs
         if (msgLength < 3 || this.isRandomInput(userMessage)) {

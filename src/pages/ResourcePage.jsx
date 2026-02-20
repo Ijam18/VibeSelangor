@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+    Globe, Server,
     Sparkles,
     Brain,
     Database,
@@ -13,17 +14,232 @@ import {
     Bot,
     Terminal,
     SendHorizontal,
-    CheckCircle2
+    CheckCircle2,
+    Lightbulb,
+    Folder,
+    User,
+    Settings,
+    Power,
+    Trash2,
+    Gamepad2,
+    Search
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { callNvidiaLLM, localIntelligence, ZARULIJAM_SYSTEM_PROMPT } from '../lib/nvidia';
+import BuilderStudioPage from './BuilderStudioPage';
+import { useWeather } from '../utils/useWeather';
 
 const LESSONS_IJAM = [
+    {
+        id: "setup-environment",
+        icon: Sparkles,
+        title: "Install Node.js + Antigravity (First Setup)",
+        stage: "Foundation",
+        summary: "Ni setup paling basic sebelum mula vibe coding dengan lancar.",
+        eli5: "Node.js ni macam enjin kereta. Antigravity pula co-pilot AI kau. Kalau enjin takde, kereta tak jalan.",
+        steps: [
+            "Install Node.js LTS dari website rasmi.",
+            "Buka terminal, check `node -v` dan `npm -v`.",
+            "Install/open Antigravity ikut panduan platform kau.",
+            "Dalam project folder, run `npm install`.",
+            "Run `npm run dev` dan pastikan website boleh hidup."
+        ],
+        linkLabel: "Buka Node.js Download",
+        linkUrl: "https://nodejs.org/en/download"
+    },
+    {
+        id: "setup-ai-api-key",
+        icon: Brain,
+        title: "Dapatkan API Key AI & Pasang di Antigravity",
+        stage: "Foundation",
+        summary: "Penting: Manage token API korang supaya tak mahal. OpenRouter paling jimat untuk guna semua model.",
+        eli5: "API Key ni macam kad pengenalan. Korang boleh guna Groq (laju & murah) atau NVIDIA LLM. OpenRouter pula act macam wallet prepaid untuk bayar semua model.",
+        steps: [
+            "Buka platform pilihan: Groq (Percuma/Murah), NVIDIA LLM, atau OpenRouter (Jimat).",
+            "Register akaun dan ambil 'API Keys'.",
+            "Buka VSCode/Cursor, pergi bahagian settings Antigravity.",
+            "Paste API key dan pilih model.",
+            "Elakkan guna Opus/Sonnet untuk benda simple sebab mahal token."
+        ],
+        linkLabel: "Dapatkan Groq API Key",
+        linkUrl: "https://console.groq.com/keys"
+    },
+    {
+        id: "chatgpt-personality",
+        icon: Users,
+        title: "Set Up Personality ChatGPT",
+        stage: "Ideation",
+        summary: "Ajar ChatGPT jadi pakar sebelum kau tanya teknikal.",
+        eli5: "Macam kau lantik Manager. Mula-mula bagi dia title 'Senior UI Engineer & PM', baru instruction dia mantap.",
+        steps: [
+            "Buka ChatGPT.",
+            "Tulis prompt: 'You are an expert React UI Engineer and Product Manager...'",
+            "Ceritakan idea app kau secara ringkas.",
+            "Minta dia suggest features dan UX flow sebelum buat apa-apa.",
+            "Bincang sampai idea tu solid."
+        ],
+        linkLabel: "Buka ChatGPT",
+        linkUrl: "https://chat.openai.com"
+    },
+    {
+        id: "chatgpt-master-prompt",
+        icon: BookOpen,
+        title: "Generate The Master Prompt",
+        stage: "Ideation",
+        summary: "Tukar idea jadi satu arahan lengkap untuk Antigravity.",
+        eli5: "Bila idea dah confirm, kau suruh ChatGPT rumuskan jadi satu pelan tindakan (blueprint) yang lengkap untuk AI lain baca.",
+        steps: [
+            "Bila brainstorm dah siap di ChatGPT.",
+            "Minta ChatGPT: 'Summarize everything we discussed into ONE single master prompt for an AI coding assistant (like Claude 3) to build this app.'",
+            "Pastikan prompt tu ada details UI, warna, layout, dan data structure.",
+            "Copy Master Prompt tu."
+        ],
+        linkLabel: "Buka ChatGPT",
+        linkUrl: "https://chat.openai.com"
+    },
+    {
+        id: "antigravity-sonnet",
+        icon: Rocket,
+        title: "Paste Master Prompt ke Antigravity",
+        stage: "Vibe Coding",
+        summary: "Pilih model yang tepat dan mula bina aplikasi. Sonnet untuk architect, Gemini untuk visual.",
+        eli5: "Antigravity ada banyak AI. Claude 3.5 Sonnet = Senior Engineer (steady). Opus = KrackedDev (power gila). Gemini Pro = Junior (cepat). Gemini Flash = UI Designer. Gemini 3.1 = High-Performance All Rounder.",
+        steps: [
+            "Buka Antigravity dalam project folder.",
+            "Pilih AI model yang sesuai: Claude 3.5 Sonnet atau Gemini 3.1 (all-rounder).",
+            "Paste Master Prompt dari ChatGPT tadi.",
+            "Tekan Enter dan tunggu AI siapkan struktur website dan component.",
+            "Kalau nak tukar warna/padding UI, switch ke Gemini Flash (Designer)."
+        ],
+        linkLabel: "Buka Antigravity Docs",
+        linkUrl: "https://antigravity.id"
+    },
+    {
+        id: "github-repo-setup",
+        icon: Github,
+        title: "Push Code ke GitHub",
+        stage: "Versioning",
+        summary: "Save code secara cloud supaya tak hilang dan boleh deploy.",
+        eli5: "GitHub ni macam Google Drive tapi khas untuk code. Kau 'push' code ke sana untuk simpan secara kekal.",
+        steps: [
+            "Buka browser dan create GitHub repo baru.",
+            "Dalam terminal VSCode, run: `git init`.",
+            "Run: `git add .` lepas tu `git commit -m 'initial commit'`.",
+            "Penting: Belajar beza `git pull` (tarik code turun) dan `git fetch`.",
+            "Run command `git push -u origin main` untuk upload semua code asal ke branch utama (main)."
+        ],
+        linkLabel: "Buka GitHub",
+        linkUrl: "https://github.com"
+    },
+    {
+        id: "vercel-deploy",
+        icon: Rocket,
+        title: "Deploy ke Vercel",
+        stage: "Launch",
+        summary: "Pancarkan website kau ke internet. Paste Vercel URL dalam terminal ni untuk dapat Trophy!",
+        eli5: "Dalam local, kau je nampak website tu. Vercel akan ambil code dari GitHub dan letak kat server awam.",
+        steps: [
+            "Create akaun Vercel guna GitHub.",
+            "Import repo yang kau baru push tadi.",
+            "Biarkan settings default dan tekan Deploy.",
+            "Bila dah siap, copy URL `.vercel.app` tu.",
+            "PASTE URL TU DALAM TERMINAL INI tekan ENTER untuk complete task!"
+        ],
+        linkLabel: "Buka Vercel",
+        linkUrl: "https://vercel.com"
+    },
+    {
+        id: "vercel-analytics",
+        icon: Users,
+        title: "Pasang Vercel Analytics",
+        stage: "Launch",
+        summary: "Track visitor website secara percuma dan mudah.",
+        eli5: "Macam pasang CCTV kat kedai, kau boleh nampak berapa orang masuk dan dari mana diorang datang.",
+        steps: [
+            "Dalam Vercel dashboard, pergi tab Analytics dan klik Enable.",
+            "Dalam terminal VSCode, run: `npm i @vercel/analytics`.",
+            "Import dan letak component `<Analytics />` dalam fail utama app (contoh: `App.jsx` atau `main.jsx`).",
+            "Commit dan push ke GitHub (Vercel akan auto-deploy).",
+            "Sekarang kau boleh tengok graf traffic kat Vercel dashboard."
+        ],
+        linkLabel: "Vercel Analytics Guide",
+        linkUrl: "https://vercel.com/docs/analytics/quickstart"
+    },
+    {
+        id: "supabase-setup",
+        icon: Database,
+        title: "Cipta Database Supabase",
+        stage: "Database",
+        summary: "Bina database cloud. PENTING: Faham beza Anon Key dan Service Role Key.",
+        eli5: "Bila buat akaun login atau simpan data form, kau perlukan backend database. Supabase paling senang untuk mula.",
+        steps: [
+            "Buat project kat Supabase, tunggu 2-3 minit server setup.",
+            "Pergi ke Project Settings > API.",
+            "Copy `Project URL` dan `anon - public` key.",
+            "AMARAN: Jangan sekali-kali expose `service_role` key! Berbahaya!",
+            "Buat file `.env.local` dan masukkan keys tersebut."
+        ],
+        linkLabel: "Buka Supabase",
+        linkUrl: "https://supabase.com"
+    },
+    {
+        id: "supabase-sql",
+        icon: Database,
+        title: "Run SQL Query & Bina Table",
+        stage: "Database",
+        summary: "Cara paling cepat cipta struktur kotak data guna AI dan SQL.",
+        eli5: "Dari buat table satu per satu pakai mouse, suruh AI generate script SQL, paste dalam Supabase, dan siap sepenip mata.",
+        steps: [
+            "Minta Antigravity: 'Generate a Supabase SQL query to create a users table with name and email'.",
+            "Dalam Supabase dashboard, pergi ke SQL Editor (icon terminal kilat).",
+            "Klik New Query, paste code tadi dan tekan RUN.",
+            "Pergi ke Table Editor untuk confirm table tu dah wujud.",
+            "Disable RLS buat masa ni kalau kau sekadar prototype."
+        ],
+        linkLabel: "Buka Supabase SQL Editor Guide",
+        linkUrl: "https://supabase.com/docs/guides/database/sql-editor"
+    },
+    {
+        id: "supabase-connect",
+        icon: Database,
+        title: "Sambung Database ke Vercel & UI",
+        stage: "Database",
+        summary: "Panggil data dari cloud masuk ke UI website korang.",
+        eli5: "Wayar dah sambung kat local, tapi Vercel tak tau password Supabase. Kena setting environment variable.",
+        steps: [
+            "Masukkan credentials Supabase dalam `.env` ke dalam Vercel Dashboard > Settings > Environment Variables.",
+            "Suruh Antigravity tulis logic fetchData untuk panggil data dari table.",
+            "Minta Antigravity map data tu kat atas UI table atau cards.",
+            "Push code ke GitHub, tunggu Vercel deploy.",
+            "Boom! Website dah bersambung dengan database live."
+        ],
+        linkLabel: "Environment Variables Supabase",
+        linkUrl: "https://vercel.com/docs/environment-variables"
+    },
+    {
+        id: "custom-domain",
+        icon: Rocket,
+        title: "Bonus: Beli & Pasang Custom Domain",
+        stage: "Bonus",
+        summary: "Buang hujung .vercel.app dan nampak professional dengan domain .com.",
+        eli5: "Beli nama rumah unik, lepastu sambung letrik ke Vercel.",
+        steps: [
+            "Beli domain (contoh dari Namecheap atau Porkbun).",
+            "Dalam Vercel dashboard > Settings > Domains, add domain yang baru dibeli.",
+            "Vercel akan bagi setting A Record dan CNAME.",
+            "Copy settings tu dan paste dekat DNS settings di tempat beli domain tu.",
+            "Tunggu propagate (kadang cepat, kadang beberapa jam)."
+        ],
+        linkLabel: "Vercel Domains Guide",
+        linkUrl: "https://vercel.com/docs/custom-domains"
+    }
+    ,
+
     {
         id: 'install-node-antigravity',
         icon: Sparkles,
         title: 'Install Node.js + Antigravity (First Setup)',
-        stage: 'Foundation',
+        stage: 'Extended Toolkit',
         summary: 'Ni setup paling basic sebelum mula vibe coding dengan lancar.',
         eli5: 'Node.js ni macam enjin kereta. Antigravity pula co-pilot AI kau. Kalau enjin takde, kereta tak jalan.',
         steps: [
@@ -37,10 +253,59 @@ const LESSONS_IJAM = [
         linkUrl: 'https://nodejs.org/en/download'
     },
     {
+        id: 'setup-ai-api-key',
+        icon: Brain,
+        title: 'Dapatkan API Key AI & Pasang di Antigravity',
+        stage: 'Extended Toolkit',
+        summary: 'Tanpa API key, AI tak boleh berfikir. Ini cara dapatkan otak untuk Antigravity kau.',
+        eli5: 'API Key ni macam kad pengenalan untuk AI. Kau tunjuk kad ni kat server, baru dorang bagi AI tolong kau.',
+        steps: [
+            'Buka platform AI pilihan (contoh: Groq, Gemini, OpenAI).',
+            'Register akaun dan cari bahagian "API Keys".',
+            'Generate key baru dan copy.',
+            'Buka VSCode (atau Cursor), pergi bahagian settings Antigravity.',
+            'Paste API key dan pilih model AI yang kau nak guna.'
+        ],
+        linkLabel: 'Dapatkan Groq API Key (Laju & Free)',
+        linkUrl: 'https://console.groq.com/keys'
+    },
+    {
+        id: 'the-4-step-flow',
+        icon: Rocket,
+        title: 'Benda First: The 4-Step App Flow',
+        stage: 'Extended Toolkit',
+        summary: 'Membina app tak susah. Ini adalah 4 langkah utama yang kita akan sentiasa ulang.',
+        eli5: 'Kalau masak, kita (1) cari resepi idea, (2) masak kat dapur Antigravity, (3) hidang kat meja Vercel, pastu (4) letak buku log Supabase.',
+        steps: [
+            'Idea & Brainstorming.',
+            'Vibe Coding pada Antigravity.',
+            'Publish secara live pada Vercel.',
+            'Sambung Database Supabase untuk simpan memori.'
+        ],
+        linkLabel: 'Baca Proses Vibe Coding',
+        linkUrl: '#'
+    },
+    {
+        id: 'ai-tech-stack',
+        icon: Brain,
+        title: 'AI Tech Stack: Guna Tool Yang Betul',
+        stage: 'Extended Toolkit',
+        summary: 'Banyak AI tools dekat luar sana. Ini cara kita gabungkannya untuk hasilkan app terbaik.',
+        eli5: 'ChatGPT tu manager bincang idea. Gemini pelukis yang hasilkan aset. Antigravity pula arkitek yang bantu kita ikat bata satu per satu.',
+        steps: [
+            'Gunakan ChatGPT untuk bincang idea dan brainstorm.',
+            'Gunakan Gemini AI untuk janaan gambar dan aset design.',
+            'Gunakan Antigravity (VSCode/Cursor) untuk coding.',
+            'Jangan suruh satu AI buat semua benda.'
+        ],
+        linkLabel: 'Teroka ChatGPT untuk Idea',
+        linkUrl: 'https://chat.openai.com'
+    },
+    {
         id: 'skill-md-basics',
         icon: BookOpen,
         title: 'Step 1: Faham `.md` & Skill Creator Dulu',
-        stage: 'Foundation',
+        stage: 'Extended Toolkit',
         summary: 'Sebelum start vibe coding, kena faham file instruction (`SKILL.md`) supaya AI ikut arahan kau betul-betul.',
         eli5: '`.md` tu macam buku manual. Kalau manual jelas, robot tak sesat. Skill Creator pula macam mesin yang bantu kau buat manual special ikut task kau.',
         steps: [
@@ -57,7 +322,7 @@ const LESSONS_IJAM = [
         id: 'style-direction',
         icon: BookOpen,
         title: 'Pilih Design Direction Sendiri',
-        stage: 'Design',
+        stage: 'Extended Toolkit',
         summary: 'Supaya website kau tak nampak generic AI template.',
         eli5: 'Website macam baju. Kalau semua pakai uniform sama, takde identiti. Kau pilih gaya dulu baru AI ikut gaya kau.',
         steps: [
@@ -81,7 +346,7 @@ const LESSONS_IJAM = [
         id: 'ai-refer-design',
         icon: Brain,
         title: 'Lepas Pilih Design, Suruh AI Refer Style Tu',
-        stage: 'Build',
+        stage: 'Extended Toolkit',
         summary: 'Jangan minta AI random design. Bagi AI reference website supaya output lebih kena dengan taste kau.',
         eli5: 'Macam bagi contoh baju kat tailor. Tailor tak agak-agak, dia ikut rujukan yang kau suka.',
         steps: [
@@ -98,7 +363,7 @@ const LESSONS_IJAM = [
         id: 'container-frame-element',
         icon: BookOpen,
         title: 'Container, Frame, Element (Visual Basics)',
-        stage: 'Design',
+        stage: 'Extended Toolkit',
         summary: 'Belajar struktur visual paling penting supaya layout tak bersepah.',
         eli5: 'Container macam kotak besar, frame macam rak dalam kotak, element pula barang atas rak.',
         steps: [
@@ -115,7 +380,7 @@ const LESSONS_IJAM = [
         id: 'move-elements',
         icon: Rocket,
         title: 'Cara Move Element Dengan Betul',
-        stage: 'Design',
+        stage: 'Extended Toolkit',
         summary: 'Bukan sekadar drag. Kena tahu alignment, spacing, dan visual balance.',
         eli5: 'Alih kerusi dalam rumah kena tengok laluan orang jalan. Website pun sama, elemen kena ada flow.',
         steps: [
@@ -132,7 +397,7 @@ const LESSONS_IJAM = [
         id: 'asset-format-basics',
         icon: BookOpen,
         title: 'JPG, PNG, SVG: Bila Nak Guna Apa',
-        stage: 'Design',
+        stage: 'Extended Toolkit',
         summary: 'Faham format assets supaya website laju dan visual kekal sharp.',
         eli5: 'JPG untuk gambar biasa, PNG untuk gambar ada transparent, SVG untuk icon/shape yang sentiasa tajam.',
         steps: [
@@ -149,7 +414,7 @@ const LESSONS_IJAM = [
         id: 'generate-assets-ai',
         icon: Sparkles,
         title: 'Generate Asset Dengan AI (Image, Icon, Mockup)',
-        stage: 'Build',
+        stage: 'Extended Toolkit',
         summary: 'Belajar hasilkan asset cepat guna AI tanpa nampak generic.',
         eli5: 'AI macam designer assistant. Kau bagi direction jelas, dia hasilkan draft laju untuk kau polish.',
         steps: [
@@ -166,7 +431,7 @@ const LESSONS_IJAM = [
         id: 'generate-3d-assets',
         icon: Sparkles,
         title: 'Generate 3D Assets Untuk Website',
-        stage: 'Creative',
+        stage: 'Extended Toolkit',
         summary: 'Tambah depth dan wow factor guna 3D asset secara ringan.',
         eli5: '3D assets macam prop pentas. Kalau guna betul, website nampak hidup. Kalau over, jadi berat.',
         steps: [
@@ -183,7 +448,7 @@ const LESSONS_IJAM = [
         id: 'ai-build-website',
         icon: Brain,
         title: 'Guna AI Buat Website dengan Betul',
-        stage: 'Build',
+        stage: 'Extended Toolkit',
         summary: 'Prompt clear = output cun. Prompt kabur = output random.',
         eli5: 'AI ni macam runner. Kalau kau bagi alamat clear, dia sampai. Kalau alamat vague, dia pusing-pusing.',
         steps: [
@@ -200,7 +465,7 @@ const LESSONS_IJAM = [
         id: 'basic-prompting',
         icon: Brain,
         title: 'Basic Prompting: Cara Bagi Arahan Yang Menjadi',
-        stage: 'Build',
+        stage: 'Extended Toolkit',
         summary: 'Belajar format prompt basic supaya AI bagi output yang tepat dan boleh pakai terus.',
         eli5: 'Prompt tu macam bagi alamat rumah. Lagi jelas alamat, lagi senang orang sampai betul-betul depan pintu.',
         steps: [
@@ -217,7 +482,7 @@ const LESSONS_IJAM = [
         id: 'ai-implementation-planning',
         icon: Brain,
         title: 'Discuss dengan AI untuk Buat Implementation Plan',
-        stage: 'Build',
+        stage: 'Extended Toolkit',
         summary: 'Sebelum terus build, bincang dengan AI untuk pecah kerja kepada task kecil yang clear.',
         eli5: 'Macam nak travel: rancang route dulu, baru jalan. Kalau tak, buang masa pusing-pusing.',
         steps: [
@@ -234,7 +499,7 @@ const LESSONS_IJAM = [
         id: 'ux-flow',
         icon: Users,
         title: 'Bina Website yang Senang Guna',
-        stage: 'UX',
+        stage: 'Extended Toolkit',
         summary: 'Cantik je tak cukup. User mesti senang faham dan klik.',
         eli5: 'Rumah cantik tapi pintu susah cari memang stress. Website pun sama.',
         steps: [
@@ -251,7 +516,7 @@ const LESSONS_IJAM = [
         id: 'content-copy',
         icon: BookOpen,
         title: 'Copywriting yang Bantu Convert',
-        stage: 'Content',
+        stage: 'Extended Toolkit',
         summary: 'Ayat website kena jelas, bukan sekadar fancy.',
         eli5: 'Kalau kedai tak letak signboard jelas, orang tak tahu kedai jual apa.',
         steps: [
@@ -268,7 +533,7 @@ const LESSONS_IJAM = [
         id: 'inspect-mobile-view',
         icon: Rocket,
         title: 'Inspect Element: Test Mobile View Macam Pro',
-        stage: 'Polish',
+        stage: 'Extended Toolkit',
         summary: 'Lepas design siap, kena check versi phone guna browser inspect supaya layout tak pecah.',
         eli5: 'Inspect element tu macam cermin ajaib. Kau boleh tukar skrin jadi phone mode dan tengok website kau kemas ke tak.',
         steps: [
@@ -286,7 +551,7 @@ const LESSONS_IJAM = [
         id: 'file-structure-basics',
         icon: BookOpen,
         title: 'File Structure Basics (Supaya Tak Serabut)',
-        stage: 'Foundation',
+        stage: 'Extended Toolkit',
         summary: 'Susun folder dari awal supaya senang maintain bila project makin besar.',
         eli5: 'Macam susun almari. Kalau baju campur kasut campur dokumen, nanti semua jadi lambat nak cari.',
         steps: [
@@ -303,7 +568,7 @@ const LESSONS_IJAM = [
         id: 'ask-ai-code-comments',
         icon: Brain,
         title: 'Nak Faham Code? Suruh AI Tulis Comment',
-        stage: 'Toolkit',
+        stage: 'Extended Toolkit',
         summary: 'Kalau blur dengan code, gunakan AI untuk annotate code langkah demi langkah.',
         eli5: 'Comment tu macam subtitle dalam movie. Kau terus faham scene tu pasal apa.',
         steps: [
@@ -320,7 +585,7 @@ const LESSONS_IJAM = [
         id: 'user-retention',
         icon: Users,
         title: 'User Retention: Buat User Datang Balik',
-        stage: 'Growth',
+        stage: 'Extended Toolkit',
         summary: 'Retention penting supaya app kau bukan sekadar viral sehari dua, tapi terus digunakan.',
         eli5: 'User retention macam orang datang balik ke kedai sebab servis sedap dan barang berguna.',
         steps: [
@@ -337,7 +602,7 @@ const LESSONS_IJAM = [
         id: 'scale-your-app',
         icon: Rocket,
         title: 'Scale Your App (Bila User Makin Ramai)',
-        stage: 'Growth',
+        stage: 'Extended Toolkit',
         summary: 'Bila traction naik, app kena tahan load, maintain laju, dan senang diurus.',
         eli5: 'Macam kedai makin ramai customer, kena tambah staff dan sistem supaya tak kelam-kabut.',
         steps: [
@@ -354,7 +619,7 @@ const LESSONS_IJAM = [
         id: 'monetize-app',
         icon: Sparkles,
         title: 'Monetize Your App (Jana Income)',
-        stage: 'Growth',
+        stage: 'Extended Toolkit',
         summary: 'Lepas produk stabil, pilih model monetization yang sesuai dengan value app kau.',
         eli5: 'Kalau app kau bantu orang, monetization ialah cara dapat hasil sambil terus improve servis.',
         steps: [
@@ -371,7 +636,7 @@ const LESSONS_IJAM = [
         id: 'visual-troubleshooting',
         icon: Sparkles,
         title: 'Troubleshoot Visual Issue (Copy Paste Workflow)',
-        stage: 'Polish',
+        stage: 'Extended Toolkit',
         summary: 'Kalau layout rosak, ikut SOP troubleshooting yang cepat dan clear.',
         eli5: 'Macam baiki basikal: test satu benda dulu, jangan tukar semua serentak.',
         steps: [
@@ -388,7 +653,7 @@ const LESSONS_IJAM = [
         id: 'connect-database',
         icon: Database,
         title: 'Sambung Website ke Database',
-        stage: 'Data',
+        stage: 'Extended Toolkit',
         summary: 'Bagi website memory: simpan data user, submission, feedback.',
         eli5: 'Database ni kotak simpan barang berlabel. Website boleh letak dan cari semula bila perlu.',
         steps: [
@@ -405,7 +670,7 @@ const LESSONS_IJAM = [
         id: 'api-basics',
         icon: Brain,
         title: 'API Tu Apa (Versi Beginner)',
-        stage: 'Data',
+        stage: 'Extended Toolkit',
         summary: 'API ialah cara app kau minta data dari service lain.',
         eli5: 'API macam waiter restoran. Kau bagi order, waiter pergi dapur, lepas tu waiter bawa balik makanan (data).',
         steps: [
@@ -422,7 +687,7 @@ const LESSONS_IJAM = [
         id: 'fetching-basics',
         icon: Brain,
         title: 'Fetching Data (Cara Ambil Data Dalam App)',
-        stage: 'Data',
+        stage: 'Extended Toolkit',
         summary: 'Fetching = app kau ambil data dari API/database dan paparkan dekat UI.',
         eli5: 'Macam kau ambil air guna paip. Kau buka paip (request), air keluar (response), lepas tu guna air tu dalam rumah (UI).',
         steps: [
@@ -439,7 +704,7 @@ const LESSONS_IJAM = [
         id: 'web-scraping-basics',
         icon: BookOpen,
         title: 'Web Scraping (Ambil Data Website Secara Beretika)',
-        stage: 'Data',
+        stage: 'Extended Toolkit',
         summary: 'Scraping sesuai untuk research/content sourcing, tapi kena ikut rules laman web.',
         eli5: 'Scraping macam salin nota dari papan putih. Boleh salin, tapi kena ikut peraturan kelas dan jangan rosakkan papan.',
         steps: [
@@ -456,7 +721,7 @@ const LESSONS_IJAM = [
         id: 'supabase-keys',
         icon: Database,
         title: 'Supabase Keys: Mana Boleh Share, Mana Tak Boleh',
-        stage: 'Security',
+        stage: 'Extended Toolkit',
         summary: 'Kena faham beza anon key dan service role key supaya project selamat.',
         eli5: 'Kunci rumah ada dua: kunci tetamu dan kunci master. Tetamu boleh guna ruang biasa, kunci master jangan bagi orang.',
         steps: [
@@ -473,7 +738,7 @@ const LESSONS_IJAM = [
         id: 'github-flow',
         icon: Github,
         title: 'Upload Project ke GitHub',
-        stage: 'Versioning',
+        stage: 'Extended Toolkit',
         summary: 'Backup kerja + senang kolaborasi + senang deploy.',
         eli5: 'GitHub macam cloud folder versioned. Setiap kemas kini ada rekod.',
         steps: [
@@ -490,7 +755,7 @@ const LESSONS_IJAM = [
         id: 'github-antigravity',
         icon: Github,
         title: 'Connection GitHub <-> Antigravity',
-        stage: 'Workflow',
+        stage: 'Extended Toolkit',
         summary: 'Antigravity bantu generate/edit, GitHub simpan version rasmi project kau.',
         eli5: 'Antigravity macam co-pilot kereta, GitHub macam dashcam. Co-pilot bantu drive, dashcam simpan semua perjalanan.',
         steps: [
@@ -507,7 +772,7 @@ const LESSONS_IJAM = [
         id: 'deploy-live',
         icon: Rocket,
         title: 'Deploy Website Sampai Live',
-        stage: 'Launch',
+        stage: 'Extended Toolkit',
         summary: 'Lepas deploy, semua orang boleh buka link website kau.',
         eli5: 'Sebelum deploy, website duduk dalam bilik kau. Lepas deploy, dia duduk kat jalan besar.',
         steps: [
@@ -524,7 +789,7 @@ const LESSONS_IJAM = [
         id: 'vercel-production',
         icon: Rocket,
         title: 'Vercel: Dari Preview ke Production',
-        stage: 'Launch',
+        stage: 'Extended Toolkit',
         summary: 'Belajar beza preview deployment dan production deployment.',
         eli5: 'Preview macam rehearsal atas stage kosong. Production macam show sebenar depan audience.',
         steps: [
@@ -541,7 +806,7 @@ const LESSONS_IJAM = [
         id: 'install-skills',
         icon: Sparkles,
         title: 'Install Skills untuk Start Vibe Coding',
-        stage: 'Toolkit',
+        stage: 'Extended Toolkit',
         summary: 'Skills bagi kau shortcut workflow supaya tak blank bila start.',
         eli5: 'Skills macam preset gear dalam game. Bila equip, kerja jadi lagi cepat dan terarah.',
         steps: [
@@ -558,7 +823,7 @@ const LESSONS_IJAM = [
         id: 'creative-motion',
         icon: Sparkles,
         title: 'Creative Mode: Animation yang Sedap Tengok',
-        stage: 'Creative',
+        stage: 'Extended Toolkit',
         summary: 'Bila website dah launch, baru tambah wow factor secara berhemah.',
         eli5: 'Animation macam seasoning. Sikit jadi sedap, terlalu banyak jadi pening.',
         steps: [
@@ -575,7 +840,7 @@ const LESSONS_IJAM = [
         id: 'ai-imagination',
         icon: Brain,
         title: 'Imagination with AI: Idea Jadi Reality',
-        stage: 'Creative',
+        stage: 'Extended Toolkit',
         summary: 'Lepas basic settle, imagination kau jadi engine utama.',
         eli5: 'AI ibarat tukang bina laju, tapi architect tetap kau. Kalau imaginasi jelas, hasil unik.',
         steps: [
@@ -592,10 +857,215 @@ const LESSONS_IJAM = [
 
 const LESSONS_FORMAL = [
     {
+        id: "setup-environment",
+        icon: Sparkles,
+        title: "Install Node.js + Antigravity (First Setup)",
+        stage: "Foundation",
+        summary: "This is the initial setup sebelum mula vibe coding dengan lancar.",
+        eli5: "Node.js ni macam enjin kereta. Antigravity pula co-pilot AI kau. Kalau enjin takde, kereta tak jalan.",
+        steps: [
+            "Install Node.js LTS dari website rasmi.",
+            "Buka terminal, check `node -v` dan `npm -v`.",
+            "Install/open Antigravity ikut panduan platform kau.",
+            "Dalam project folder, run `npm install`.",
+            "Run `npm run dev` dan pastikan website boleh hidup."
+        ],
+        linkLabel: "Buka Node.js Download",
+        linkUrl: "https://nodejs.org/en/download"
+    },
+    {
+        id: "setup-ai-api-key",
+        icon: Brain,
+        title: "Dapatkan API Key AI & Pasang di Antigravity",
+        stage: "Foundation",
+        summary: "Penting: Manage token API korang supaya tak mahal. OpenRouter paling jimat untuk guna semua model.",
+        eli5: "API Key ni macam kad pengenalan. Korang boleh guna Groq (laju & murah) atau NVIDIA LLM. OpenRouter pula act macam wallet prepaid untuk bayar semua model.",
+        steps: [
+            "Open your chosen platform: Groq (Percuma/Murah), NVIDIA LLM, atau OpenRouter (Jimat).",
+            "Register akaun dan ambil 'API Keys'.",
+            "Buka VSCode/Cursor, pergi bahagian settings Antigravity.",
+            "Paste API key dan pilih model.",
+            "Elakkan guna Opus/Sonnet untuk benda simple sebab mahal token."
+        ],
+        linkLabel: "Dapatkan Groq API Key",
+        linkUrl: "https://console.groq.com/keys"
+    },
+    {
+        id: "chatgpt-personality",
+        icon: Users,
+        title: "Set Up Personality ChatGPT",
+        stage: "Ideation",
+        summary: "Train ChatGPT to act as an expert sebelum kau tanya teknikal.",
+        eli5: "Macam kau lantik Manager. Mula-mula bagi dia title 'Senior UI Engineer & PM', baru instruction dia mantap.",
+        steps: [
+            "Buka ChatGPT.",
+            "Tulis prompt: 'You are an expert React UI Engineer and Product Manager...'",
+            "Ceritakan idea app kau secara ringkas.",
+            "Minta dia suggest features dan UX flow sebelum buat apa-apa.",
+            "Bincang sampai idea tu solid."
+        ],
+        linkLabel: "Buka ChatGPT",
+        linkUrl: "https://chat.openai.com"
+    },
+    {
+        id: "chatgpt-master-prompt",
+        icon: BookOpen,
+        title: "Generate The Master Prompt",
+        stage: "Ideation",
+        summary: "Translate ideas into a single comprehensive arahan lengkap untuk Antigravity.",
+        eli5: "Bila idea dah confirm, kau suruh ChatGPT rumuskan jadi satu pelan tindakan (blueprint) yang lengkap untuk AI lain baca.",
+        steps: [
+            "Bila brainstorm dah siap di ChatGPT.",
+            "Minta ChatGPT: 'Summarize everything we discussed into ONE single master prompt for an AI coding assistant (like Claude 3) to build this app.'",
+            "Pastikan prompt tu ada details UI, warna, layout, dan data structure.",
+            "Copy Master Prompt tu."
+        ],
+        linkLabel: "Buka ChatGPT",
+        linkUrl: "https://chat.openai.com"
+    },
+    {
+        id: "antigravity-sonnet",
+        icon: Rocket,
+        title: "Paste Master Prompt ke Antigravity",
+        stage: "Vibe Coding",
+        summary: "Select the appropriate model dan mula bina aplikasi. Sonnet untuk architect, Gemini untuk visual.",
+        eli5: "Antigravity ada banyak AI. Claude 3.5 Sonnet = Senior Engineer (steady). Opus = KrackedDev (power gila). Gemini Pro = Junior (cepat). Gemini Flash = UI Designer. Gemini 3.1 = High-Performance All Rounder.",
+        steps: [
+            "Buka Antigravity dalam project folder.",
+            "Pilih AI model yang sesuai: Claude 3.5 Sonnet atau Gemini 3.1 (all-rounder).",
+            "Paste Master Prompt dari ChatGPT tadi.",
+            "Tekan Enter dan tunggu AI siapkan struktur website dan component.",
+            "Kalau nak tukar warna/padding UI, switch ke Gemini Flash (Designer)."
+        ],
+        linkLabel: "Buka Antigravity Docs",
+        linkUrl: "https://antigravity.id"
+    },
+    {
+        id: "github-repo-setup",
+        icon: Github,
+        title: "Push Code ke GitHub",
+        stage: "Versioning",
+        summary: "Save code to the cloud supaya tak hilang dan boleh deploy.",
+        eli5: "GitHub ni macam Google Drive tapi khas untuk code. Kau 'push' code ke sana untuk simpan secara kekal.",
+        steps: [
+            "Buka browser dan create GitHub repo baru.",
+            "Dalam terminal VSCode, run: `git init`.",
+            "Run: `git add .` lepas tu `git commit -m 'initial commit'`.",
+            "Penting: Belajar beza `git pull` (tarik code turun) dan `git fetch`.",
+            "Run command `git push -u origin main` untuk upload semua code asal ke branch utama (main)."
+        ],
+        linkLabel: "Buka GitHub",
+        linkUrl: "https://github.com"
+    },
+    {
+        id: "vercel-deploy",
+        icon: Rocket,
+        title: "Deploy ke Vercel",
+        stage: "Launch",
+        summary: "Publish your website to the internet. Paste Vercel URL dalam terminal ni untuk dapat Trophy!",
+        eli5: "Dalam local, kau je nampak website tu. Vercel akan ambil code dari GitHub dan letak kat server awam.",
+        steps: [
+            "Create akaun Vercel guna GitHub.",
+            "Import repo yang kau baru push tadi.",
+            "Biarkan settings default dan tekan Deploy.",
+            "Bila dah siap, copy URL `.vercel.app` tu.",
+            "PASTE URL TU DALAM TERMINAL INI tekan ENTER untuk complete task!"
+        ],
+        linkLabel: "Buka Vercel",
+        linkUrl: "https://vercel.com"
+    },
+    {
+        id: "vercel-analytics",
+        icon: Users,
+        title: "Pasang Vercel Analytics",
+        stage: "Launch",
+        summary: "Track website visitors secara percuma dan mudah.",
+        eli5: "Macam pasang CCTV kat kedai, kau boleh nampak berapa orang masuk dan dari mana diorang datang.",
+        steps: [
+            "Dalam Vercel dashboard, pergi tab Analytics dan klik Enable.",
+            "Dalam terminal VSCode, run: `npm i @vercel/analytics`.",
+            "Import dan letak component `<Analytics />` dalam fail utama app (contoh: `App.jsx` atau `main.jsx`).",
+            "Commit dan push ke GitHub (Vercel akan auto-deploy).",
+            "Sekarang kau boleh tengok graf traffic kat Vercel dashboard."
+        ],
+        linkLabel: "Vercel Analytics Guide",
+        linkUrl: "https://vercel.com/docs/analytics/quickstart"
+    },
+    {
+        id: "supabase-setup",
+        icon: Database,
+        title: "Cipta Database Supabase",
+        stage: "Database",
+        summary: "Build a cloud database. PENTING: Faham beza Anon Key dan Service Role Key.",
+        eli5: "Bila buat akaun login atau simpan data form, kau perlukan backend database. Supabase paling senang untuk mula.",
+        steps: [
+            "Create a project on Supabase and wait 2-3 minit server setup.",
+            "Pergi ke Project Settings > API.",
+            "Copy `Project URL` dan `anon - public` key.",
+            "AMARAN: Jangan sekali-kali expose `service_role` key! Berbahaya!",
+            "Buat file `.env.local` dan masukkan keys tersebut."
+        ],
+        linkLabel: "Buka Supabase",
+        linkUrl: "https://supabase.com"
+    },
+    {
+        id: "supabase-sql",
+        icon: Database,
+        title: "Run SQL Query & Bina Table",
+        stage: "Database",
+        summary: "The fastest way to create struktur kotak data guna AI dan SQL.",
+        eli5: "Dari buat table satu per satu pakai mouse, suruh AI generate script SQL, paste dalam Supabase, dan siap sepenip mata.",
+        steps: [
+            "Minta Antigravity: 'Generate a Supabase SQL query to create a users table with name and email'.",
+            "Dalam Supabase dashboard, pergi ke SQL Editor (icon terminal kilat).",
+            "Klik New Query, paste code tadi dan tekan RUN.",
+            "Pergi ke Table Editor untuk confirm table tu dah wujud.",
+            "Disable RLS buat masa ni kalau kau sekadar prototype."
+        ],
+        linkLabel: "Buka Supabase SQL Editor Guide",
+        linkUrl: "https://supabase.com/docs/guides/database/sql-editor"
+    },
+    {
+        id: "supabase-connect",
+        icon: Database,
+        title: "Sambung Database ke Vercel & UI",
+        stage: "Database",
+        summary: "Fetch data from the cloud masuk ke UI website korang.",
+        eli5: "Wayar dah sambung kat local, tapi Vercel tak tau password Supabase. Kena setting environment variable.",
+        steps: [
+            "Masukkan credentials Supabase dalam `.env` ke dalam Vercel Dashboard > Settings > Environment Variables.",
+            "Suruh Antigravity tulis logic fetchData untuk panggil data dari table.",
+            "Minta Antigravity map data tu kat atas UI table atau cards.",
+            "Push code ke GitHub, tunggu Vercel deploy.",
+            "Boom! Website dah bersambung dengan database live."
+        ],
+        linkLabel: "Environment Variables Supabase",
+        linkUrl: "https://vercel.com/docs/environment-variables"
+    },
+    {
+        id: "custom-domain",
+        icon: Rocket,
+        title: "Bonus: Beli & Pasang Custom Domain",
+        stage: "Bonus",
+        summary: "Buang hujung .vercel.app dan nampak professional dengan domain .com.",
+        eli5: "Beli nama rumah unik, lepastu sambung letrik ke Vercel.",
+        steps: [
+            "Beli domain (contoh dari Namecheap atau Porkbun).",
+            "Dalam Vercel dashboard > Settings > Domains, add domain yang baru dibeli.",
+            "Vercel akan bagi setting A Record dan CNAME.",
+            "Copy settings tu dan paste dekat DNS settings di tempat beli domain tu.",
+            "Tunggu propagate (kadang cepat, kadang beberapa jam)."
+        ],
+        linkLabel: "Vercel Domains Guide",
+        linkUrl: "https://vercel.com/docs/custom-domains"
+    }
+    ,
+
+    {
         id: 'install-node-antigravity',
         icon: Sparkles,
         title: 'Install Node.js and Antigravity (Initial Setup)',
-        stage: 'Foundation',
+        stage: 'Extended Toolkit',
         summary: 'Complete this setup first to ensure your vibe-coding workflow runs smoothly.',
         eli5: 'Node.js is the engine. Antigravity is your AI co-pilot. You need both before driving.',
         steps: [
@@ -609,10 +1079,59 @@ const LESSONS_FORMAL = [
         linkUrl: 'https://nodejs.org/en/download'
     },
     {
+        id: 'setup-ai-api-key',
+        icon: Brain,
+        title: 'Obtain an AI API Key & Configure Antigravity',
+        stage: 'Extended Toolkit',
+        summary: 'Without an API key, the AI cannot process requests. This connects Antigravity to its intelligence.',
+        eli5: 'An API Key is like a VIP pass. You show it to the AI server so they know you are authorized to use their brain.',
+        steps: [
+            'Navigate to your preferred AI platform (e.g., Groq, Gemini, OpenAI).',
+            'Create an account and locate the "API Keys" dashboard.',
+            'Generate a new API key and copy the sequence.',
+            'Open your editor\'s Antigravity settings/extension page.',
+            'Paste the API key and select your preferred model.'
+        ],
+        linkLabel: 'Get Groq API Key (Fast & Free)',
+        linkUrl: 'https://console.groq.com/keys'
+    },
+    {
+        id: 'the-4-step-flow',
+        icon: Rocket,
+        title: 'The Blueprint: 4-Step App Workflow',
+        stage: 'Extended Toolkit',
+        summary: 'Building an app is repeatable. Master these 4 fundamental steps first.',
+        eli5: 'You brainstorm the map, you build the house in Antigravity, you open it to the public via Vercel, and you track the visitors with Supabase.',
+        steps: [
+            'Idea Generation & Brainstorming.',
+            'Vibe Coding within Antigravity.',
+            'Publishing live to the web via Vercel.',
+            'Connecting a Database (Supabase) for persistent memory.'
+        ],
+        linkLabel: 'Read the Builder Guide',
+        linkUrl: '#'
+    },
+    {
+        id: 'ai-tech-stack',
+        icon: Brain,
+        title: 'AI Tech Stack: Choose the Right Tools',
+        stage: 'Extended Toolkit',
+        summary: 'Understand the specific specialties of different AI tools in your workflow.',
+        eli5: 'ChatGPT is your conversational whiteboard. Gemini is your artistic illustrator. Antigravity is your construction crew.',
+        steps: [
+            'Use ChatGPT for high-level technical discussions and brainstorming.',
+            'Use Gemini to generate images, assets, and creative references.',
+            'Use Antigravity as your primary IDE coding co-pilot.',
+            'Avoid relying on a single AI model for everything.'
+        ],
+        linkLabel: 'Open ChatGPT for Brainstorming',
+        linkUrl: 'https://chat.openai.com'
+    },
+    {
         id: 'skill-md-basics',
         icon: BookOpen,
         title: 'Step 1: Understand `.md` Files and Skill Creator',
-        stage: 'Foundation',
+        stage: 'Extended Toolkit',
         summary: 'Before building, learn how `SKILL.md` guides AI behavior and workflow.',
         eli5: 'A markdown file is an instruction booklet. If the booklet is clear, the assistant follows correctly.',
         steps: [
@@ -629,7 +1148,7 @@ const LESSONS_FORMAL = [
         id: 'style-direction',
         icon: BookOpen,
         title: 'Choose a Distinct Design Direction',
-        stage: 'Design',
+        stage: 'Extended Toolkit',
         summary: 'A clear visual direction prevents your website from looking generic.',
         eli5: 'If everyone wears the same uniform, nobody stands out. Your design direction is your identity.',
         steps: [
@@ -653,7 +1172,7 @@ const LESSONS_FORMAL = [
         id: 'ai-refer-design',
         icon: Brain,
         title: 'After Choosing a Design, Ask AI to Reference It',
-        stage: 'Build',
+        stage: 'Extended Toolkit',
         summary: 'Use concrete references so AI output matches your style direction.',
         eli5: 'If you show a clear example, the assistant can follow your taste more accurately.',
         steps: [
@@ -670,7 +1189,7 @@ const LESSONS_FORMAL = [
         id: 'container-frame-element',
         icon: BookOpen,
         title: 'Container, Frame, and Element (Visual Fundamentals)',
-        stage: 'Design',
+        stage: 'Extended Toolkit',
         summary: 'Learn core visual structure so your layout stays clean and intentional.',
         eli5: 'A container is a big box, frames are shelves, and elements are items on those shelves.',
         steps: [
@@ -687,7 +1206,7 @@ const LESSONS_FORMAL = [
         id: 'move-elements',
         icon: Rocket,
         title: 'How to Move Elements with Proper Visual Balance',
-        stage: 'Design',
+        stage: 'Extended Toolkit',
         summary: 'Element movement should follow grid, alignment, and spacing logic.',
         eli5: 'Moving furniture works best when pathways stay clear. UI placement works the same way.',
         steps: [
@@ -704,7 +1223,7 @@ const LESSONS_FORMAL = [
         id: 'asset-format-basics',
         icon: BookOpen,
         title: 'JPG, PNG, SVG: When to Use Each',
-        stage: 'Design',
+        stage: 'Extended Toolkit',
         summary: 'Choose the correct format so visuals stay sharp and pages remain fast.',
         eli5: 'Use JPG for photos, PNG for transparency, and SVG for crisp icons and logos.',
         steps: [
@@ -721,7 +1240,7 @@ const LESSONS_FORMAL = [
         id: 'generate-assets-ai',
         icon: Sparkles,
         title: 'Generate Assets with AI (Images, Icons, Mockups)',
-        stage: 'Build',
+        stage: 'Extended Toolkit',
         summary: 'Create useful visual assets quickly without generic-looking output.',
         eli5: 'AI is your design assistant: clear direction in, faster useful drafts out.',
         steps: [
@@ -738,7 +1257,7 @@ const LESSONS_FORMAL = [
         id: 'generate-3d-assets',
         icon: Sparkles,
         title: 'Generate 3D Assets for Web Experiences',
-        stage: 'Creative',
+        stage: 'Extended Toolkit',
         summary: 'Use 3D assets to add depth while keeping performance healthy.',
         eli5: '3D should support the story, not slow down the page.',
         steps: [
@@ -755,7 +1274,7 @@ const LESSONS_FORMAL = [
         id: 'ai-build-website',
         icon: Brain,
         title: 'Use AI to Build Websites Effectively',
-        stage: 'Build',
+        stage: 'Extended Toolkit',
         summary: 'Good prompts produce usable first drafts faster.',
         eli5: 'AI is like a delivery rider: with a precise address, it reaches the right place quickly.',
         steps: [
@@ -772,7 +1291,7 @@ const LESSONS_FORMAL = [
         id: 'basic-prompting',
         icon: Brain,
         title: 'Basic Prompting: Give Better AI Instructions',
-        stage: 'Build',
+        stage: 'Extended Toolkit',
         summary: 'Learn a simple prompt format so AI outputs are accurate and usable.',
         eli5: 'A prompt is an address. The clearer the address, the faster AI reaches the right result.',
         steps: [
@@ -789,7 +1308,7 @@ const LESSONS_FORMAL = [
         id: 'ai-implementation-planning',
         icon: Brain,
         title: 'Discuss with AI to Create an Implementation Plan',
-        stage: 'Build',
+        stage: 'Extended Toolkit',
         summary: 'Before coding, use AI to break features into clear, executable phases.',
         eli5: 'Planning first saves time and prevents rework.',
         steps: [
@@ -806,7 +1325,7 @@ const LESSONS_FORMAL = [
         id: 'ux-flow',
         icon: Users,
         title: 'Design for Usability and Clarity',
-        stage: 'UX',
+        stage: 'Extended Toolkit',
         summary: 'Beauty alone is not enough; users must understand what to do next.',
         eli5: 'A beautiful house is frustrating if the front door is hard to find.',
         steps: [
@@ -823,7 +1342,7 @@ const LESSONS_FORMAL = [
         id: 'content-copy',
         icon: BookOpen,
         title: 'Write Conversion-Focused Website Copy',
-        stage: 'Content',
+        stage: 'Extended Toolkit',
         summary: 'Clear copy increases trust and action.',
         eli5: 'If a shop sign is confusing, people walk away.',
         steps: [
@@ -840,7 +1359,7 @@ const LESSONS_FORMAL = [
         id: 'inspect-mobile-view',
         icon: Rocket,
         title: 'Inspect Element for Mobile View Validation',
-        stage: 'Polish',
+        stage: 'Extended Toolkit',
         summary: 'Use browser DevTools to validate mobile layout before release.',
         eli5: 'Inspect mode lets you preview your website like different phones.',
         steps: [
@@ -858,7 +1377,7 @@ const LESSONS_FORMAL = [
         id: 'file-structure-basics',
         icon: BookOpen,
         title: 'File Structure Basics (Keep Projects Maintainable)',
-        stage: 'Foundation',
+        stage: 'Extended Toolkit',
         summary: 'Good folder structure reduces confusion as your project grows.',
         eli5: 'Organized folders are like labeled drawers: you find things faster.',
         steps: [
@@ -875,7 +1394,7 @@ const LESSONS_FORMAL = [
         id: 'ask-ai-code-comments',
         icon: Brain,
         title: 'Want to Understand Code? Ask AI to Add Comments',
-        stage: 'Toolkit',
+        stage: 'Extended Toolkit',
         summary: 'Use AI to annotate code so beginners can read it with confidence.',
         eli5: 'Comments are subtitles for code behavior.',
         steps: [
@@ -892,7 +1411,7 @@ const LESSONS_FORMAL = [
         id: 'user-retention',
         icon: Users,
         title: 'User Retention: Bring Users Back Consistently',
-        stage: 'Growth',
+        stage: 'Extended Toolkit',
         summary: 'Retention keeps your app useful over time, not just during launch hype.',
         eli5: 'Retention means people return because your app keeps helping them.',
         steps: [
@@ -909,7 +1428,7 @@ const LESSONS_FORMAL = [
         id: 'scale-your-app',
         icon: Rocket,
         title: 'Scale Your App for Growth',
-        stage: 'Growth',
+        stage: 'Extended Toolkit',
         summary: 'As usage increases, your app must stay fast, reliable, and maintainable.',
         eli5: 'Scaling is upgrading systems before traffic overloads your app.',
         steps: [
@@ -926,7 +1445,7 @@ const LESSONS_FORMAL = [
         id: 'monetize-app',
         icon: Sparkles,
         title: 'Monetize Your App Sustainably',
-        stage: 'Growth',
+        stage: 'Extended Toolkit',
         summary: 'Choose a monetization model that matches product value and user maturity.',
         eli5: 'Monetization is how your app earns while continuing to deliver value.',
         steps: [
@@ -943,7 +1462,7 @@ const LESSONS_FORMAL = [
         id: 'visual-troubleshooting',
         icon: Sparkles,
         title: 'Visual Troubleshooting (Copy-Paste Debug Workflow)',
-        stage: 'Polish',
+        stage: 'Extended Toolkit',
         summary: 'Fix layout issues faster using a focused, repeatable troubleshooting loop.',
         eli5: 'Repair one part at a time, test it, then move to the next part.',
         steps: [
@@ -960,7 +1479,7 @@ const LESSONS_FORMAL = [
         id: 'connect-database',
         icon: Database,
         title: 'Connect Your Website to a Database',
-        stage: 'Data',
+        stage: 'Extended Toolkit',
         summary: 'Data storage enables personalized and persistent experiences.',
         eli5: 'A database is a labeled storage box for information.',
         steps: [
@@ -977,7 +1496,7 @@ const LESSONS_FORMAL = [
         id: 'api-basics',
         icon: Brain,
         title: 'API Fundamentals for Beginners',
-        stage: 'Data',
+        stage: 'Extended Toolkit',
         summary: 'APIs allow your app to exchange data with external services.',
         eli5: 'An API is like a waiter: you place an order, the waiter brings your response back.',
         steps: [
@@ -994,7 +1513,7 @@ const LESSONS_FORMAL = [
         id: 'fetching-basics',
         icon: Brain,
         title: 'Fetching Data in Practice',
-        stage: 'Data',
+        stage: 'Extended Toolkit',
         summary: 'Fetching is how your UI retrieves live data from APIs or databases.',
         eli5: 'You open a tap (request), water comes out (response), then you use it (render in UI).',
         steps: [
@@ -1011,7 +1530,7 @@ const LESSONS_FORMAL = [
         id: 'web-scraping-basics',
         icon: BookOpen,
         title: 'Web Scraping (Ethical Beginner Intro)',
-        stage: 'Data',
+        stage: 'Extended Toolkit',
         summary: 'Use scraping for research and references while respecting platform rules.',
         eli5: 'Scraping is like copying notes from a board, but you still must follow classroom rules.',
         steps: [
@@ -1028,7 +1547,7 @@ const LESSONS_FORMAL = [
         id: 'supabase-keys',
         icon: Database,
         title: 'Supabase Keys and Security Basics',
-        stage: 'Security',
+        stage: 'Extended Toolkit',
         summary: 'Know which keys are safe for frontend and which must remain private.',
         eli5: 'You have a guest key and a master key. Never hand out the master key publicly.',
         steps: [
@@ -1045,7 +1564,7 @@ const LESSONS_FORMAL = [
         id: 'github-flow',
         icon: Github,
         title: 'Publish and Manage Project on GitHub',
-        stage: 'Versioning',
+        stage: 'Extended Toolkit',
         summary: 'Version control protects your work and supports collaboration.',
         eli5: 'Think of GitHub as a cloud folder with time machine history.',
         steps: [
@@ -1062,7 +1581,7 @@ const LESSONS_FORMAL = [
         id: 'github-antigravity',
         icon: Github,
         title: 'GitHub and Antigravity Workflow',
-        stage: 'Workflow',
+        stage: 'Extended Toolkit',
         summary: 'Use Antigravity for acceleration and GitHub for controlled version history.',
         eli5: 'Antigravity helps you build faster; GitHub keeps a reliable history of each step.',
         steps: [
@@ -1079,7 +1598,7 @@ const LESSONS_FORMAL = [
         id: 'deploy-live',
         icon: Rocket,
         title: 'Deploy Your Website to Production',
-        stage: 'Launch',
+        stage: 'Extended Toolkit',
         summary: 'Deployment makes your product accessible to real users.',
         eli5: 'Before deployment, your website lives in your room. After deployment, it lives on a public street.',
         steps: [
@@ -1096,7 +1615,7 @@ const LESSONS_FORMAL = [
         id: 'vercel-production',
         icon: Rocket,
         title: 'Vercel Preview vs Production',
-        stage: 'Launch',
+        stage: 'Extended Toolkit',
         summary: 'Test in preview first, then release safely to production.',
         eli5: 'Preview is rehearsal; production is the real public show.',
         steps: [
@@ -1113,7 +1632,7 @@ const LESSONS_FORMAL = [
         id: 'install-skills',
         icon: Sparkles,
         title: 'Install Skills and Starter Resources',
-        stage: 'Toolkit',
+        stage: 'Extended Toolkit',
         summary: 'Skills and templates accelerate beginner workflows.',
         eli5: 'Skills are like equipment presets that make each mission easier.',
         steps: [
@@ -1130,7 +1649,7 @@ const LESSONS_FORMAL = [
         id: 'creative-motion',
         icon: Sparkles,
         title: 'Creative Mode: Motion and Interaction',
-        stage: 'Creative',
+        stage: 'Extended Toolkit',
         summary: 'After launch, use motion to improve delight and guidance.',
         eli5: 'Animation is seasoning: a small amount improves everything.',
         steps: [
@@ -1147,7 +1666,7 @@ const LESSONS_FORMAL = [
         id: 'ai-imagination',
         icon: Brain,
         title: 'Creative Imagination with AI',
-        stage: 'Creative',
+        stage: 'Extended Toolkit',
         summary: 'Use AI to explore original ideas while keeping human direction.',
         eli5: 'AI can build quickly, but you still decide the destination.',
         steps: [
@@ -1179,7 +1698,21 @@ const COPY_BY_TONE = {
 
 const LESSON_TIPS_BY_TONE = {
     ijam: {
+        'setup-environment': ['Guna Node LTS, elak version experimental.', 'Lepas install, restart terminal sebelum check `node -v`.', 'Kalau ada error, screenshot terus untuk debug cepat.'],
+        'setup-ai-api-key': ['Groq API sangat pantas kalau nak test feature.', 'Simpan key kat tempat selamat, bukan hardcode.', 'OpenRouter paling chill sebab satu wallet cover semua.'],
+        'chatgpt-personality': ['Tulis role dia, bagi contoh.', 'Bincang panjang lebar kat ChatGPT dulu, sebelum sentuh code.', 'Bagi dia critique idea kau.'],
+        'chatgpt-master-prompt': ['Ini trick rahsia. JANGAN type satu-satu kat Antigravity, bagi MASTER PROMPT terus.', 'Tekankan UI design sistem yang jelas.', 'Pastikan SQL schema ada dalam tu kalau perlukan backend.'],
+        'antigravity-sonnet': ['Pilih Claude 3.5 Sonnet untuk kestabilan logic.', 'Guna Gemini Flash kalau design lari.', 'Boleh switch model ikut task.'],
+        'github-repo-setup': ['Commit kecil tapi kerap.', 'Penting: Faham beza `git pull` dengan `git fetch`.', 'Push setiap habis satu feature.'],
+        'vercel-deploy': ['Check env vars sebelum deploy.', 'Test flow utama selepas live.', 'PASTE URL VERCEL DALAM TERMINAL UNTUK DAPAT TROPHY!', 'Simpan checklist deployment.'],
+        'vercel-analytics': ['Letak tag Analytis kat root (App.js).', 'Kalau pakai Next.js, ada Vercel Analytics wrapper.', 'Tengok log live kat dashboard.'],
+        'supabase-setup': ['Anon key untuk frontend je.', 'Service role key JANGAN expose dalam code frontend.', 'Letak kat `.env` dan `.gitignore` fail tu.'],
+        'supabase-sql': ['Guna AI untuk generate Table creation command.', 'Copy SQL dari ChatGPT, paste kat browser Supabase.', 'Run test data dari editor terus.'],
+        'supabase-connect': ['Masukkan environment variables Supabase tu ke Vercel setting.', 'Jangan hard-code URL.', 'Bind variable VITE_SUPABASE_URL.'],
+        'custom-domain': ['Domain CNAME setting kat portal domain (CTH: Namecheap).', 'Ping DNS checker untuk tengok dah propagate.', 'Vercel urus SSL automatik.'],
         'install-node-antigravity': ['Guna Node LTS, elak version experimental.', 'Lepas install, restart terminal sebelum check `node -v`.', 'Kalau ada error, screenshot terus untuk debug cepat.'],
+        'the-4-step-flow': ['Ingat langkah ni supaya tak sesat di tengah jalan.', 'Jangan lari ke Vercel kalau tahap Vibe Coding lum siap.', 'Idea brainstormed baik menjimatkan masa coding.'],
+        'ai-tech-stack': ['Bookmark tool ni siap-siap.', 'Bila buntu idea, campak ke ChatGPT, bukan terus paksa Antigravity buat kod.', 'Gemini 3.1 paling mantap buat overall architecture.'],
         'skill-md-basics': ['Mulakan dengan instruction pendek dan specific.', 'Satu skill fokus satu objective.', 'Test skill guna task kecil dulu.'],
         'style-direction': ['Pilih 1 primary style, bukan campur 5 style.', 'Buat moodboard ringkas sebelum generate UI.', 'Pastikan warna dan font konsisten.'],
         'ai-refer-design': ['Bagi AI 1-2 reference je supaya direction clear.', 'Cakap elemen apa yang kau nak tiru (spacing/typography).', 'Minta AI elak copy 100%.', 'Gaya kau: minta theme match dengan identity site sedia ada.'],
@@ -1211,7 +1744,21 @@ const LESSON_TIPS_BY_TONE = {
         'ai-imagination': ['Mulakan idea kecil tapi unik.', 'Uji dengan user sebenar.', 'Iterate ikut feedback, bukan ego.']
     },
     formal: {
+        'setup-environment': ['Use Node LTS.', 'Restart your terminal.'],
+        'setup-ai-api-key': ['Groq API is fast.', 'Keep keys secure.'],
+        'chatgpt-personality': ['Set explicit persona context first.'],
+        'chatgpt-master-prompt': ['Summarize context into ONE strong prompt.'],
+        'antigravity-sonnet': ['Select Claude 3.5 Sonnet for logic stability.', 'Use Gemini Flash for aesthetic adjustments.'],
+        'github-repo-setup': ['Commit in small blocks.', 'Understand pull vs fetch.'],
+        'vercel-deploy': ['Check env vars before deploy.', 'Verify functionality after pushing live.'],
+        'vercel-analytics': ['Place analytics component in the app root.'],
+        'supabase-setup': ['Protect your service role key always.'],
+        'supabase-sql': ['Validate AI generated SQL before execution in the editor.'],
+        'supabase-connect': ['Configure environment variables carefully within Vercel pipeline.'],
+        'custom-domain': ['Link CNAME and A records.', 'SSL is automatically provisioned.'],
         'install-node-antigravity': ['Use Node.js LTS for stability.', 'Restart terminal after installation.', 'Capture exact error logs for faster debugging.'],
+        'the-4-step-flow': ['Memorizing this flow prevents getting overwhelmed later.', 'Complete Vibe Coding locally before worrying about Vercel deployments.', 'A strong ChatGPT brainstorm session limits Antigravity context switch.'],
+        'ai-tech-stack': ['Bookmark your tools so they are easily accessible.', 'Delegate complex ideation strictly to ChatGPT before throwing code at Antigravity.', 'Use Gemini 3.1 for high-performance references and prompt engineering.'],
         'skill-md-basics': ['Keep instructions concise and explicit.', 'One skill should target one clear objective.', 'Validate with a small test task first.'],
         'style-direction': ['Choose one primary style direction.', 'Create a lightweight moodboard first.', 'Keep typography and color tokens consistent.'],
         'ai-refer-design': ['Provide 1-2 reference links only.', 'Specify which traits to emulate.', 'Avoid direct copying of full layouts.', 'Your workflow favors theme alignment with the existing site identity.'],
@@ -1609,10 +2156,33 @@ const buildResourceAiPrompt = ({ mode, lesson, teachingTone, userInput, tips }) 
     ].join('\n');
 };
 
+const getStageGreeting = (stage, tone) => {
+    if (tone === 'formal') {
+        switch (stage) {
+            case 'Foundation': return 'System Initialization Sequence:';
+            case 'Ideation': return 'Strategic Planning Phase:';
+            case 'Vibe Coding': return 'Development Environment Active:';
+            case 'Versioning': return 'Source Control Management:';
+            case 'Launch': return 'Deployment Protocol Initiated:';
+            case 'Database': return 'Data Architecture Setup:';
+            default: return 'Module Objective:';
+        }
+    } else {
+        switch (stage) {
+            case 'Foundation': return 'yo kita setup tapak rumah dulu ni:';
+            case 'Ideation': return 'masa untuk perah otak, chief:';
+            case 'Vibe Coding': return 'time untuk vibe coding, chill & code:';
+            case 'Versioning': return 'save progress kau kat awan:';
+            case 'Launch': return 'jom terbang ke bulan (live deployment):';
+            case 'Database': return 'bina memori bot otak kau:';
+            default: return 'lesson baru unlock:';
+        }
+    }
+};
+
 const buildIjamBotLessonBrief = ({ lesson, tips, tone }) => {
-    const intro = tone === 'ijam'
-        ? `yo builder (b ᵔ▽ᵔ)b jom focus lesson ni: ${lesson.title}`
-        : `Lesson focus: ${lesson.title}`;
+    const stageGreeting = getStageGreeting(lesson.stage, tone);
+    const intro = `${stageGreeting} ${lesson.title}`;
     const why = tone === 'ijam'
         ? `kenapa penting: ${lesson.summary}`
         : `Why it matters: ${lesson.summary}`;
@@ -1627,17 +2197,58 @@ const buildIjamBotLessonBrief = ({ lesson, tips, tone }) => {
         why,
         explain,
         '',
-        tone === 'ijam' ? 'tiny steps:' : 'Next steps:',
-        steps,
-        '',
-        tone === 'ijam' ? 'tips execute cepat:' : 'Execution tips:',
-        tipsBlock || '- Keep one focused step at a time.',
+        tone === 'ijam' ? 'klik "> show next step" untuk mula.' : 'Click "> show next step" to begin.',
         tone === 'ijam' ? '\nkalau stuck, terus type: debug <isu kau> (¬‿¬)' : ''
     ].join('\n');
 };
 
-const ResourcePage = () => {
-    const PLAN_START_COMMAND = 'ijam --start-plan';
+const WindowFrame = ({ title, onClose, children, icon: Icon }) => (
+    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: '48px', background: '#111827', border: 'none', display: 'flex', flexDirection: 'column', zIndex: 50, overflow: 'hidden' }}>
+        <div style={{ background: '#f5d000', padding: '10px 16px', borderBottom: '3px solid #0b1220', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#0b1220', fontWeight: 900, fontFamily: 'monospace', fontSize: '14px' }}>
+                {Icon && <Icon size={16} />}
+                {title}
+            </div>
+            <button
+                onClick={onClose}
+                style={{ background: '#c8102e', border: '2px solid #0b1220', color: '#fff', padding: '4px 12px', fontWeight: 900, cursor: 'pointer', borderRadius: '4px', fontSize: '12px', fontFamily: 'monospace' }}
+            >
+                CLOSE [X]
+            </button>
+        </div>
+        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            {children}
+        </div>
+    </div>
+);
+
+const DesktopIcon = ({ label, icon: Icon, onClick, color = "#f5d000" }) => (
+    <button
+        onClick={onClick}
+        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'transparent', border: 'none', cursor: 'pointer', padding: '12px', borderRadius: '8px', transition: 'background 0.2s' }}
+        onMouseOver={(e) => e.currentTarget.style.background = 'rgba(245, 208, 0, 0.1)'}
+        onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+    >
+        <div style={{ background: '#0b1220', border: '2px solid #f5d000', color: color, padding: '12px', borderRadius: '12px', boxShadow: '4px 4px 0 #0b1220' }}>
+            <Icon size={32} />
+        </div>
+        <span style={{ color: '#fff', fontSize: '11px', fontWeight: 900, fontFamily: 'monospace', textShadow: '2px 2px 2px #000' }}>{label}</span>
+    </button>
+);
+
+const StartMenuApp = ({ icon: Icon, label, onClick }) => (
+    <button
+        onClick={onClick}
+        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'transparent', border: 'none', cursor: 'pointer', padding: '12px', borderRadius: '8px', transition: 'background 0.2s' }}
+        onMouseOver={(e) => e.currentTarget.style.background = '#1e293b'}
+        onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+    >
+        <Icon size={24} color="#f8fafc" />
+        <span style={{ color: '#f8fafc', fontSize: '10px', fontWeight: 600, fontFamily: 'monospace' }}>{label}</span>
+    </button>
+);
+
+const ResourcePage = ({ session, currentUser }) => {
     const [activeIndex, setActiveIndex] = useState(0);
     const [search, setSearch] = useState('');
     const [communityResources, setCommunityResources] = useState([]);
@@ -1647,12 +2258,112 @@ const ResourcePage = () => {
     const [assistantInput, setAssistantInput] = useState('');
     const [assistantLoading, setAssistantLoading] = useState(false);
     const [assistantOpen, setAssistantOpen] = useState(true);
-    const [planStarted, setPlanStarted] = useState(false);
-    const [planCommandInput, setPlanCommandInput] = useState('');
-    const [planCommandError, setPlanCommandError] = useState('');
+    const [slideIndex, setSlideIndex] = useState(-1);
+    const [showTips, setShowTips] = useState(false);
     const [assistantMessages, setAssistantMessages] = useState([
         { role: 'assistant', content: 'IJAM_BOT ready. Pick a mode and ask about this lesson.' }
     ]);
+
+    const [activeTab, setActiveTab] = useState('lessons'); // 'lessons', 'ai', 'cloud', 'social'
+    const [searchQuery, setSearchQuery] = useState('');
+    const [activeWindow, setActiveWindow] = useState(null); // 'terminal', 'files', 'stats', null
+    const [isStartMenuOpen, setIsStartMenuOpen] = useState(false);
+    const [startMenuSearch, setStartMenuSearch] = useState('');
+
+    const [chatMessages, setChatMessages] = useState([
+        { role: 'bot', text: 'IJAM_OS_INITIALIZED: Greetings, Builder. I am Antigravity. Type your command or click on the lessons above to begin.' }
+    ]);
+
+    // --- Computer Experience States ---
+    const [isBooted, setIsBooted] = useState(false);
+    const [isOnboarding, setIsOnboarding] = useState(false);
+    const [onboardingStep, setOnboardingStep] = useState(0);
+    const [sidebarVisible, setSidebarVisible] = useState(true);
+    const [bootText, setBootText] = useState('');
+    const [isBooting, setIsBooting] = useState(false);
+    const [systemTime, setSystemTime] = useState('');
+    const [systemDate, setSystemDate] = useState('');
+
+    // --- Profile/Settings Form States ---
+    const [profileForm, setProfileForm] = useState({
+        username: '',
+        district: '',
+        ideaTitle: '',
+        problemStatement: ''
+    });
+    const [isSavingSettings, setIsSavingSettings] = useState(false);
+
+    useEffect(() => {
+        if (currentUser) {
+            setProfileForm({
+                username: currentUser.name || '',
+                district: currentUser.district || '',
+                ideaTitle: currentUser.idea_title || '',
+                problemStatement: currentUser.problem_statement || ''
+            });
+        }
+    }, [currentUser]);
+
+    const handleSaveSettings = async (e) => {
+        if (e) e.preventDefault();
+        if (!session?.user?.id) return;
+
+        setIsSavingSettings(true);
+        try {
+            const { error } = await supabase.from('profiles').upsert({
+                id: session.user.id,
+                full_name: profileForm.username,
+                district: profileForm.district,
+                idea_title: profileForm.ideaTitle,
+                problem_statement: profileForm.problemStatement,
+                updated_at: new Date().toISOString()
+            });
+
+            if (error) throw error;
+            appendTerminal('system', '[✓] Profile configurations synced to cloud.');
+            alert('Settings saved successfully!');
+        } catch (err) {
+            console.error('Save failed:', err);
+            appendTerminal('system', '[!] Failed to sync cloud configs.');
+            alert('Save failed: ' + err.message);
+        } finally {
+            setIsSavingSettings(false);
+        }
+    };
+
+    useEffect(() => {
+        const updateTime = () => {
+            const now = new Date();
+            let hours = now.getHours();
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // the hour '0' should be '12'
+            setSystemTime(`${String(hours).padStart(2, '0')}:${minutes} ${ampm}`);
+
+            const options = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+            setSystemDate(now.toLocaleDateString('en-US', options));
+        };
+        updateTime();
+        const timer = setInterval(updateTime, 1000);
+        return () => clearInterval(timer);
+    }, []);
+
+    const { weather, isLoading: isWeatherLoading } = useWeather();
+
+    // --- Gamification State ---
+    const [userVibes, setUserVibes] = useState(0);
+
+    const userRank = useMemo(() => {
+        if (userVibes < 50) return 'L1 NOVICE';
+        if (userVibes < 150) return 'L2 PROMPTER';
+        return 'L3 VIBE CODER';
+    }, [userVibes]);
+
+    const addVibes = (amount, reason) => {
+        setUserVibes(prev => prev + amount);
+        appendTerminal('system', `[+] Earned ${amount} Vibes: ${reason}`);
+    };
 
     const lessons = teachingTone === 'formal' ? LESSONS_FORMAL : LESSONS_IJAM;
 
@@ -1678,6 +2389,18 @@ const ResourcePage = () => {
     }, [search, lessons]);
     const navigableLessons = filteredLessons.length ? filteredLessons : lessons;
 
+    const groupedLessons = useMemo(() => {
+        const groups = {};
+        navigableLessons.forEach((lesson, originalIndex) => {
+            const stage = lesson.stage || 'Uncategorized';
+            if (!groups[stage]) {
+                groups[stage] = [];
+            }
+            groups[stage].push({ ...lesson, originalIndex });
+        });
+        return groups;
+    }, [navigableLessons]);
+
     useEffect(() => {
         if (activeIndex > navigableLessons.length - 1) {
             setActiveIndex(0);
@@ -1692,6 +2415,7 @@ const ResourcePage = () => {
         if (!url) return;
         const normalized = /^https?:\/\//i.test(url) ? url : `https://${url}`;
         window.open(normalized, '_blank', 'noopener,noreferrer');
+        addVibes(10, "Resource Studied");
     };
 
     useEffect(() => {
@@ -1706,6 +2430,8 @@ const ResourcePage = () => {
             }
         ]);
         setAssistantInput('');
+        setSlideIndex(-1);
+        setShowTips(false);
     }, [activeLesson.id, teachingTone, activeLessonTips]);
 
     const runAssistant = async (seedInput = '') => {
@@ -1748,16 +2474,6 @@ const ResourcePage = () => {
         }
     };
 
-    const handleStartPlan = () => {
-        if (planCommandInput.trim().toLowerCase() === PLAN_START_COMMAND) {
-            setPlanStarted(true);
-            setPlanCommandError('');
-            trackResourceEvent('plan_started', { lessonId: activeLesson.id });
-            return;
-        }
-        setPlanCommandError(`Invalid command. Use: ${PLAN_START_COMMAND}`);
-    };
-
     const lessonLibraryItems = useMemo(() => (
         lessons.map((lesson) => ({
             id: `lesson-${lesson.id}`,
@@ -1798,8 +2514,7 @@ const ResourcePage = () => {
     const terminalOutputRef = useRef(null);
     const [terminalLog, setTerminalLog] = useState([
         { role: 'system', text: 'IJAM_TERMINAL booted.' },
-        { role: 'assistant', text: 'yo aku IJAM_BOT. kita buat step by step je, chill.' },
-        { role: 'system', text: `Run "${PLAN_START_COMMAND}" to unlock lesson plan.` }
+        { role: 'assistant', text: 'yo aku IJAM_BOT. kita buat step by step je, chill.\ntanya je apa-apa pasal lesson ni.' }
     ]);
 
     useEffect(() => {
@@ -1818,25 +2533,11 @@ const ResourcePage = () => {
         setTerminalLog((prev) => [...prev, { role, text }]);
     };
 
-    const getHelpText = () => [
-        'commands:',
-        'help',
-        'ijam --start-plan',
-        'ls lessons',
-        'open <lesson-id | number>',
-        'teach',
-        'tips',
-        'links',
-        'next',
-        'complete',
-        'progress',
-        'debug <issue>',
-        'plan <goal>',
-        'clear'
-    ].join('\n');
-
     const runTerminalAi = async (mode, userInput) => {
         setTerminalBusy(true);
+        if (userInput && userInput.length > 50) {
+            addVibes(20, "Complex Prompting");
+        }
         try {
             const prompt = buildResourceAiPrompt({
                 mode,
@@ -1862,169 +2563,240 @@ const ResourcePage = () => {
         }
     };
 
+    const handleBoot = async () => {
+        setIsBooting(true);
+        setBootText("");
+        const seq = [
+            "> INITIALIZING VIBE_OS v2.0...",
+            "> LOADING CURRICULUM MODULES...",
+            "> SYNCING WITH ANTIGRAVITY CO-PILOT...",
+            "> CHECKING BUILDER CREDENTIALS...",
+            "> WELCOME, BUILDER.",
+            "> READY TO START YOUR JOURNEY?"
+        ];
+
+        for (const line of seq) {
+            setBootText(prev => prev + line + "\n");
+            await new Promise(r => setTimeout(r, 600));
+        }
+        setIsBooting(false);
+    };
+
+    const confirmBoot = () => {
+        setIsBooted(true);
+        setIsOnboarding(true);
+        setOnboardingStep(1);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('vibe_os_booted', 'true');
+        }
+        setTerminalLog([
+            { role: 'system', text: 'SYSTEM ONLINE. ONBOARDING SEQUENCE INITIATED.' },
+            { role: 'assistant', text: 'yo WELCOME BRO! aku IJAM_BOT. sebelum kita start, aku nak check vibe kau sikit.' },
+            { role: 'assistant', text: 'QUESTION 1: Kalau nak AI buat UI lawa, kau kena bagi "Master Prompt" yang detail atau suruh dia "buat web lawa" saje?' }
+        ]);
+    };
+
     const executeTerminalCommand = async (rawCommand) => {
         const raw = rawCommand.trim();
         if (!raw) return;
 
         appendTerminal('user', raw);
-        const lower = raw.toLowerCase();
-        const [cmd, ...args] = lower.split(' ');
 
-        if (lower === 'clear') {
-            setTerminalLog([{ role: 'system', text: 'Terminal cleared.' }]);
+        if (activeLesson.id === 'vercel-deploy' && raw.includes('vercel.app')) {
+            addVibes(100, "Live Deployment Verified - ASCII TROPHY UNLOCKED!");
+            appendTerminal('assistant', `
+    ___________
+   '._==_==_=_.'
+   .-\\:      /-.
+  | (|:.     |) |
+   '-|:.     |-'
+     \\::.    /
+      '::. .'
+        ) (
+      _.' '._
+     \`"""""""\`
+YOU DID IT. APP DEPLOYED!`);
             return;
         }
 
-        if (!planStarted && lower !== PLAN_START_COMMAND && lower !== 'help') {
-            appendTerminal('system', `Locked. Run "${PLAN_START_COMMAND}" first.`);
+        if (isOnboarding) {
+            handleOnboarding(raw);
             return;
         }
 
-        if (lower === 'help') {
-            appendTerminal('system', getHelpText());
-            return;
-        }
-
-        if (lower === PLAN_START_COMMAND) {
-            setPlanStarted(true);
-            setPlanCommandError('');
-            appendTerminal('system', 'Plan unlocked. Use "ls lessons" to begin.');
-            return;
-        }
-
-        if (lower === 'ls lessons') {
-            appendTerminal(
-                'system',
-                lessons.map((lesson, idx) => `${idx + 1}. ${lesson.id} | ${lesson.stage} | ${lesson.title}`).join('\n')
-            );
-            return;
-        }
-
-        if (cmd === 'open') {
-            const target = args.join(' ').trim();
-            let targetIndex = -1;
-            const asNumber = Number(target);
-            if (!Number.isNaN(asNumber) && asNumber > 0 && asNumber <= lessons.length) {
-                targetIndex = asNumber - 1;
-            } else {
-                targetIndex = lessons.findIndex((lesson) => lesson.id.toLowerCase() === target);
-            }
-            if (targetIndex < 0) {
-                appendTerminal('system', `Lesson not found: ${target || '(empty)'}`);
-                return;
-            }
-            setActiveIndex(targetIndex);
-            appendTerminal('assistant', buildIjamBotLessonBrief({
-                lesson: lessons[targetIndex],
-                tips: LESSON_TIPS_BY_TONE[teachingTone]?.[lessons[targetIndex].id] || [],
-                tone: teachingTone
-            }));
-            return;
-        }
-
-        if (lower === 'teach') {
-            appendTerminal('assistant', buildIjamBotLessonBrief({
-                lesson: activeLesson,
-                tips: activeLessonTips,
-                tone: teachingTone
-            }));
-            return;
-        }
-
-        if (lower === 'tips') {
-            appendTerminal('assistant', (activeLessonTips || []).map((tip) => `- ${tip}`).join('\n') || 'No tips mapped.');
-            return;
-        }
-
-        if (lower === 'links') {
-            appendTerminal('system', [
-                `Lesson: ${activeLesson.linkUrl}`,
-                `YouTube: ${activeMedia?.youtubeUrl || 'N/A'}`,
-                `Community: ${currentCommunity?.url || 'N/A'}`
-            ].join('\n'));
-            return;
-        }
-
-        if (lower === 'next') {
-            setActiveIndex((prev) => (prev + 1) % navigableLessons.length);
-            appendTerminal('system', 'Moved to next lesson.');
-            const nextLesson = navigableLessons[(activeIndex + 1) % navigableLessons.length];
-            appendTerminal('assistant', buildIjamBotLessonBrief({
-                lesson: nextLesson,
-                tips: LESSON_TIPS_BY_TONE[teachingTone]?.[nextLesson.id] || [],
-                tone: teachingTone
-            }));
-            return;
-        }
-
-        if (lower === 'complete') {
-            setCompletedLessons((prev) => (prev.includes(activeLesson.id) ? prev : [...prev, activeLesson.id]));
-            appendTerminal('system', `Marked complete: ${activeLesson.id}`);
-            return;
-        }
-
-        if (lower === 'progress') {
-            appendTerminal('system', `Progress: ${completedLessons.length}/${lessons.length} completed.`);
-            return;
-        }
-
-        if (cmd === 'debug') {
-            const issue = raw.slice(raw.indexOf(' ') + 1).trim() || `Need debug help for ${activeLesson.title}`;
-            await runTerminalAi('troubleshoot', issue);
-            return;
-        }
-
-        if (cmd === 'plan') {
-            const goal = raw.slice(raw.indexOf(' ') + 1).trim() || `Implementation plan for ${activeLesson.title}`;
-            await runTerminalAi('plan', goal);
-            return;
-        }
-
-        appendTerminal('system', `Unknown command: ${raw}. Run "help".`);
+        await runTerminalAi('chat', raw);
     };
 
-    return (
-        <section id="resources-page" style={{ ...sectionStyle, background: '#090c13', height: '100vh', overflow: 'hidden', paddingTop: '12px', paddingBottom: '12px' }}>
-            <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 10px', height: '100%' }}>
-                <div style={{ border: '3px solid #0b1220', borderRadius: '12px', boxShadow: '8px 8px 0 #0b1220', background: '#111827', color: '#e5e7eb', overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ padding: '8px 12px', borderBottom: '3px solid #0b1220', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', background: '#f5d000', color: '#0b1220' }}>
-                        <div style={{ fontFamily: 'monospace', fontWeight: 900 }}>IJAM_TERMINAL // Resource OS</div>
-                        <div style={{ fontFamily: 'monospace', fontSize: '11px', fontWeight: 800 }}>
-                            {planStarted ? 'STATUS: UNLOCKED' : 'STATUS: LOCKED'}
-                        </div>
+    const handleOnboarding = (input) => {
+        const text = input.toLowerCase();
+
+        if (onboardingStep === 1) {
+            if (text.includes('master') || text.includes('detail')) {
+                appendTerminal('assistant', 'Steady! Context is king. Next question...');
+                appendTerminal('assistant', 'QUESTION 2: Code kau kat local dah siap. Nak simpan kat GitHub kena guna command "git push" atau "git pull"?');
+                setOnboardingStep(2);
+                addVibes(20, 'Onboarding Progress ✨');
+            } else {
+                appendTerminal('assistant', 'Hmm, tak tepat tu. Kena bagi detail (Master Prompt) baru AI faham. Try again?');
+            }
+        } else if (onboardingStep === 2) {
+            if (text.includes('push')) {
+                appendTerminal('assistant', 'Betul! Push untuk hantar, Pull untuk ambil. Last one...');
+                appendTerminal('assistant', 'QUESTION 3: Lepas push ke GitHub, tool apa kita guna untuk bagi website tu LIVE kat internet?\n(A) Vercel\n(B) Supabase\n(C) Antigravity');
+                setOnboardingStep(3);
+                addVibes(20, 'Onboarding Progress ✨');
+            } else {
+                appendTerminal('assistant', 'Eh silap tu. "git pull" tu untuk tarik code orang lain. Kita nak hantar (push) code kita.');
+            }
+        } else if (onboardingStep === 3) {
+            if (text.includes('vercel') || text.includes('a')) {
+                appendTerminal('assistant', 'MANTAP! Kau dah ready jadi Vibe Coder.');
+                appendTerminal('assistant', 'VIBE_OS UNLOCKED. Semua lesson dah terbuka untuk kau.');
+                setIsOnboarding(false);
+                setOnboardingStep(0);
+                addVibes(50, 'Onboarding Completed 🏆');
+
+                // Show first lesson brief
+                const firstLesson = lessons[0];
+                appendTerminal('system', `Opened lesson: ${firstLesson.id}`);
+                appendTerminal('assistant', buildIjamBotLessonBrief({
+                    lesson: firstLesson,
+                    tips: LESSON_TIPS_BY_TONE[teachingTone]?.[firstLesson.id] || [],
+                    tone: teachingTone
+                }));
+            } else {
+                appendTerminal('assistant', 'Hampir tepat! Supabase tu database. Antigravity tu editor. Kita nak host kat Vercel.');
+            }
+        }
+    };
+
+    if (!isBooted) {
+        return (
+            <section id="resources-page" style={{ ...sectionStyle, background: '#090c13', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f8fafc', fontFamily: 'monospace' }}>
+                <div style={{ padding: '40px', background: '#0b1220', border: '4px solid #f5d000', boxShadow: '12px 12px 0 #f5d000', maxWidth: '600px', width: '90%', position: 'relative' }}>
+                    <div style={{ position: 'absolute', top: '-25px', left: '20px', background: '#f5d000', color: '#0b1220', padding: '4px 12px', fontWeight: 900, fontSize: '14px' }}>IjamOS v2.0</div>
+                    <div style={{ whiteSpace: 'pre-wrap', marginBottom: '30px', fontSize: '16px', lineHeight: 1.6, minHeight: '240px', color: '#86efac' }}>
+                        {bootText || "> SYSTEM STATUS: IDLE\n> AWAITING USER COMMAND..."}
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: isNarrowScreen ? '1fr' : 'minmax(220px, 320px) 1fr', flex: 1, minHeight: 0 }}>
-                        <aside style={{ borderRight: isNarrowScreen ? 'none' : '3px solid #0b1220', borderBottom: isNarrowScreen ? '3px solid #0b1220' : 'none', padding: '10px', background: '#0b1220', minHeight: 0 }}>
-                            <div style={{ fontFamily: 'monospace', fontWeight: 900, fontSize: '11px', marginBottom: '8px', color: '#93c5fd' }}>LESSON TREE</div>
-                            <div style={{ display: 'grid', gap: '6px', maxHeight: isNarrowScreen ? '24vh' : '56vh', overflowY: 'auto' }}>
-                                {lessons.map((lesson, idx) => (
+                    {!isBooting && bootText === "" && (
+                        <button
+                            onClick={handleBoot}
+                            style={{ background: '#c8102e', border: '3px solid #000', color: '#fff', padding: '12px 24px', fontWeight: 900, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '4px 4px 0 #000' }}
+                        >
+                            INITIATE SYSTEM BOOT
+                        </button>
+                    )}
+                    {!isBooting && bootText.includes('READY TO START') && (
+                        <button
+                            onClick={confirmBoot}
+                            style={{ background: '#22c55e', border: '3px solid #000', color: '#000', padding: '12px 24px', fontWeight: 900, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '4px 4px 0 #000' }}
+                        >
+                            YES, START MY JOURNEY
+                        </button>
+                    )}
+                    {isBooting && (
+                        <div style={{ color: '#f5d000', fontWeight: 900, fontSize: '14px' }}>
+                            [ LOADING IjamOS... ]
+                        </div>
+                    )}
+                </div>
+            </section>
+        );
+    }
+
+    return (
+        <section id="resources-page" style={{ ...sectionStyle, background: '#0b131e', height: '100vh', overflow: 'hidden', position: 'relative' }}>
+            {/* Desktop Wallpaper - Grid Pattern */}
+            <div style={{ position: 'absolute', inset: 0, opacity: 0.1, backgroundImage: 'radial-gradient(#f5d000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px', pointerEvents: 'none' }} />
+
+            {/* Desktop Icons Container */}
+            <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '40px 20px', height: '100%', position: 'relative', zIndex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, 100px)', gap: '24px', alignItems: 'start', contentVisibility: 'auto' }}>
+                <DesktopIcon label="TERMINAL" icon={Terminal} onClick={() => setActiveWindow('terminal')} />
+                <DesktopIcon label="FILES" icon={Folder} onClick={() => setActiveWindow('files')} />
+                <DesktopIcon label="STATS" icon={User} onClick={() => setActiveWindow('progress')} color="#86efac" />
+                <DesktopIcon label="RECYCLE" icon={Trash2} onClick={() => setActiveWindow('trash')} color="#c8102e" />
+                <DesktopIcon label="SETTINGS" icon={Settings} onClick={() => setActiveWindow('settings')} color="#94a3b8" />
+                <DesktopIcon label="ARCADE" icon={Gamepad2} onClick={() => setActiveWindow('arcade')} color="#f5d000" />
+            </div>
+
+            {/* Application Windows */}
+
+            {/* 1. Terminal Window */}
+            {activeWindow === 'terminal' && (
+                <WindowFrame title="IJAM_TERMINAL // IjamOS" icon={Bot} onClose={() => setActiveWindow(null)}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isNarrowScreen ? '1fr' : (sidebarVisible ? 'minmax(220px, 320px) 1fr' : '0 1fr'), gridTemplateRows: isNarrowScreen ? 'auto minmax(0,1fr)' : 'minmax(0,1fr)', flex: 1, minHeight: 0 }}>
+                        <aside style={{ borderRight: (isNarrowScreen || !sidebarVisible) ? 'none' : '3px solid #0b1220', borderBottom: isNarrowScreen ? '3px solid #0b1220' : 'none', padding: sidebarVisible || isNarrowScreen ? '10px' : '0', background: '#0b1220', minHeight: 0, overflow: 'hidden' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                <div style={{ fontFamily: 'monospace', fontWeight: 900, fontSize: '11px', color: '#93c5fd' }}>LESSON TREE</div>
+                                {!isNarrowScreen && (
                                     <button
-                                        key={lesson.id}
-                                        type="button"
-                                        onClick={() => {
-                                            setActiveIndex(idx);
-                                            appendTerminal('system', `Opened lesson: ${lesson.id}`);
-                                            appendTerminal('assistant', buildIjamBotLessonBrief({
-                                                lesson,
-                                                tips: LESSON_TIPS_BY_TONE[teachingTone]?.[lesson.id] || [],
-                                                tone: teachingTone
-                                            }));
-                                        }}
-                                        style={{
-                                            textAlign: 'left',
-                                            border: '2px solid #334155',
-                                            background: lesson.id === activeLesson.id ? '#c8102e' : '#111827',
-                                            color: '#f8fafc',
-                                            borderRadius: '8px',
-                                            padding: '6px 8px',
-                                            fontFamily: 'monospace',
-                                            fontSize: '11px',
-                                            fontWeight: 700,
-                                            cursor: 'pointer'
-                                        }}
+                                        onClick={() => setSidebarVisible(false)}
+                                        style={{ background: 'transparent', border: 'none', color: '#475569', cursor: 'pointer', fontSize: '10px', fontWeight: 900 }}
                                     >
-                                        {idx + 1}. {lesson.id}
+                                        [COLLAPSE]
                                     </button>
+                                )}
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: isNarrowScreen ? '24vh' : '56vh', overflowY: 'auto', paddingRight: '4px' }}>
+                                {Object.entries(groupedLessons).map(([stageName, stageLessons]) => (
+                                    <div key={stageName}>
+                                        <div style={{ color: '#f5d000', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', marginBottom: '6px', borderBottom: '1px solid #334155', paddingBottom: '2px', letterSpacing: '0.05em' }}>
+                                            {stageName}
+                                        </div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                            {stageLessons.map((lesson, localIdx) => {
+                                                const isActive = lesson.id === activeLesson.id;
+                                                return (
+                                                    <button
+                                                        key={lesson.id}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setActiveIndex(lesson.originalIndex);
+                                                            setSlideIndex(-1);
+                                                            setTerminalLog([
+                                                                { role: 'system', text: 'Terminal cleared for new lesson.' },
+                                                                { role: 'system', text: `Opened lesson: ${lesson.id}` },
+                                                                {
+                                                                    role: 'assistant', text: buildIjamBotLessonBrief({
+                                                                        lesson,
+                                                                        tips: LESSON_TIPS_BY_TONE[teachingTone]?.[lesson.id] || [],
+                                                                        tone: teachingTone
+                                                                    })
+                                                                }
+                                                            ]);
+                                                        }}
+                                                        style={{
+                                                            textAlign: 'left',
+                                                            background: isActive ? '#c8102e' : 'transparent',
+                                                            border: isActive ? '1px solid #ef4444' : '1px solid transparent',
+                                                            color: isActive ? '#f8fafc' : '#94a3b8',
+                                                            borderRadius: '6px',
+                                                            padding: '4px 6px',
+                                                            fontFamily: 'monospace',
+                                                            fontSize: '11px',
+                                                            fontWeight: isActive ? 800 : 600,
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.15s ease'
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            if (!isActive) {
+                                                                e.target.style.background = '#1e293b';
+                                                                e.target.style.color = '#e2e8f0';
+                                                            }
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            if (!isActive) {
+                                                                e.target.style.background = 'transparent';
+                                                                e.target.style.color = '#94a3b8';
+                                                            }
+                                                        }}
+                                                    >
+                                                        {lesson.title}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
                                 ))}
                             </div>
                             <div style={{ marginTop: '10px', fontFamily: 'monospace', fontSize: '11px', color: '#fcd34d' }}>
@@ -2034,63 +2806,156 @@ const ResourcePage = () => {
                                 disclaimer: lessons are co-written with AI
                             </div>
                         </aside>
-                        <main style={{ padding: '10px', display: 'grid', gridTemplateRows: 'auto auto minmax(0,1fr) auto', gap: '8px', minHeight: 0 }}>
-                            <div style={{ border: '2px solid #334155', borderRadius: '8px', padding: '8px', fontFamily: 'monospace', background: '#0b1220', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#f5d000', fontWeight: 900 }}>
-                                    <Bot size={14} /> IJAM_BOT online for this lesson
-                                </div>
-                                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                                    {['teach', 'tips', `plan ${activeLesson.id}`].map((quick) => (
-                                        <button
-                                            key={quick}
-                                            type="button"
-                                            className="btn btn-outline"
-                                            onClick={async () => {
-                                                if (terminalBusy) return;
-                                                await executeTerminalCommand(quick);
-                                            }}
-                                            style={{ fontSize: '10px', fontFamily: 'monospace' }}
-                                        >
-                                            {quick}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                            <div style={{ border: '2px solid #334155', borderRadius: '8px', padding: '8px', fontFamily: 'monospace', fontSize: '12px', background: '#0b1220' }}>
-                                <div style={{ color: '#f5d000', fontWeight: 900 }}>ACTIVE LESSON: {activeLesson.id}</div>
-                                <div style={{ color: '#bfdbfe' }}>{activeLesson.title}</div>
-                                <div style={{ color: '#9ca3af', fontSize: '11px' }}>Run: help | ls lessons | open lesson-id | teach | next | debug issue | plan goal</div>
-                            </div>
-                            <div ref={terminalOutputRef} style={{ border: '2px solid #334155', borderRadius: '8px', background: '#0b1220', padding: '8px', overflowY: 'auto', minHeight: 0, maxHeight: isNarrowScreen ? '40vh' : 'none', fontFamily: 'monospace', fontSize: '12px', lineHeight: 1.5 }}>
-                                {terminalLog.map((entry, idx) => (
-                                    <div key={`${entry.role}-${idx}`} style={{ marginBottom: '8px', whiteSpace: 'pre-wrap' }}>
-                                        <span style={{ color: entry.role === 'assistant' ? '#f5d000' : entry.role === 'user' ? '#86efac' : '#93c5fd', fontWeight: 900 }}>
-                                            {entry.role === 'assistant' ? 'IJAM_BOT>' : entry.role === 'user' ? 'YOU>' : 'SYS>'}
-                                        </span>{' '}
-                                        <span style={{ color: '#e5e7eb' }}>{entry.text}</span>
-                                    </div>
-                                ))}
-                                {terminalBusy && (
-                                    <div><span style={{ color: '#f5d000', fontWeight: 900 }}>IJAM_BOT&gt;</span> processing...</div>
+                        <main style={{ padding: '10px', display: 'grid', gridTemplateRows: 'auto minmax(0,1fr) auto', gap: '8px', minHeight: 0 }}>
+
+                            <div style={{ position: 'relative', border: '2px solid #334155', borderRadius: '8px', padding: '8px', fontFamily: 'monospace', fontSize: '12px', background: '#0b1220', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                                {!sidebarVisible && !isNarrowScreen && (
+                                    <button
+                                        onClick={() => setSidebarVisible(true)}
+                                        style={{ background: '#0b1220', color: '#f5d000', border: '1px solid #f5d000', borderRadius: '4px', padding: '2px 6px', fontSize: '10px', fontWeight: 900, cursor: 'pointer' }}
+                                    >
+                                        SHOW TREE
+                                    </button>
                                 )}
+                                <div>
+                                    <div style={{ color: '#f5d000', fontWeight: 900 }}>ACTIVE LESSON: {activeLesson.id}</div>
+                                    <div style={{ color: '#bfdbfe' }}>{activeLesson.title}</div>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowTips(!showTips)}
+                                            style={{
+                                                background: showTips ? '#f5d000' : '#1e293b',
+                                                border: `3px solid #0b1220`,
+                                                borderRadius: '8px',
+                                                padding: '8px',
+                                                cursor: 'pointer',
+                                                color: showTips ? '#0b1220' : '#000',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                transition: 'all 0.2s ease',
+                                                boxShadow: '4px 4px 0 #0b1220'
+                                            }}
+                                            title="IJAM_BOT Tips"
+                                        >
+                                            <Bot size={20} strokeWidth={2.5} />
+                                        </button>
+
+                                        {showTips && activeLessonTips && activeLessonTips.length > 0 && (
+                                            <div style={{
+                                                position: 'absolute',
+                                                top: '120%',
+                                                right: 0,
+                                                background: '#f8fafc',
+                                                border: '3px solid #0b1220',
+                                                borderRadius: '12px',
+                                                padding: '16px',
+                                                width: '280px',
+                                                zIndex: 50,
+                                                boxShadow: '8px 8px 0 #0b1220',
+                                                color: '#0f172a'
+                                            }}>
+                                                {/* Speech Bubble Arrow pointing Top-Right towards the Bot */}
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    top: '-12px',
+                                                    right: '16px',
+                                                    width: '0',
+                                                    height: '0',
+                                                    borderLeft: '12px solid transparent',
+                                                    borderRight: '12px solid transparent',
+                                                    borderBottom: '12px solid #0b1220'
+                                                }}></div>
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    top: '-8px',
+                                                    right: '16px',
+                                                    width: '0',
+                                                    height: '0',
+                                                    borderLeft: '12px solid transparent',
+                                                    borderRight: '12px solid transparent',
+                                                    borderBottom: '12px solid #f8fafc'
+                                                }}></div>
+
+                                                <div style={{ color: '#c8102e', fontWeight: 900, fontSize: '13px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                    <Lightbulb size={16} strokeWidth={3} /> {teachingTone === 'ijam' ? 'IJAM CAKAP:' : 'LESSON INSIGHTS:'}
+                                                </div>
+                                                <ul style={{ margin: 0, paddingLeft: '18px', color: '#334155', fontSize: '12px', lineHeight: 1.6, fontWeight: 600 }}>
+                                                    {activeLessonTips.map((tip, i) => (
+                                                        <li key={i} style={{ marginBottom: i < activeLessonTips.length - 1 ? '10px' : '0' }}>{tip}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                            <div style={{ border: '2px solid #334155', borderRadius: '8px', background: '#0b1220', display: 'flex', flexDirection: 'column', minHeight: 0, height: '100%', maxHeight: isNarrowScreen ? '60vh' : 'none', overflow: 'hidden' }}>
+                                <div ref={terminalOutputRef} style={{ padding: '8px', overflowY: 'auto', flex: 1, fontFamily: 'monospace', fontSize: '12px', lineHeight: 1.5 }}>
+                                    {activeMedia?.visual && (
+                                        <div style={{ marginBottom: '16px', border: '2px solid #334155', borderRadius: '8px', overflow: 'hidden', background: '#111827' }}>
+                                            <img
+                                                src={activeMedia.visual}
+                                                alt={activeLesson.title}
+                                                style={{ width: '100%', height: 'auto', display: 'block' }}
+                                                onError={(e) => e.target.style.display = 'none'}
+                                            />
+                                        </div>
+                                    )}
+                                    {terminalLog.map((entry, idx) => (
+                                        <div key={`${entry.role}-${idx}`} style={{ marginBottom: '8px', whiteSpace: 'pre-wrap' }}>
+                                            {entry.role !== 'system' && (
+                                                <span style={{ color: entry.role === 'assistant' ? '#f5d000' : '#86efac', fontWeight: 900 }}>
+                                                    {entry.role === 'assistant' ? 'IJAM_BOT>' : `[${userRank} | ${userVibes}] YOU>`}
+                                                </span>
+                                            )}
+                                            {entry.role !== 'system' && ' '}
+                                            <span style={{ color: entry.role === 'system' ? '#93c5fd' : '#e5e7eb', fontStyle: entry.role === 'system' ? 'italic' : 'normal' }}>
+                                                {entry.text}
+                                            </span>
+                                        </div>
+                                    ))}
+                                    {terminalBusy && (
+                                        <div><span style={{ color: '#f5d000', fontWeight: 900 }}>IJAM_BOT&gt;</span> processing...</div>
+                                    )}
+                                    {!terminalBusy && terminalLog.length > 0 && (
+                                        <div style={{ marginTop: '12px', cursor: 'pointer', color: '#f5d000', textDecoration: 'underline', fontWeight: 'bold' }}
+                                            onClick={() => {
+                                                if (slideIndex < activeLesson.steps.length) {
+                                                    const next = slideIndex + 1;
+                                                    setSlideIndex(next);
+                                                    if (next === activeLesson.steps.length) {
+                                                        appendTerminal('assistant', teachingTone === 'ijam' ? '[LESSON COMPLETE]\npadu gila! klik "> proceed to next lesson" untuk sambung.' : '[LESSON COMPLETE]\nGreat job! Click "> proceed to next lesson" to continue.');
+                                                    } else {
+                                                        appendTerminal('assistant', `[STEP ${next + 1} OF ${activeLesson.steps.length}]\n${activeLesson.steps[next]}`);
+                                                    }
+                                                } else {
+                                                    const nextLessonIdx = (activeIndex + 1) % navigableLessons.length;
+                                                    const nextLesson = navigableLessons[nextLessonIdx];
+                                                    setActiveIndex(nextLessonIdx);
+                                                    setSlideIndex(-1);
+                                                    setTerminalLog([
+                                                        { role: 'system', text: 'Terminal cleared for new lesson.' },
+                                                        { role: 'system', text: `Opened lesson: ${nextLesson.id}` },
+                                                        {
+                                                            role: 'assistant', text: buildIjamBotLessonBrief({
+                                                                lesson: nextLesson,
+                                                                tips: LESSON_TIPS_BY_TONE[teachingTone]?.[nextLesson.id] || [],
+                                                                tone: teachingTone
+                                                            })
+                                                        }
+                                                    ]);
+                                                }
+                                            }}>
+                                            &gt; {slideIndex >= activeLesson.steps.length ? 'proceed to next lesson' : 'show next step'}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                             <div style={{ border: '2px solid #334155', borderRadius: '8px', padding: '8px', background: '#0b1220' }}>
-                                {!planStarted && (
-                                    <div style={{ marginBottom: '8px', display: 'grid', gridTemplateColumns: '1fr auto', gap: '6px' }}>
-                                        <input
-                                            value={planCommandInput}
-                                            onChange={(e) => setPlanCommandInput(e.target.value)}
-                                            placeholder={`type: ${PLAN_START_COMMAND}`}
-                                            style={{ border: '2px solid #f5d000', borderRadius: '8px', background: '#111827', color: '#f8fafc', padding: '10px', fontFamily: 'monospace', fontWeight: 800 }}
-                                        />
-                                        <button type="button" className="btn btn-red" onClick={handleStartPlan} style={{ fontFamily: 'monospace' }}>
-                                            START
-                                        </button>
-                                    </div>
-                                )}
-                                {planCommandError && (
-                                    <div style={{ color: '#fca5a5', fontFamily: 'monospace', fontSize: '11px', marginBottom: '6px' }}>{planCommandError}</div>
-                                )}
                                 <form
                                     onSubmit={async (e) => {
                                         e.preventDefault();
@@ -2103,35 +2968,394 @@ const ResourcePage = () => {
                                     <input
                                         value={terminalInput}
                                         onChange={(e) => setTerminalInput(e.target.value)}
-                                        placeholder='type command (try: help)'
-                                        style={{ border: '2px solid #f5d000', borderRadius: '8px', background: '#111827', color: '#f8fafc', padding: '10px', fontFamily: 'monospace', fontWeight: 800 }}
+                                        placeholder='minta tolong sini...'
+                                        style={{ border: '2px solid #f5d000', borderRadius: '8px', background: '#111827', color: '#f8fafc', padding: '10px', fontFamily: 'monospace', fontWeight: 800, minWidth: 0, width: '100%' }}
                                     />
                                     <button type="submit" className="btn btn-red" disabled={terminalBusy} style={{ fontFamily: 'monospace' }}>
                                         RUN
                                     </button>
                                 </form>
-                                <div style={{ marginTop: '6px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                                    {['help', PLAN_START_COMMAND, 'ls lessons', `open ${activeLesson.id}`, 'teach', 'next', 'progress'].map((cmd) => (
-                                        <button
-                                            key={cmd}
-                                            type="button"
-                                            className="btn btn-outline"
-                                            onClick={async () => {
-                                                if (terminalBusy) return;
-                                                await executeTerminalCommand(cmd);
-                                            }}
-                                            style={{ fontSize: '10px', fontFamily: 'monospace' }}
-                                        >
-                                            {cmd}
-                                        </button>
-                                    ))}
-                                </div>
                             </div>
                         </main>
+                    </div>
+                </WindowFrame>
+            )}
+
+            {/* 2. Resource Explorer Window */}
+            {activeWindow === 'files' && (
+                <WindowFrame title="FILE_EXPLORER // IjamOS" icon={Folder} onClose={() => setActiveWindow(null)}>
+                    <div style={{ padding: '20px', height: '100%', overflowY: 'auto' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+                            {libraryItems.map((item, idx) => (
+                                <div key={item.id} style={{ background: '#0b1220', border: '3px solid #f5d000', borderRadius: '12px', padding: '16px', boxShadow: '6px 6px 0 #0b1220', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                                        <div style={{ color: '#f5d000', fontWeight: 900, fontFamily: 'monospace', fontSize: '14px' }}>{item.title}</div>
+                                        <div style={{ background: '#1e293b', padding: '2px 8px', borderRadius: '4px', color: '#bfdbfe', fontSize: '10px', fontWeight: 800 }}>{item.source}</div>
+                                    </div>
+                                    <div style={{ color: '#94a3b8', fontSize: '12px', flex: 1 }}>{item.description}</div>
+                                    <button
+                                        onClick={() => openExternal(item.url)}
+                                        style={{ background: '#f5d000', border: '2px solid #0b1220', color: '#0b1220', padding: '8px', fontWeight: 900, fontFamily: 'monospace', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                    >
+                                        OPEN_EXTERNAL <ExternalLink size={14} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </WindowFrame>
+            )}
+
+            {/* 3. Settings/Stats Window */}
+            {activeWindow === 'progress' && (
+                <WindowFrame title="BUILDER_STATS // PROGRESS" icon={User} onClose={() => setActiveWindow(null)}>
+                    <div style={{ padding: '24px', color: '#fff', overflowY: 'auto', height: '100%' }}>
+                        {/* Builder Identity Card */}
+                        <div style={{ background: 'linear-gradient(45deg, #0b1220 0%, #1e293b 100%)', border: '3px solid #f5d000', borderRadius: '16px', padding: '24px', marginBottom: '30px', display: 'flex', alignItems: 'center', gap: '20px', boxShadow: '8px 8px 0 #0b1220' }}>
+                            <div style={{ width: '80px', height: '80px', borderRadius: '20px', background: '#f5d000', border: '4px solid #0b1220', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', fontWeight: 900, color: '#0b1220', flexShrink: 0 }}>
+                                {(currentUser?.name || 'A')[0].toUpperCase()}
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '12px', color: '#f5d000', fontWeight: 900, letterSpacing: '0.1em', marginBottom: '4px' }}>VERIFIED_BUILDER</div>
+                                <div style={{ fontSize: '24px', fontWeight: 900, color: '#fff' }}>{currentUser?.name || 'Anonymous Builder'}</div>
+                                <div style={{ fontSize: '13px', color: '#94a3b8', fontWeight: 800 }}>DARI {currentUser?.district || 'Selangor'} // {userRank}</div>
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: isNarrowScreen ? '1fr' : '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
+                            {/* Rank Card */}
+                            <div style={{ background: '#0b1220', padding: '24px', border: '3px solid #f5d000', borderRadius: '12px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px', letterSpacing: '0.1em' }}>RANK</div>
+                                <div style={{ fontSize: '24px', fontWeight: 900, color: '#f5d000' }}>{userRank}</div>
+                                <div style={{ fontSize: '14px', color: '#86efac', marginTop: '4px', fontWeight: 800 }}>{userVibes} VIBES</div>
+                            </div>
+                            {/* Completion Card */}
+                            <div style={{ background: '#0b1220', padding: '24px', border: '3px solid #334155', borderRadius: '12px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px', letterSpacing: '0.1em' }}>COMPLETION</div>
+                                <div style={{ fontSize: '24px', fontWeight: 900, color: '#fff' }}>
+                                    {Math.round((completedLessons.length / lessons.length) * 100)}%
+                                </div>
+                                <div style={{ fontSize: '14px', color: '#94a3b8', marginTop: '4px' }}>
+                                    {completedLessons.length} / {lessons.length} Modules
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div style={{ marginBottom: '30px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '12px', fontWeight: 900, fontFamily: 'monospace' }}>
+                                <span>SYSTEM_READY_INDEX</span>
+                                <span>{Math.round((completedLessons.length / lessons.length) * 100)}%</span>
+                            </div>
+                            <div style={{ height: '12px', background: '#0b1220', border: '2px solid #334155', borderRadius: '6px', overflow: 'hidden' }}>
+                                <div style={{
+                                    height: '100%',
+                                    width: `${(completedLessons.length / lessons.length) * 100}%`,
+                                    background: '#f5d000',
+                                    boxShadow: '0 0 12px rgba(245, 208, 0, 0.4)',
+                                    transition: 'width 1s ease-out'
+                                }} />
+                            </div>
+                        </div>
+
+                        {/* Stage Checklist */}
+                        <div style={{ background: '#0b1220', padding: '20px', borderRadius: '12px', border: '2px solid #1e293b' }}>
+                            <div style={{ fontSize: '14px', fontWeight: 900, color: '#f5d000', marginBottom: '16px', fontFamily: 'monospace' }}>ROADMAP_CHECKLIST</div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {Object.keys(groupedLessons).map(stage => {
+                                    const stageLessons = groupedLessons[stage];
+                                    const completedInStage = stageLessons.filter(l => completedLessons.includes(l.id)).length;
+                                    const isStageDone = completedInStage === stageLessons.length;
+
+                                    return (
+                                        <div key={stage} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: isStageDone ? 'rgba(134, 239, 172, 0.05)' : 'rgba(255,255,255,0.02)', border: isStageDone ? '1px solid #86efac' : '1px solid #1e293b', borderRadius: '8px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                <div style={{ width: '18px', height: '18px', border: '2px solid', borderColor: isStageDone ? '#86efac' : '#334155', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#86efac' }}>
+                                                    {isStageDone && "✓"}
+                                                </div>
+                                                <span style={{ fontSize: '13px', fontWeight: 800, color: isStageDone ? '#86efac' : '#fff' }}>{stage.toUpperCase()}</span>
+                                            </div>
+                                            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 900 }}>{completedInStage}/{stageLessons.length}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                </WindowFrame>
+            )}
+
+            {activeWindow === 'settings' && (
+                <WindowFrame title="SYSTEM_SETTINGS // CONFIG" icon={Settings} onClose={() => setActiveWindow(null)}>
+                    <div style={{ padding: '24px', color: '#fff', overflowY: 'auto', height: '100%' }}>
+                        <form onSubmit={handleSaveSettings} style={{ maxWidth: '600px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+                            {/* Profile Visual Preview */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '20px', paddingBottom: '24px', borderBottom: '1px solid #1e293b' }}>
+                                <div style={{ width: '64px', height: '64px', borderRadius: '12px', background: '#334155', border: '2px solid #f5d000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: 900, color: '#f5d000' }}>
+                                    {(profileForm.username || 'A')[0].toUpperCase()}
+                                </div>
+                                <div>
+                                    <h3 style={{ fontSize: '14px', color: '#f5d000', margin: 0, fontWeight: 900, fontFamily: 'monospace' }}>[ USER_PROFILE ]</h3>
+                                    <p style={{ fontSize: '11px', color: '#64748b', margin: '4px 0 0' }}>Configure your identity across IjamOS</p>
+                                </div>
+                            </div>
+
+                            <div>
+
+                                <h3 style={{ fontSize: '14px', color: '#f5d000', marginBottom: '16px', fontWeight: 900, fontFamily: 'monospace' }}>[ USER_PROFILE ]</h3>
+                                <div style={{ display: 'grid', gridTemplateColumns: isMobileView ? '1fr' : '1fr 1fr', gap: '16px' }}>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '8px', fontWeight: 900 }}>FULL_NAME</label>
+                                        <input
+                                            value={profileForm.username}
+                                            onChange={e => setProfileForm(p => ({ ...p, username: e.target.value }))}
+                                            style={{ width: '100%', background: '#0b1220', border: '2px solid #334155', padding: '12px', color: '#fff', borderRadius: '8px', fontFamily: 'monospace' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '8px', fontWeight: 900 }}>DISTRICT</label>
+                                        <input
+                                            value={profileForm.district}
+                                            onChange={e => setProfileForm(p => ({ ...p, district: e.target.value }))}
+                                            style={{ width: '100%', background: '#0b1220', border: '2px solid #334155', padding: '12px', color: '#fff', borderRadius: '8px', fontFamily: 'monospace' }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Project Section */}
+                            <div>
+                                <h3 style={{ fontSize: '14px', color: '#f5d000', marginBottom: '16px', fontWeight: 900, fontFamily: 'monospace' }}>[ PROJECT_CORE ]</h3>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '8px', fontWeight: 900 }}>IDEA_TITLE</label>
+                                        <input
+                                            value={profileForm.ideaTitle}
+                                            onChange={e => setProfileForm(p => ({ ...p, ideaTitle: e.target.value }))}
+                                            style={{ width: '100%', background: '#0b1220', border: '2px solid #334155', padding: '12px', color: '#fff', borderRadius: '8px', fontFamily: 'monospace' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '8px', fontWeight: 900 }}>PROBLEM_STATEMENT</label>
+                                        <textarea
+                                            value={profileForm.problemStatement}
+                                            onChange={e => setProfileForm(p => ({ ...p, problemStatement: e.target.value }))}
+                                            rows={3}
+                                            style={{ width: '100%', background: '#0b1220', border: '2px solid #334155', padding: '12px', color: '#fff', borderRadius: '8px', fontFamily: 'monospace', resize: 'none' }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={isSavingSettings}
+                                style={{
+                                    background: '#f5d000',
+                                    color: '#0b1220',
+                                    padding: '16px',
+                                    fontWeight: 950,
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    fontSize: '14px',
+                                    marginTop: '10px',
+                                    boxShadow: '4px 4px 0 #0b1220',
+                                    fontFamily: 'monospace'
+                                }}
+                            >
+                                {isSavingSettings ? 'SYNCING...' : 'SAVE CONFIGURATION'}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (confirm('Clear local OS session?')) {
+                                        localStorage.removeItem('vibe_os_booted');
+                                        window.location.reload();
+                                    }
+                                }}
+                                style={{ background: 'transparent', color: '#94a3b8', border: '1px solid #1e293b', padding: '10px', borderRadius: '8px', fontSize: '11px', cursor: 'pointer', fontFamily: 'monospace' }}
+                            >
+                                [ X ] FACTORY_RESET_OS
+                            </button>
+                        </form>
+                    </div>
+                </WindowFrame>
+            )}
+
+            {/* 6. Arcade Window */}
+            {activeWindow === 'arcade' && (
+                <WindowFrame title="BUILDER_ARCADE // STUDIO" icon={Gamepad2} onClose={() => setActiveWindow(null)}>
+                    <div style={{ flex: 1, minHeight: 0, background: '#f3f4f6', overflowY: 'auto' }}>
+                        <BuilderStudioPage session={session} />
+                    </div>
+                </WindowFrame>
+            )}
+
+            {/* 4. Recycle Bin Window */}
+            {activeWindow === 'trash' && (
+                <WindowFrame title="RECYCLE_BIN // DELETED CONTENT" icon={Trash2} onClose={() => setActiveWindow(null)}>
+                    <div style={{ padding: '60px 20px', textAlign: 'center', color: '#64748b' }}>
+                        <Trash2 size={48} style={{ marginBottom: '20px', opacity: 0.3 }} />
+                        <div style={{ fontFamily: 'monospace', fontWeight: 900, fontSize: '14px' }}>BOX IS CURRENTLY EMPTY</div>
+                        <div style={{ fontSize: '11px', marginTop: '10px' }}>[ No deleted vibes or failed projects found ]</div>
+                    </div>
+                </WindowFrame>
+            )}
+
+            {/* Start Menu Overlay */}
+            {isStartMenuOpen && (
+                <div
+                    style={{
+                        position: 'absolute',
+                        bottom: '48px',
+                        left: '0',
+                        width: '380px',
+                        maxWidth: '100%',
+                        height: '520px',
+                        maxHeight: 'calc(100vh - 48px)',
+                        background: '#0b1220',
+                        border: '3px solid #000',
+                        borderBottom: 'none',
+                        boxShadow: '6px 6px 0 rgba(0,0,0,0.5)',
+                        zIndex: 9999,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        fontFamily: 'monospace',
+                        color: '#fff',
+                        borderTopRightRadius: '12px'
+                    }}
+                >
+                    {/* Search Bar */}
+                    <div style={{ padding: '20px', borderBottom: '2px solid #1e293b' }}>
+                        <div style={{ position: 'relative' }}>
+                            <input
+                                type="text"
+                                placeholder="Search apps, files, or web..."
+                                value={startMenuSearch}
+                                onChange={(e) => setStartMenuSearch(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '12px 12px 12px 40px',
+                                    background: '#1e293b',
+                                    border: '1px solid #334155',
+                                    color: '#fff',
+                                    borderRadius: '6px',
+                                    fontFamily: 'monospace',
+                                    fontSize: '14px'
+                                }}
+                            />
+                            <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: '14px', top: '14px' }} />
+                        </div>
+                    </div>
+
+                    {/* Pinned Apps */}
+                    <div style={{ padding: '20px', flex: 1, overflowY: 'auto' }}>
+                        <h4 style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '16px', fontWeight: 900 }}>PINNED</h4>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+                            <StartMenuApp icon={Terminal} label="Terminal" onClick={() => { setActiveWindow('terminal'); setIsStartMenuOpen(false); }} />
+                            <StartMenuApp icon={Folder} label="Files" onClick={() => { setActiveWindow('files'); setIsStartMenuOpen(false); }} />
+                            <StartMenuApp icon={User} label="Stats" onClick={() => { setActiveWindow('stats'); setIsStartMenuOpen(false); }} />
+                            <StartMenuApp icon={Gamepad2} label="Arcade" onClick={() => { setActiveWindow('arcade'); setIsStartMenuOpen(false); }} />
+                            <StartMenuApp icon={Settings} label="Config" onClick={() => { setActiveWindow('settings'); setIsStartMenuOpen(false); }} />
+                            <StartMenuApp icon={Trash2} label="Recycle" onClick={() => { setActiveWindow('trash'); setIsStartMenuOpen(false); }} />
+                            <StartMenuApp icon={BookOpen} label="Docs" onClick={() => { window.open('https://antigravity.id', '_blank'); setIsStartMenuOpen(false); }} />
+                            <StartMenuApp icon={Github} label="GitHub" onClick={() => { window.open('https://github.com', '_blank'); setIsStartMenuOpen(false); }} />
+                        </div>
+                    </div>
+
+                    {/* Bottom Footer (Weather/Date + Power) */}
+                    <div style={{ padding: '16px 20px', background: '#080d18', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '2px solid #1e293b' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <button
+                                aria-label="Power Options"
+                                onClick={() => {
+                                    if (window.confirm('Power off IjamOS session?')) {
+                                        localStorage.removeItem('vibe_os_booted');
+                                        window.location.reload();
+                                    }
+                                }}
+                                style={{
+                                    background: '#ef4444',
+                                    border: 'none',
+                                    color: '#fff',
+                                    width: '32px',
+                                    height: '32px',
+                                    borderRadius: '16px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                <Power size={16} />
+                            </button>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <div style={{ fontWeight: 900, fontSize: '13px' }}>{currentUser?.name || 'Administrator'}</div>
+                                <div style={{ color: '#94a3b8', fontSize: '10px' }}>Local Session</div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            )}
+
+            {/* Taskbar */}
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '48px', background: '#f5d000', borderTop: '3px solid #0b1220', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', zIndex: 100 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                    <button
+                        onClick={() => setIsStartMenuOpen(!isStartMenuOpen)}
+                        style={{
+                            background: isStartMenuOpen ? '#1e293b' : '#0b1220',
+                            color: isStartMenuOpen ? '#fff' : '#f5d000',
+                            border: 'none',
+                            padding: '6px 16px',
+                            fontWeight: 900,
+                            fontFamily: 'monospace',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            transition: 'all 0.2s'
+                        }}
+                    >
+                        <Power size={14} /> START
+                    </button>
+                    {activeWindow && (
+                        <div style={{ background: '#0b1220', color: '#fff', padding: '6px 16px', borderRadius: '4px', fontSize: '11px', fontWeight: 900, border: '1px solid #334155', fontFamily: 'monospace' }}>
+                            {activeWindow.toUpperCase()}
+                        </div>
+                    )}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0px', marginRight: '4px' }}>
+                        <div style={{ fontSize: '10px', color: '#000', fontWeight: 600 }}>{systemDate}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 900, color: '#c8102e' }}>
+                            {isWeatherLoading ? (
+                                <span>Syncing...</span>
+                            ) : weather ? (
+                                <>
+                                    <span>{weather.temperature}°C</span>
+                                    <span style={{ fontSize: '10px', color: '#0b1220' }}>({weather.description})</span>
+                                </>
+                            ) : (
+                                <span>Selangor</span>
+                            )}
+                        </div>
+                    </div>
+
+                    <div style={{ fontFamily: 'monospace', fontSize: '14px', fontWeight: 900, color: '#0b1220' }}>
+                        {systemTime}
                     </div>
                 </div>
             </div>
         </section>
     );
+
 };
+
 export default ResourcePage;

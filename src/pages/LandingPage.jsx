@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Users, Folder, Sunrise, Sun, Moon, Coffee, Flag, PartyPopper, Gift, Hammer, Zap, Cpu, MessageSquare, Bot, Cloud, CloudRain, CloudLightning, Wind, Maximize2, Minimize2, X, HelpCircle } from 'lucide-react';
 import GalleryShowcase from '../components/GalleryShowcase';
 import { localIntelligence, callNvidiaLLM, ZARULIJAM_SYSTEM_PROMPT } from '../lib/nvidia';
@@ -21,6 +21,7 @@ import {
     extractKrackedDescription,
     downloadCSV
 } from '../utils';
+import { useLiveEvents } from '../utils/useLiveEvents';
 
 const LandingPage = ({
     profiles,
@@ -40,6 +41,17 @@ const LandingPage = ({
     const [selectedDistrictKey, setSelectedDistrictKey] = useState(null);
     const [mapRegions, setMapRegions] = useState([]);
     const [mapViewMode, setMapViewMode] = useState('builders'); // 'builders' or 'projects'
+
+    // Live Events (Public Holidays & Hijri Date)
+    const { liveEventMessage, eventGreeting } = useLiveEvents();
+
+    const liveStatusText = useMemo(() => {
+        const safeProfiles = profiles || [];
+        const safeSubmissions = submissions || [];
+        const builderCount = safeProfiles.filter(p => !['owner', 'admin'].includes(p.role)).length;
+        const projectCount = safeSubmissions.length;
+        return `[LIVE STATUS] ${builderCount} Builders / ${projectCount} Projects. Vibe Level: MAXIMUM!`;
+    }, [profiles, submissions]);
 
     // Mascot & Weather State
     const [showMascotModal, setShowMascotModal] = useState(false);
@@ -62,11 +74,36 @@ const LandingPage = ({
     const handleSendMessage = async (e, text = null) => {
         if (e) e.preventDefault();
         const input = text || chatInput;
+        const lowerInput = input.toLowerCase().trim();
         if (!input.trim() || isAiLoading) return;
 
         const userMsg = { role: 'user', text: input };
         setChatMessages(prev => [...prev, userMsg]);
         if (!text) setChatInput('');
+
+        // Handle Special Commands
+        if (lowerInput === 'boot ijamos' || lowerInput === 'ijamos') {
+            setTimeout(() => {
+                setChatMessages(prev => [...prev, { role: 'bot', text: "[ SYSTEM ] BOOT_SEQUENCE: INITIALIZING_IJAM_OS... (b ᵔ▽ᵔ)b" }]);
+                setTimeout(() => {
+                    setPublicPage('ijamos');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }, 1200);
+            }, 600);
+            return;
+        }
+
+        if (lowerInput === 'stats') {
+            const builderCount = profiles.filter(p => !['owner', 'admin'].includes(p.role)).length;
+            const projectCount = submissions.length;
+            setTimeout(() => {
+                setChatMessages(prev => [...prev, {
+                    role: 'bot',
+                    text: `[ VIBE_STATS ]\n⚡ ACTIVE_BUILDERS: ${builderCount}\n🚀 PROJECTS_SHIPPED: ${projectCount}\n🔥 STATUS: MAXIMUM_VIBE\n\nSelangor tengah membara ni bro! (☆▽☆)`
+                }]);
+            }, 600);
+            return;
+        }
 
         if (chatMode === 'ai') {
             setIsAiLoading(true);
@@ -102,10 +139,11 @@ const LandingPage = ({
     };
 
     const SUGGESTED_QUESTIONS = [
+        "boot ijamos",
+        "stats",
         "macam mana nak join?",
         "apa itu necb?",
         "7-day sprint tu apa?",
-        "tools apa yang perlu?",
         "siapa ijam?"
     ];
 
@@ -158,6 +196,85 @@ const LandingPage = ({
         if (condition.includes('Storm')) return <CloudLightning size={size} color="#fbbf24" />;
         if (condition.includes('Cloud')) return <Cloud size={size} color="#64748b" />;
         return <Sun size={size} color="#f59e0b" fill="#f59e0b" />;
+    };
+
+    const LiveMarquee = ({ profiles, submissions }) => {
+        const safeProfiles = profiles || [];
+        const safeSubmissions = submissions || [];
+
+        const builderCount = safeProfiles.filter(p => !['owner', 'admin'].includes(p.role)).length;
+        const projectCount = safeSubmissions.length;
+        const latestProject = safeSubmissions[0];
+
+        const items = [
+            { label: "SITE_STATUS", value: "ONLINE", color: "marquee-green" },
+            { label: "ACTIVE_BUILDERS", value: builderCount, color: "marquee-red" },
+            { label: "PROJECTS_COMMITTED", value: projectCount, color: "marquee-yellow" },
+            { label: "LATEST_DROP", value: latestProject ? `${latestProject.project_name}` : "WAITING", color: "marquee-red" },
+            { label: "VIBE_LEVEL", value: "MAXIMUM", color: "marquee-green" },
+            { label: "LOCATION", value: "SELANGOR, MY", color: "marquee-yellow" },
+        ];
+
+        const marqueeRef = useRef(null);
+
+        // Start in the middle
+        useEffect(() => {
+            if (marqueeRef.current) {
+                const container = marqueeRef.current;
+                const singleSectionWidth = container.scrollWidth / 3;
+                container.scrollLeft = singleSectionWidth;
+            }
+        }, []);
+
+        const handleScroll = () => {
+            if (!marqueeRef.current) return;
+            const container = marqueeRef.current;
+            const singleSectionWidth = container.scrollWidth / 3;
+
+            // Same precise logic as GalleryShowcase
+            if (container.scrollLeft <= 10) {
+                container.scrollLeft = singleSectionWidth + container.scrollLeft;
+            } else if (container.scrollLeft >= singleSectionWidth * 2 - 10) {
+                container.scrollLeft = container.scrollLeft - singleSectionWidth;
+            }
+        };
+
+        // Auto-scrolling animation removed per user request
+
+        const renderSet = (setIdx) => (
+            <div key={setIdx} className="marquee-set" style={{ display: 'flex', gap: '60px', paddingRight: '60px', flexShrink: 0 }}>
+                {items.map((item, i) => (
+                    <div key={i} className="marquee-item" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div className="marquee-status" />
+                        <span>{item.label}:</span>
+                        <span className={item.color} style={{ whiteSpace: 'nowrap' }}>{item.value}</span>
+                    </div>
+                ))}
+            </div>
+        );
+
+        return (
+            <div className="live-marquee-section" style={{ overflow: 'hidden', whiteSpace: 'nowrap', borderBottom: '3px solid black' }}>
+                <div
+                    ref={marqueeRef}
+                    onScroll={handleScroll}
+                    className="marquee-content hidden-scrollbar"
+                    style={{
+                        display: 'flex',
+                        width: '100%',
+                        overflowX: 'auto', // Must be scrollable for JS modifying scrollLeft
+                        overflowY: 'hidden',
+                        animation: 'none', // Override CSS rules
+                        scrollbarWidth: 'none', // Firefox
+                        msOverflowStyle: 'none', // IE/Edge
+                    }}
+                >
+                    {renderSet(1)}
+                    {renderSet(2)}
+                    {renderSet(3)}
+                </div>
+            </div>
+        );
     };
 
     const IjamBotMascot = ({ size = 24, mousePos }) => {
@@ -213,19 +330,23 @@ const LandingPage = ({
         else if (hour >= 15 && hour < 19) { timeLabel = "SELAMAT PETANG!"; timeIcon = getRandom(KAOMOJI.EVENING); }
         else if (hour >= 19 || hour < 5) { timeLabel = "SELAMAT MALAM!"; timeIcon = getRandom(KAOMOJI.NIGHT); }
 
-        // Combine with holiday greeting if available
-        let finalGreetingText = `${timeIcon} ${timeLabel}`;
+        let finalGreetingLines = [];
+        finalGreetingLines.push(`${timeIcon} ${timeLabel}`);
         if (holidayConfig) {
-            finalGreetingText += ` & ${holidayConfig.botLabel}! ${getRandom(KAOMOJI.VIBE)}`;
+            finalGreetingLines.push(`Selamat menyambut ${holidayConfig.botLabel}!`);
         } else {
-            finalGreetingText += ` READY TO VIBE? ${getRandom(KAOMOJI.VIBE)}`;
+            if (eventGreeting) {
+                finalGreetingLines.push(eventGreeting);
+            }
+            finalGreetingLines.push("Semua orang boleh akses IjamOS sekarang!");
         }
+        finalGreetingLines.push("Click anywhere on this terminal to initialize IjamOS (b ᵔ▽ᵔ)b");
 
         return {
             timestamp: `${year}-${String(month).padStart(2, '0')}-${String(date).padStart(2, '0')} ${String(hour).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`,
-            text: finalGreetingText
+            text: finalGreetingLines.join('\n')
         };
-    }, [holidayConfig]);
+    }, [holidayConfig, eventGreeting]);
 
     // Sequential Typing
     useEffect(() => {
@@ -621,15 +742,17 @@ const LandingPage = ({
     }, [pendingKualaLumpurOpen, isKualaLumpurLoading]);
 
     return (
-        <>
-            <section id="how-it-works" className="hero" style={{ paddingTop: '8px', paddingBottom: '40px' }}>
+        <div style={{ position: 'relative' }}>
+            <LiveMarquee profiles={profiles} submissions={submissions} />
+            <section id="how-it-works" className="hero hero-glow-container" style={{ paddingTop: '8px', paddingBottom: '40px' }}>
+                <div className="hero-aura" />
                 <div className="container grid-12">
-                    <div style={{ gridColumn: 'span 7' }}>
+                    <div style={{ gridColumn: 'span 5' }}>
                         <div className="pill pill-red" style={{ marginBottom: '12px' }}>SELANGOR BUILDER SPRINT 2026</div>
                         <h1 className="text-huge">Built for <span style={{ color: 'var(--selangor-red)' }}>Selangor</span>. Connecting and growing the builder community.</h1>
                         <button className="btn btn-red" style={{ marginTop: '12px' }} onClick={handleJoinClick}>Join the Cohort</button>
                     </div>
-                    <div style={{ gridColumn: 'span 5' }}>
+                    <div style={{ gridColumn: 'span 7' }}>
                         <div className="neo-card no-jitter" style={{ border: '3px solid black', boxShadow: '12px 12px 0px black', padding: '32px', height: '100%', display: 'flex', flexDirection: 'column' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'auto', gap: '12px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -649,7 +772,17 @@ const LandingPage = ({
                                     </div>
                                 </div>
                             </div>
-                            <div className="terminal-shell" style={{ background: '#000', borderRadius: '12px', padding: '16px 20px', marginTop: '20px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '210px' }}>
+                            <div
+                                className="terminal-shell"
+                                onClick={() => {
+                                    setChatMessages(prev => [...prev, { role: 'bot', text: "[ SYSTEM ] BOOT_SEQUENCE: INITIALIZING_IJAM_OS... (b ᵔ▽ᵔ)b" }]);
+                                    setTimeout(() => {
+                                        setPublicPage('ijamos');
+                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    }, 1200);
+                                }}
+                                style={{ background: '#000', borderRadius: '12px', padding: '16px 20px', marginTop: '20px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '210px' }}
+                            >
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                     <div className="terminal-prompt" style={{ color: 'var(--selangor-red)', fontFamily: 'monospace', fontSize: '13px', lineHeight: 1.4, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -662,6 +795,13 @@ const LandingPage = ({
                                         {typedCommand}
                                         {typingPhase === 'command' && <span className="terminal-caret">|</span>}
                                     </p>
+
+                                    {typingPhase !== 'command' && (
+                                        <div style={{ color: '#22c55e', fontFamily: 'monospace', fontSize: '12px', lineHeight: 1.5, marginTop: '2px', marginBottom: '14px' }}>
+                                            <div>{liveStatusText}</div>
+                                            {liveEventMessage && <div>[LIVE EVENT] {liveEventMessage}</div>}
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div style={{ marginTop: 'auto', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
@@ -678,7 +818,7 @@ const LandingPage = ({
                                             <span className="terminal-bot-label" style={{ color: 'var(--selangor-red)', fontSize: '10px', fontWeight: '950', fontFamily: 'monospace', letterSpacing: '1px' }}>IJAM_BOT</span>
                                             <span style={{ color: '#666', fontSize: '9px', fontFamily: 'monospace' }}>{typedTimestamp}</span>
                                         </div>
-                                        <p className="terminal-greeting" style={{ color: '#22c55e', fontWeight: 'bold', fontFamily: 'monospace', fontSize: '12px', lineHeight: 1.4, minHeight: '1.2em' }}>
+                                        <p className="terminal-greeting" style={{ color: '#22c55e', fontWeight: 'bold', fontFamily: 'monospace', fontSize: '12px', lineHeight: 1.4, minHeight: '1.2em', whiteSpace: 'pre-wrap' }}>
                                             {typedGreeting}
                                             {typingPhase === 'greeting' && <span className="terminal-caret" style={{ background: '#22c55e' }}>|</span>}
                                         </p>
@@ -1082,7 +1222,7 @@ const LandingPage = ({
                 setPublicPage={setPublicPage}
                 setSelectedDetailProfile={setSelectedDetailProfile}
             />
-        </>
+        </div>
     );
 };
 

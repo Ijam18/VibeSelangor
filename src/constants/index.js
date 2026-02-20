@@ -87,9 +87,8 @@ export const DEPLOY_COMMAND = '$ vibe deploy --target live';
 
 export const HEADER_LINKS = [
     { label: 'Map', sectionId: 'map' },
-    { label: 'Resources', page: 'resources' },
     { label: 'Forum', page: 'forum' },
-    { label: 'Arcade', page: 'studio', authRequired: true },
+
     { label: 'Showcase', page: 'showcase' },
     { label: 'Leaderboard', page: 'leaderboard' },
     { label: 'How it works', page: 'how-it-works' },

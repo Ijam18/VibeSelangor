@@ -13,11 +13,29 @@
   --font-body: 'Inter', sans-serif;
 
   --radius-sharp: 12px;
-  --max-width: 1200px;
+  --max-width: 1440px;
 
   --shadow-neo: 4px 4px 0px var(--border-charcoal);
   --shadow-neo-lg: 8px 8px 0px var(--border-charcoal);
   --shadow-neo-hover: 6px 6px 0px var(--border-charcoal);
+
+  /* Extended Selangor Palette */
+  --selangor-yellow: #f5d000;
+  --selangor-red-light: #E63946;
+  --selangor-red-muted: #A41623;
+  --accent-teal-dark: #006666;
+  --accent-teal-light: #00A3A3;
+
+  /* Terminal Theme */
+  --terminal-bg: #0a0a0a;
+  --terminal-text: #22c55e;
+  --terminal-prompt: var(--selangor-red);
+  --terminal-border: #333;
+  --terminal-shadow: rgba(206, 17, 38, 0.3);
+
+  /* Sticker/Cutout */
+  --sticker-shadow: 8px 8px 0 var(--border-charcoal);
+  --shadow-terminal: 12px 12px 0px black;
 }
 
 * {
@@ -534,6 +552,74 @@ section {
   opacity: 0.8;
 }
 
+/* Info Sticker Components */
+.info-sticker {
+  position: relative;
+  background: #fff;
+  border: 2px solid var(--border-charcoal);
+  border-radius: 12px 2px 12px 12px;
+  box-shadow: 6px 6px 0 var(--border-charcoal);
+  padding: 16px 20px;
+  transform: rotate(1.5deg);
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.info-sticker:hover {
+  transform: rotate(0deg) translateY(-2px);
+  box-shadow: 8px 8px 0 var(--border-charcoal);
+}
+
+.info-sticker--yellow {
+  background: linear-gradient(135deg, #fff6d9 0%, #f5d000 100%);
+}
+
+.info-sticker--red {
+  background: linear-gradient(135deg, #ffe5e7 0%, #E63946 100%);
+}
+
+.info-sticker--teal {
+  background: linear-gradient(135deg, #e0f7f7 0%, #00A3A3 100%);
+}
+
+.info-sticker__title {
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.info-sticker__content {
+  font-size: 13px;
+  line-height: 1.4;
+  opacity: 0.9;
+}
+
+/* Cutout Card */
+.cutout-card {
+  position: relative;
+  background: white;
+  border: 3px solid var(--border-charcoal);
+  border-radius: var(--radius-sharp);
+  box-shadow: var(--shadow-neo-lg);
+  padding: 24px;
+  overflow: visible;
+}
+
+.cutout-card::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 40px;
+  height: 40px;
+  background: var(--selangor-red);
+  border: 2px solid var(--border-charcoal);
+  border-radius: 50%;
+  box-shadow: 2px 2px 0 var(--border-charcoal);
+}
+
 .program-step {
   border: 2px solid var(--border-charcoal);
   border-radius: 10px;
@@ -599,6 +685,72 @@ section {
   overflow: hidden;
 }
 
+/* Enhanced Terminal Window */
+.terminal-window {
+  background: var(--terminal-bg);
+  border: 3px solid var(--border-charcoal);
+  border-radius: 12px;
+  box-shadow: var(--shadow-terminal);
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.terminal-window:hover {
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 20px var(--terminal-shadow);
+  transform: translateY(-2px);
+}
+
+.terminal-header {
+  background: #000;
+  border-bottom: 2px solid var(--terminal-border);
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.terminal-dots {
+  display: flex;
+  gap: 8px;
+}
+
+.terminal-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid var(--border-charcoal);
+}
+
+.terminal-dot--red {
+  background: var(--selangor-red);
+}
+
+.terminal-dot--yellow {
+  background: var(--selangor-yellow);
+}
+
+.terminal-dot--green {
+  background: var(--terminal-text);
+}
+
+@keyframes terminalPulse {
+
+  0%,
+  100% {
+    opacity: 1;
+    text-shadow: 0 0 8px var(--terminal-shadow);
+  }
+
+  50% {
+    opacity: 0.7;
+    text-shadow: 0 0 4px var(--terminal-shadow);
+  }
+}
+
+.terminal-prompt--animated {
+  animation: terminalPulse 1.2s ease-in-out infinite;
+}
+
 .terminal-prompt {
   animation: promptPulse 1.2s ease-in-out infinite;
 }
@@ -628,6 +780,7 @@ section {
   .grid-12 {
     display: flex;
     flex-direction: column;
+    gap: 32px;
   }
 }
 
@@ -733,8 +886,20 @@ section {
   }
 
   .text-huge {
-    font-size: clamp(34px, 10vw, 46px);
-    line-height: 1.05;
+    font-size: clamp(16px, 4vw, 20px);
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+  }
+
+  .pill {
+    padding: 4px 10px;
+    font-size: 9px;
+    letter-spacing: 0.05em;
+  }
+
+  .btn {
+    padding: 10px 16px;
+    font-size: 11px;
   }
 
   .glass-header .container {
@@ -1847,4 +2012,153 @@ section {
   .resource-card {
     margin-bottom: 16px;
   }
+}
+
+/* --- Homepage Enhancement Styles --- */
+
+/* Hero Glow / Aura Effect */
+.hero-glow-container {
+  position: relative;
+  overflow: visible;
+}
+
+.hero-glow-container::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 140%;
+  height: 140%;
+  background: radial-gradient(circle, rgba(206, 17, 38, 0.08) 0%, rgba(206, 17, 38, 0.03) 40%, transparent 70%);
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 50%;
+  filter: blur(40px);
+  animation: pulse-glow 8s infinite alternate ease-in-out;
+}
+
+@keyframes pulse-glow {
+  0% {
+    opacity: 0.5;
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+}
+
+/* Live Activity Marquee */
+.live-marquee-section {
+  background: #000;
+  border-top: 3px solid #000;
+  border-bottom: 3px solid #000;
+  padding: 6px 0;
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+  z-index: 10;
+  margin: 0;
+}
+
+.marquee-content {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll 20s linear infinite;
+  will-change: transform;
+}
+
+.marquee-set {
+  display: flex;
+  gap: 60px;
+  padding-right: 60px;
+  /* Bridge gap for seamless loop */
+}
+
+.marquee-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #fff;
+  font-family: var(--font-heading);
+  font-weight: 850;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.marquee-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+  animation: blink 1.5s infinite;
+}
+
+.marquee-red {
+  color: var(--selangor-red);
+}
+
+.marquee-yellow {
+  color: #f5d000;
+}
+
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0%);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.terminal-shell {
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.terminal-shell:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(206, 17, 38, 0.2);
+}
+
+.terminal-shell::after {
+  content: 'CLICK TO INITIALIZE IJAM_OS';
+  position: absolute;
+  inset: 0;
+  background: rgba(206, 17, 38, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-family: var(--font-heading);
+  font-weight: 900;
+  font-size: 16px;
+  letter-spacing: 2px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 50;
+  pointer-events: none;
+}
+
+.terminal-shell:hover::after {
+  opacity: 1;
+}
+
+/* Terminal Caret Customization */
+.terminal-caret-red {
+  background: var(--selangor-red) !important;
+}
+
+.terminal-system-log {
+  color: #94a3b8;
+  font-family: monospace;
+  font-size: 11px;
+  margin-top: 4px;
 }

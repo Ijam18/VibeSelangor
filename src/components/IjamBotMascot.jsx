@@ -91,6 +91,19 @@ const IjamBotMascot = ({ size = 48, mousePos, emotion = 'neutral' }) => {
                 return 'M 15 70 L 25 70'; // Straight line, tired
             case 'sad':
                 return 'M 10 75 Q 20 65 30 75'; // Frown
+            // New emotions
+            case 'frustrated':
+                return 'M 8 78 Q 20 72 32 78'; // Downward frown
+            case 'motivated':
+                return 'M 8 68 Q 20 78 32 68'; // Determined smile
+            case 'celebrating':
+                return 'M 5 65 Q 20 85 35 65'; // Wide open
+            case 'surprised':
+                return 'M 14 70 Q 20 75 26 70'; // Small O
+            case 'bored':
+                return 'M 12 72 L 28 72'; // Flat line
+            case 'focused':
+                return 'M 10 70 Q 20 73 30 70'; // Slight determined
             default:
                 return 'M 10 70 Q 20 75 30 70'; // Neutral
         }
@@ -109,6 +122,19 @@ const IjamBotMascot = ({ size = 48, mousePos, emotion = 'neutral' }) => {
                 return 'M 10 40 Q 15 42 20 40'; // Half-closed, sleepy
             case 'thinking':
                 return 'M 10 38 Q 15 35 20 38'; // Slightly squinted, thinking
+            // New emotions
+            case 'frustrated':
+                return 'M 10 42 L 20 38'; // Angled frown
+            case 'motivated':
+                return 'M 10 36 Q 15 32 20 36'; // Wide open
+            case 'celebrating':
+                return 'M 10 35 Q 15 28 20 35'; // Very wide
+            case 'surprised':
+                return 'M 10 35 Q 15 30 20 35 Q 15 28 15 33'; // Wide circles
+            case 'bored':
+                return 'M 10 40 Q 15 43 20 40'; // Half-lidded
+            case 'focused':
+                return 'M 10 37 Q 15 34 20 37'; // Concentrated
             default:
                 return 'M 10 38 Q 15 33 20 38'; // Normal eyes
         }
@@ -143,6 +169,19 @@ const IjamBotMascot = ({ size = 48, mousePos, emotion = 'neutral' }) => {
                 return '#f97316'; // Orange for confused
             case 'sad':
                 return '#3b82f6'; // Blue for sad
+            // New emotions
+            case 'frustrated':
+                return '#dc2626'; // Dark red
+            case 'motivated':
+                return '#10b981'; // Emerald green
+            case 'celebrating':
+                return '#fbbf24'; // Yellow/gold
+            case 'surprised':
+                return '#a855f7'; // Purple
+            case 'bored':
+                return '#6b7280'; // Gray
+            case 'focused':
+                return '#0ea5e9'; // Cyan/sky blue
             default:
                 return '#ef4444'; // Default red
         }
@@ -162,6 +201,19 @@ const IjamBotMascot = ({ size = 48, mousePos, emotion = 'neutral' }) => {
                 return '(o^▽^o)';
             case 'sad':
                 return '(ง •̀_•́)ง';
+            // New emotions
+            case 'frustrated':
+                return '(╬ಠ益ಠ)';
+            case 'motivated':
+                return '(ง •̀_•́)ง';
+            case 'celebrating':
+                return '٩(^ᴗ^)۶';
+            case 'surprised':
+                return '(ﾟοﾟ人))';
+            case 'bored':
+                return '(´~`  )';
+            case 'focused':
+                return '(￣^￣)ゞ';
             default:
                 return '(✿◠‿◠)';
         }

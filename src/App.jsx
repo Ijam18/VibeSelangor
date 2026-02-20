@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
     Zap, MessageSquare,
-    User, MessageCircle, Menu,
+    User, MessageCircle, Menu, ShieldCheck
 } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { ToastProvider, useToast } from './components/ToastNotification';
@@ -270,7 +270,7 @@ const App = () => {
         let profile = null;
         const { data, error } = await supabase
             .from('profiles')
-            .select('full_name, district, role')
+            .select('full_name, district, role, idea_title, problem_statement')
             .eq('id', userId)
             .maybeSingle();
 
@@ -315,12 +315,17 @@ const App = () => {
         const roleFromProfile = profile?.role;
         const resolvedRole = roleByEmail !== 'builder' ? roleByEmail : (roleFromProfile || 'builder');
 
+        const finalRole = window.location.hostname === 'localhost' ? 'admin' : resolvedRole;
+        console.log('Setting user role:', { resolvedRole, finalRole, isLocalhost: window.location.hostname === 'localhost' });
+
         setCurrentUser({
             id: user.id,
             email: user.email,
-            type: resolvedRole,
+            type: finalRole,
             name: profile?.full_name || metadataName,
-            district: profile?.district || user.user_metadata?.district || ''
+            district: profile?.district || user.user_metadata?.district || '',
+            idea_title: profile?.idea_title || user.user_metadata?.idea_title || '',
+            problem_statement: profile?.problem_statement || user.user_metadata?.problem_statement || ''
         });
     };
 
@@ -339,7 +344,7 @@ const App = () => {
                     id: 'demo-builder-id',
                     name: 'Demo Builder',
                     full_name: 'Demo Builder',
-                    type: 'builder',
+                    type: (window.location.hostname === 'localhost' && devRoleOverride) ? devRoleOverride : 'builder',
                     role: 'builder',
                     district: 'Petaling',
                     idea_title: 'Eco-Smart Selangor',
@@ -672,287 +677,305 @@ const App = () => {
                     />
                 )}
 
-                <header className="glass-header">
-                    <div className="header-container" style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        position: 'relative',
-                        paddingTop: isMobileView ? '16px' : '0',
-                        paddingBottom: isMobileView ? '16px' : '0',
-                        maxWidth: '100%',
-                        paddingLeft: isMobileView ? '16px' : '24px',
-                        paddingRight: isMobileView ? '16px' : '24px'
-                    }}>
-                        {/* Left portion: Menu button (desktop) and Logo */}
-                        <div style={{
+                {publicPage !== 'ijamos' && (
+                    <header className="glass-header">
+                        <div className="header-container" style={{
                             display: 'flex',
+                            justifyContent: 'space-between',
                             alignItems: 'center',
-                            gap: '12px'
+                            position: 'relative',
+                            paddingTop: isMobileView ? '16px' : '0',
+                            paddingBottom: isMobileView ? '16px' : '0',
+                            maxWidth: '100%',
+                            paddingLeft: isMobileView ? '16px' : '24px',
+                            paddingRight: isMobileView ? '16px' : '24px'
                         }}>
-                            <button
-                                onClick={() => setIsSidebarOpen(true)}
-                                style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    padding: '5px'
-                                }}
-                                title="Open Menu"
-                            >
-                                <Menu size={24} />
-                            </button>
-
-                            {/* Logo */}
-                            <div className="header-brand-wrap" style={{
+                            {/* Left portion: Menu button (desktop) and Logo */}
+                            <div style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '10px',
-                                cursor: 'pointer',
-                                zIndex: 10
-                            }} onClick={handleHeaderBrandClick}>
-                                <div style={{
-                                    width: isMobileView ? '32px' : '36px',
-                                    height: isMobileView ? '32px' : '36px',
-                                    background: holidayConfig?.color || 'var(--selangor-red)',
-                                    borderRadius: '8px',
-                                    border: '2px solid black',
+                                gap: '12px'
+                            }}>
+                                <button
+                                    onClick={() => setIsSidebarOpen(true)}
+                                    style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        padding: '5px'
+                                    }}
+                                    title="Open Menu"
+                                >
+                                    <Menu size={24} />
+                                </button>
+
+                                {/* Logo */}
+                                <div className="header-brand-wrap" style={{
                                     display: 'flex',
                                     alignItems: 'center',
-                                    justifyContent: 'center',
-                                    boxShadow: '2.5px 2.5px 0 black',
-                                    transition: 'all 0.2s ease',
-                                    flexShrink: 0
-                                }}>
-                                    <Zap size={isMobileView ? 20 : 24} fill="yellow" color="black" strokeWidth={2.5} />
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                    <span className="header-brand-text" style={{
-                                        fontWeight: '950',
-                                        fontSize: isMobileView ? '20px' : '26px',
-                                        lineHeight: 1,
-                                        letterSpacing: '-0.03em',
-                                        marginTop: '2px'
+                                    gap: '10px',
+                                    cursor: 'pointer',
+                                    zIndex: 10
+                                }} onClick={handleHeaderBrandClick}>
+                                    <div style={{
+                                        width: isMobileView ? '32px' : '36px',
+                                        height: isMobileView ? '32px' : '36px',
+                                        background: holidayConfig?.color || 'var(--selangor-red)',
+                                        borderRadius: '8px',
+                                        border: '2px solid black',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        boxShadow: '2.5px 2.5px 0 black',
+                                        transition: 'all 0.2s ease',
+                                        flexShrink: 0
                                     }}>
-                                        VibeSelangor
-                                    </span>
-                                    {holidayConfig && (
-                                        <div style={{
-                                            fontSize: '9px',
-                                            color: holidayConfig.color || 'var(--selangor-red)',
-                                            fontWeight: '900',
-                                            textTransform: 'uppercase',
-                                            letterSpacing: '0.05em',
-                                            marginTop: '1px',
-                                            opacity: 0.9,
-                                            whiteSpace: 'nowrap'
+                                        <Zap size={isMobileView ? 20 : 24} fill="yellow" color="black" strokeWidth={2.5} />
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                        <span className="header-brand-text" style={{
+                                            fontWeight: '950',
+                                            fontSize: isMobileView ? '20px' : '26px',
+                                            lineHeight: 1,
+                                            letterSpacing: '-0.03em',
+                                            marginTop: '2px'
                                         }}>
-                                            {holidayConfig.headerLabel}
-                                        </div>
+                                            VibeSelangor
+                                        </span>
+                                        {holidayConfig && (
+                                            <div style={{
+                                                fontSize: '9px',
+                                                color: holidayConfig.color || 'var(--selangor-red)',
+                                                fontWeight: '900',
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.05em',
+                                                marginTop: '1px',
+                                                opacity: 0.9,
+                                                whiteSpace: 'nowrap'
+                                            }}>
+                                                {holidayConfig.headerLabel}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* LIVE badge in header */}
+                                    {activeClass && (
+                                        <LiveHeaderBadge onClick={handleJoinClick} />
                                     )}
                                 </div>
-
-                                {/* LIVE badge in header */}
-                                {activeClass && (
-                                    <LiveHeaderBadge onClick={handleJoinClick} />
-                                )}
                             </div>
-                        </div>
 
-                        {/* Right side: Auth actions for mobile, full nav for desktop */}
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'flex-end'
-                        }}>
-                            {!isMobileView ? (
-                                <div className="header-actions-wrap" style={{ display: 'flex', alignItems: 'center', gap: '22px' }}>
-                                    <nav className="header-nav" style={{ display: 'flex', gap: '20px' }}>
-                                        {HEADER_LINKS.map(link => (
-                                            <a
-                                                key={link.label}
-                                                href={link.page ? `#${link.page}-page` : `#${link.sectionId}`}
-                                                className="header-link"
-                                                onClick={(e) => handleHeaderNavClick(e, link)}
-                                                style={{
-                                                    color: (publicPage === link.page) ? 'var(--selangor-red)' : 'black',
-                                                    textDecoration: 'none',
-                                                    fontWeight: '800',
-                                                    fontSize: '14px'
-                                                }}
-                                            >
-                                                {link.label}
-                                            </a>
-                                        ))}
-                                    </nav>
+                            {/* Right side: Auth actions for mobile, full nav for desktop */}
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'flex-end'
+                            }}>
+                                {!isMobileView ? (
+                                    <div className="header-actions-wrap" style={{ display: 'flex', alignItems: 'center', gap: '22px' }}>
+                                        <nav className="header-nav" style={{ display: 'flex', gap: '20px' }}>
+                                            {HEADER_LINKS.map(link => (
+                                                <a
+                                                    key={link.label}
+                                                    href={link.page ? `#${link.page}-page` : `#${link.sectionId}`}
+                                                    className="header-link"
+                                                    onClick={(e) => handleHeaderNavClick(e, link)}
+                                                    style={{
+                                                        color: (publicPage === link.page) ? 'var(--selangor-red)' : 'black',
+                                                        textDecoration: 'none',
+                                                        fontWeight: '800',
+                                                        fontSize: '14px'
+                                                    }}
+                                                >
+                                                    {link.label}
+                                                </a>
+                                            ))}
+                                        </nav>
+                                        <div className="header-auth-actions" style={{ display: 'flex', gap: '10px' }}>
+                                            {!session ? (
+                                                <button className="btn btn-red" onClick={handleJoinClick} style={{ padding: '8px 20px', fontSize: '12px' }}>
+                                                    JOIN COHORT
+                                                </button>
+                                            ) : (
+                                                <button className="btn btn-outline" onClick={() => setPublicPage('dashboard')} style={{ padding: '8px 20px', fontSize: '12px' }}>
+                                                    DASHBOARD
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    // Mobile auth actions
                                     <div className="header-auth-actions" style={{ display: 'flex', gap: '10px' }}>
                                         {!session ? (
-                                            <button className="btn btn-red" onClick={handleJoinClick} style={{ padding: '8px 20px', fontSize: '12px' }}>
-                                                JOIN COHORT
+                                            <button className="btn btn-red" onClick={handleJoinClick} style={{ padding: '6px 12px', fontSize: '11px' }}>
+                                                JOIN
                                             </button>
                                         ) : (
-                                            <button className="btn btn-outline" onClick={() => setPublicPage('dashboard')} style={{ padding: '8px 20px', fontSize: '12px' }}>
-                                                DASHBOARD
+                                            <button className="btn btn-outline" onClick={() => setPublicPage('dashboard')} style={{ padding: '6px 12px', fontSize: '11px' }}>
+                                                DASH
                                             </button>
                                         )}
                                     </div>
-                                </div>
-                            ) : (
-                                // Mobile auth actions
-                                <div className="header-auth-actions" style={{ display: 'flex', gap: '10px' }}>
-                                    {!session ? (
-                                        <button className="btn btn-red" onClick={handleJoinClick} style={{ padding: '6px 12px', fontSize: '11px' }}>
-                                            JOIN
-                                        </button>
-                                    ) : (
-                                        <button className="btn btn-outline" onClick={() => setPublicPage('dashboard')} style={{ padding: '6px 12px', fontSize: '11px' }}>
-                                            DASH
-                                        </button>
-                                    )}
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
-                    </div>
-                </header>
-
-
-
-                {publicPage === 'home' && (
-                    <LandingPage
-                        profiles={profiles}
-                        submissions={submissions}
-                        session={session}
-                        handleJoinClick={handleJoinClick}
-                        isMobileView={isMobileView}
-                        setPublicPage={setPublicPage}
-                        setSelectedDetailProfile={setSelectedDetailProfile}
-                        isTerminalEnlarged={isTerminalEnlarged}
-                        setIsTerminalEnlarged={setIsTerminalEnlarged}
-                        holidayConfig={holidayConfig}
-                    />
+                    </header>
                 )}
-                {!currentUser && !['home', 'how-it-works', 'coming-soon', 'showcase', 'leaderboard', 'forum', 'studio', 'public-studio', 'resources'].includes(publicPage) && (
-                    <LandingPage
-                        profiles={profiles}
-                        submissions={submissions}
-                        session={session}
-                        handleJoinClick={handleJoinClick}
-                        isMobileView={isMobileView}
-                        setPublicPage={setPublicPage}
-                        setSelectedDetailProfile={setSelectedDetailProfile}
-                        isTerminalEnlarged={isTerminalEnlarged}
-                        setIsTerminalEnlarged={setIsTerminalEnlarged}
-                        holidayConfig={holidayConfig}
-                    />
-                )}
+
+
+
+                {
+                    publicPage === 'home' && (
+                        <LandingPage
+                            profiles={profiles}
+                            submissions={submissions}
+                            session={session}
+                            handleJoinClick={handleJoinClick}
+                            isMobileView={isMobileView}
+                            setPublicPage={setPublicPage}
+                            setSelectedDetailProfile={setSelectedDetailProfile}
+                            isTerminalEnlarged={isTerminalEnlarged}
+                            setIsTerminalEnlarged={setIsTerminalEnlarged}
+                            holidayConfig={holidayConfig}
+                        />
+                    )
+                }
+                {
+                    !currentUser && !['home', 'how-it-works', 'coming-soon', 'showcase', 'leaderboard', 'forum', 'studio', 'public-studio', 'ijamos'].includes(publicPage) && (
+                        <LandingPage
+                            profiles={profiles}
+                            submissions={submissions}
+                            session={session}
+                            handleJoinClick={handleJoinClick}
+                            isMobileView={isMobileView}
+                            setPublicPage={setPublicPage}
+                            setSelectedDetailProfile={setSelectedDetailProfile}
+                            isTerminalEnlarged={isTerminalEnlarged}
+                            setIsTerminalEnlarged={setIsTerminalEnlarged}
+                            holidayConfig={holidayConfig}
+                        />
+                    )
+                }
                 {publicPage === 'how-it-works' && <ProgramDetailsPage classes={classes} handleJoinClick={handleJoinClick} setPublicPage={setPublicPage} isMobileView={isMobileView} />}
                 {publicPage === 'coming-soon' && <ComingSoonPage setPublicPage={setPublicPage} />}
                 {publicPage === 'leaderboard' && <BuilderLeaderboard isMobileView={isMobileView} />}
                 {publicPage === 'forum' && <ForumPage session={session} currentUser={currentUser} />}
                 {publicPage === 'studio' && session && <BuilderStudioPage session={session} />}
-                {publicPage === 'studio' && !session && (
-                    <div style={{ padding: '60px 20px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎮</div>
-                        <h2 style={{ marginBottom: '8px' }}>Builder Arcade</h2>
-                        <p style={{ color: '#666', marginBottom: '24px' }}>Log in to access the arcade and squash some bugs!</p>
-                        <button className="btn btn-red" onClick={() => setIsAuthModalOpen(true)}>Login to Access Arcade</button>
-                    </div>
-                )}
-                {publicPage === 'public-studio' && visitingStudio && (
-                    <div style={{ paddingTop: '80px', background: '#fff', minHeight: '100vh' }}>
-                        <PublicStudioPage
-                            targetUserId={visitingStudio.id}
-                            targetUserName={visitingStudio.name}
-                            session={session}
-                            onBack={() => {
-                                setVisitingStudio(null);
-                                setPublicPage('showcase');
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
-                            }}
-                        />
-                    </div>
-                )}
-                {publicPage === 'showcase' && (
-                    <ShowcasePage
-                        setPublicPage={setPublicPage}
-                        submissions={submissions}
-                        profiles={profiles}
-                        session={session}
-                        setSelectedDetailProfile={setSelectedDetailProfile}
-                        isMobileView={isMobileView}
-                        handleJoinClick={handleJoinClick}
-                    />
-                )}
-                {publicPage === 'resources' && (
-                    <ResourcePage
-                        session={session}
-                        currentUser={currentUser}
-                    />
-                )}
-                {currentUser && (publicPage === 'dashboard' || !['home', 'how-it-works', 'coming-soon', 'showcase', 'forum', 'studio', 'leaderboard', 'resources'].includes(publicPage)) && (
-                    <>
-                        {(currentUser?.type === 'admin' || currentUser?.type === 'owner') && (
-                            <AdminDashboard
-                                profiles={profiles}
-                                classes={classes}
-                                attendance={attendance}
-                                submissions={submissions}
-                                handleToggleClassStatus={handleToggleClassStatus}
-                                handleToggleAttendance={handleToggleAttendance}
-                                setIsAddClassModalOpen={setIsAddClassModalOpen}
-                                fetchData={fetchData}
-                                handleSignOut={handleSignOut}
-                                setSelectedDetailProfile={setSelectedDetailProfile}
-                                isProfilesLoading={isProfilesLoading}
-                                profilesError={profilesError}
-                            />
-                        )}
-                        {currentUser?.type === 'builder' && (
-                            <BuilderDashboard
-                                currentUser={currentUser}
-                                classes={classes}
-                                attendance={attendance}
-                                submissions={submissions}
-                                handleToggleAttendance={handleToggleAttendance}
-                                handleSignOut={handleSignOut}
-                                openEditProfileModal={openEditProfileModal}
-                                isUpdatingProfile={isUpdatingProfile}
-                                session={session}
-                                fetchData={fetchData}
-                                isMobileView={isMobileView}
-                            />
-                        )}
-                    </>
-                )}
-
-                {publicPage !== 'resources' && (
-                <footer style={{ padding: '16px 0', borderTop: '3px solid black', background: 'linear-gradient(180deg, #fff 0%, #fff8dc 100%)' }}>
-                    <div className="container">
-                        <div className="neo-card no-jitter" style={{ border: '2px solid black', boxShadow: '6px 6px 0px black', textAlign: 'center', padding: '24px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                            <p style={{ fontWeight: '900', marginBottom: '8px', fontSize: '14px', width: '100%' }}>
-                                Built by <span style={{ color: 'var(--selangor-red)' }}>_zarulijam</span>
-                            </p>
-                            <a
-                                href="https://www.threads.net/@_zarulijam"
-                                target="_blank"
-                                rel="noreferrer"
-                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', color: 'black', textDecoration: 'none', fontWeight: '800', fontSize: '13px', marginBottom: '8px', width: '100%', flexWrap: 'wrap' }}
-                            >
-                                <ThreadsIcon size={16} /> DM me on Threads to connect
-                            </a>
-                            <p style={{ fontWeight: '800', fontSize: '12px', marginBottom: '8px', lineHeight: '1.4', width: '100%' }}>
-                                Support me in becoming the KrackedDevs Selangor Ambassador
-                            </p>
-                            <p style={{ fontWeight: '700', fontSize: '11px', opacity: 0.78, marginBottom: '6px', lineHeight: '1.4', maxWidth: '400px' }}>
-                                If you are outside Selangor, join the KrackedDevs Discord server to connect with your state ambassador.
-                            </p>
-                            <p style={{ fontWeight: '800', opacity: 0.45, fontSize: '10px', marginTop: '4px' }}>(c) 2026 VIBESELANGOR. NO CODE. JUST VIBES.</p>
+                {
+                    publicPage === 'studio' && !session && (
+                        <div style={{ padding: '60px 20px', textAlign: 'center' }}>
+                            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎮</div>
+                            <h2 style={{ marginBottom: '8px' }}>Builder Arcade</h2>
+                            <p style={{ color: '#666', marginBottom: '24px' }}>Log in to access the arcade and squash some bugs!</p>
+                            <button className="btn btn-red" onClick={() => setIsAuthModalOpen(true)}>Login to Access Arcade</button>
                         </div>
-                    </div>
-                </footer>
-                )}
+                    )
+                }
+                {
+                    publicPage === 'public-studio' && visitingStudio && (
+                        <div style={{ paddingTop: '80px', background: '#fff', minHeight: '100vh' }}>
+                            <PublicStudioPage
+                                targetUserId={visitingStudio.id}
+                                targetUserName={visitingStudio.name}
+                                session={session}
+                                onBack={() => {
+                                    setVisitingStudio(null);
+                                    setPublicPage('showcase');
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }}
+                            />
+                        </div>
+                    )
+                }
+                {
+                    publicPage === 'showcase' && (
+                        <ShowcasePage
+                            setPublicPage={setPublicPage}
+                            submissions={submissions}
+                            profiles={profiles}
+                            session={session}
+                            setSelectedDetailProfile={setSelectedDetailProfile}
+                            isMobileView={isMobileView}
+                            handleJoinClick={handleJoinClick}
+                        />
+                    )
+                }
+                {
+                    publicPage === 'ijamos' && (
+                        <ResourcePage
+                            session={session}
+                            currentUser={currentUser}
+                        />
+                    )
+                }
+                {
+                    currentUser && (publicPage === 'dashboard' || !['home', 'how-it-works', 'coming-soon', 'showcase', 'forum', 'studio', 'leaderboard', 'ijamos'].includes(publicPage)) && (
+                        <>
+                            {(currentUser?.type === 'admin' || currentUser?.type === 'owner') && (
+                                <AdminDashboard
+                                    profiles={profiles}
+                                    classes={classes}
+                                    attendance={attendance}
+                                    submissions={submissions}
+                                    handleToggleClassStatus={handleToggleClassStatus}
+                                    handleToggleAttendance={handleToggleAttendance}
+                                    setIsAddClassModalOpen={setIsAddClassModalOpen}
+                                    fetchData={fetchData}
+                                    handleSignOut={handleSignOut}
+                                    setSelectedDetailProfile={setSelectedDetailProfile}
+                                    isProfilesLoading={isProfilesLoading}
+                                    profilesError={profilesError}
+                                />
+                            )}
+                            {currentUser?.type === 'builder' && (
+                                <BuilderDashboard
+                                    currentUser={currentUser}
+                                    classes={classes}
+                                    attendance={attendance}
+                                    submissions={submissions}
+                                    handleToggleAttendance={handleToggleAttendance}
+                                    handleSignOut={handleSignOut}
+                                    openEditProfileModal={openEditProfileModal}
+                                    isUpdatingProfile={isUpdatingProfile}
+                                    session={session}
+                                    fetchData={fetchData}
+                                    isMobileView={isMobileView}
+                                />
+                            )}
+                        </>
+                    )
+                }
+
+                {
+                    publicPage !== 'ijamos' && (
+                        <footer style={{ padding: '16px 0', borderTop: '3px solid black', background: 'linear-gradient(180deg, #fff 0%, #fff8dc 100%)' }}>
+                            <div className="container">
+                                <div className="neo-card no-jitter" style={{ border: '2px solid black', boxShadow: '6px 6px 0px black', textAlign: 'center', padding: '24px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                    <p style={{ fontWeight: '900', marginBottom: '8px', fontSize: '14px', width: '100%' }}>
+                                        Built by <span style={{ color: 'var(--selangor-red)' }}>_zarulijam</span>
+                                    </p>
+                                    <a
+                                        href="https://www.threads.net/@_zarulijam"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', color: 'black', textDecoration: 'none', fontWeight: '800', fontSize: '13px', marginBottom: '8px', width: '100%', flexWrap: 'wrap' }}
+                                    >
+                                        <ThreadsIcon size={16} /> DM me on Threads to connect
+                                    </a>
+                                    <p style={{ fontWeight: '800', fontSize: '12px', marginBottom: '8px', lineHeight: '1.4', width: '100%' }}>
+                                        Support me in becoming the KrackedDevs Selangor Ambassador
+                                    </p>
+                                    <p style={{ fontWeight: '700', fontSize: '11px', opacity: 0.78, marginBottom: '6px', lineHeight: '1.4', maxWidth: '400px' }}>
+                                        If you are outside Selangor, join the KrackedDevs Discord server to connect with your state ambassador.
+                                    </p>
+                                    <p style={{ fontWeight: '800', opacity: 0.45, fontSize: '10px', marginTop: '4px' }}>(c) 2026 VIBESELANGOR. NO CODE. JUST VIBES.</p>
+                                </div>
+                            </div>
+                        </footer>
+                    )
+                }
                 {/* Zarulijam AI Chatbot removed in favor of IJAM_BOT terminal console */}
 
                 {/* Mobile Navigation Sidebar */}
@@ -978,38 +1001,42 @@ const App = () => {
                 <LiveChat session={session} activeClass={activeClass} />
 
                 {/* Floating Menu Button (Desktop Only) */}
-                {!isSidebarOpen && !isMobileView && publicPage !== 'resources' && (
-                    <button
-                        className="mobile-floating-menu"
-                        onClick={() => setIsSidebarOpen(true)}
-                        aria-label="Toggle Menu"
-                    >
-                        <Menu size={24} />
-                    </button>
-                )}
+                {
+                    !isSidebarOpen && !isMobileView && publicPage !== 'ijamos' && (
+                        <button
+                            className="mobile-floating-menu"
+                            onClick={() => setIsSidebarOpen(true)}
+                            aria-label="Toggle Menu"
+                        >
+                            <Menu size={24} />
+                        </button>
+                    )
+                }
 
                 {/* Mobile Bottom Navigation */}
-                {isMobileView && (
-                    <MobileBottomNav
-                        currentPage={publicPage}
-                        isLoggedIn={!!session}
-                        onNavigate={(id) => {
-                            const authPages = ['dashboard', 'studio'];
-                            if (authPages.includes(id)) {
-                                if (session) { setPublicPage(id); window.scrollTo({ top: 0, behavior: 'smooth' }); }
-                                else setIsAuthModalOpen(true);
-                            } else if (['leaderboard', 'forum', 'showcase', 'resources'].includes(id)) {
-                                setPublicPage(id);
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
-                            } else {
-                                setPublicPage('home');
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
-                            }
-                        }}
-                    />
-                )}
-            </div>
-        </ToastProvider>
+                {
+                    isMobileView && publicPage !== 'ijamos' && (
+                        <MobileBottomNav
+                            currentPage={publicPage}
+                            isLoggedIn={!!session}
+                            onNavigate={(id) => {
+                                const authPages = ['dashboard', 'studio'];
+                                if (authPages.includes(id)) {
+                                    if (session) { setPublicPage(id); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+                                    else setIsAuthModalOpen(true);
+                                } else if (['leaderboard', 'forum', 'showcase', 'ijamos'].includes(id)) {
+                                    setPublicPage(id);
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                } else {
+                                    setPublicPage('home');
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }
+                            }}
+                        />
+                    )
+                }
+            </div >
+        </ToastProvider >
     );
 };
 
