@@ -2406,38 +2406,78 @@ const APP_REGISTRY = [
 ];
 
 // ─── IjamOS v3 Draggable Window Frame ───────────────────────────────────────
-const WindowFrame = ({ winState, title, AppIcon, onClose, onMinimize, onMaximize, onFocus, onMove, children }) => {
-    const frameRef = useRef(null);
-    const dragRef  = useRef(null);
+const WindowFrame = ({ winState, title, AppIcon, onClose, onMinimize, onMaximize, onFocus, onMove, onResize, children }) => {
+    const frameRef   = useRef(null);
+    const dragRef    = useRef(null);
+    const resizeRef  = useRef(null); // { edge, sx, sy, ow, oh }
 
     useEffect(() => {
         const onMM = (e) => {
-            if (!dragRef.current) return;
-            const dx = e.clientX - dragRef.current.sx;
-            const dy = e.clientY - dragRef.current.sy;
-            if (frameRef.current) {
-                frameRef.current.style.left = `${dragRef.current.wx + dx}px`;
-                frameRef.current.style.top  = `${dragRef.current.wy + dy}px`;
+            if (dragRef.current) {
+                const dx = e.clientX - dragRef.current.sx;
+                const dy = e.clientY - dragRef.current.sy;
+                if (frameRef.current) {
+                    frameRef.current.style.left = `${dragRef.current.wx + dx}px`;
+                    frameRef.current.style.top  = `${dragRef.current.wy + dy}px`;
+                }
+            }
+            if (resizeRef.current) {
+                const { edge, sx, sy, ow, oh } = resizeRef.current;
+                const dx = e.clientX - sx;
+                const dy = e.clientY - sy;
+                let nw = ow, nh = oh;
+                if (edge.includes('e')) nw = Math.max(320, ow + dx);
+                if (edge.includes('s')) nh = Math.max(220, oh + dy);
+                if (edge.includes('w')) nw = Math.max(320, ow - dx);
+                if (edge.includes('n')) nh = Math.max(220, oh - dy);
+                if (frameRef.current) {
+                    if (edge.includes('e') || edge.includes('w')) frameRef.current.style.width  = `${nw}px`;
+                    if (edge.includes('s') || edge.includes('n')) frameRef.current.style.height = `${nh}px`;
+                }
             }
         };
         const onMU = (e) => {
-            if (!dragRef.current) return;
-            const dx = e.clientX - dragRef.current.sx;
-            const dy = e.clientY - dragRef.current.sy;
-            onMove(dragRef.current.wx + dx, dragRef.current.wy + dy);
-            dragRef.current = null;
+            if (dragRef.current) {
+                const dx = e.clientX - dragRef.current.sx;
+                const dy = e.clientY - dragRef.current.sy;
+                onMove(dragRef.current.wx + dx, dragRef.current.wy + dy);
+                dragRef.current = null;
+            }
+            if (resizeRef.current) {
+                const { edge, sx, sy, ow, oh } = resizeRef.current;
+                const dx = e.clientX - sx;
+                const dy = e.clientY - sy;
+                let nw = ow, nh = oh;
+                if (edge.includes('e')) nw = Math.max(320, ow + dx);
+                if (edge.includes('s')) nh = Math.max(220, oh + dy);
+                if (edge.includes('w')) nw = Math.max(320, ow - dx);
+                if (edge.includes('n')) nh = Math.max(220, oh - dy);
+                if (onResize) onResize(nw, nh);
+                resizeRef.current = null;
+            }
         };
         document.addEventListener('mousemove', onMM);
         document.addEventListener('mouseup', onMU);
         return () => { document.removeEventListener('mousemove', onMM); document.removeEventListener('mouseup', onMU); };
-    }, [onMove]);
+    }, [onMove, onResize]);
 
     if (!winState?.isOpen || winState?.isMinimized) return null;
     const isMax = !!winState.isMaximized;
 
     const boxStyle = isMax
-        ? { position: 'absolute', inset: '0 0 130px 0', zIndex: winState.zIndex, borderRadius: 0 }
+        ? { position: 'absolute', inset: '28px 0 0 0', zIndex: winState.zIndex, borderRadius: 0 }
         : { position: 'absolute', left: winState.x, top: winState.y, width: winState.w, height: winState.h, zIndex: winState.zIndex, borderRadius: '10px' };
+
+    const RESIZE_HANDLES = [
+        { edge: 'e',  s: { right: 0,    top: '8px',  width: '6px',  height: 'calc(100% - 16px)', cursor: 'ew-resize'   } },
+        { edge: 's',  s: { bottom: 0,   left: '8px', height: '6px', width: 'calc(100% - 16px)',  cursor: 'ns-resize'   } },
+        { edge: 'w',  s: { left: 0,     top: '8px',  width: '6px',  height: 'calc(100% - 16px)', cursor: 'ew-resize'   } },
+        { edge: 'n',  s: { top: 0,      left: '8px', height: '6px', width: 'calc(100% - 16px)',  cursor: 'ns-resize'   } },
+        { edge: 'se', s: { right: 0,    bottom: 0,   width: '14px', height: '14px',              cursor: 'nwse-resize' } },
+        { edge: 'sw', s: { left: 0,     bottom: 0,   width: '14px', height: '14px',              cursor: 'nesw-resize' } },
+        { edge: 'ne', s: { right: 0,    top: 0,      width: '14px', height: '14px',              cursor: 'nesw-resize' } },
+        { edge: 'nw', s: { left: 0,     top: 0,      width: '14px', height: '14px',              cursor: 'nwse-resize' } },
+    ];
 
     return (
         <div ref={frameRef} onMouseDown={onFocus}
@@ -2465,12 +2505,19 @@ const WindowFrame = ({ winState, title, AppIcon, onClose, onMinimize, onMaximize
                 </div>
             </div>
             <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>{children}</div>
+            {/* ── Resize handles (hidden when maximized) ── */}
+            {!isMax && onResize && RESIZE_HANDLES.map(({ edge, s }) => (
+                <div key={edge}
+                    style={{ position: 'absolute', zIndex: 10, ...s }}
+                    onMouseDown={(e) => { e.stopPropagation(); resizeRef.current = { edge, sx: e.clientX, sy: e.clientY, ow: winState.w, oh: winState.h }; }}
+                />
+            ))}
         </div>
     );
 };
 
 // ─── IjamOS v3 iOS-style Dock ────────────────────────────────────────────────
-const IjamDock = ({ dockOrder, windowStates, onOpen, onReorder }) => {
+const IjamDock = ({ dockOrder, windowStates, onOpen, onReorder, visible, onMouseEnterDock, onMouseLeaveDock }) => {
     const [mouseX, setMouseX]   = useState(null);
     const [hoverIdx, setHoverIdx] = useState(null);
     const [dragIdx, setDragIdx] = useState(null);
@@ -2488,11 +2535,12 @@ const IjamDock = ({ dockOrder, windowStates, onOpen, onReorder }) => {
     };
 
     return (
-        <div style={{ position: 'absolute', bottom: '46px', left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 500, pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 500, pointerEvents: 'none', transform: visible ? 'translateY(0)' : 'translateY(110%)', transition: 'transform 0.28s cubic-bezier(0.34,1.56,0.64,1)' }}>
             <div ref={dockRef}
                 onMouseMove={(e) => setMouseX(e.clientX)}
-                onMouseLeave={() => { setMouseX(null); setHoverIdx(null); }}
-                style={{ display: 'flex', alignItems: 'flex-end', gap: `${GAP}px`, background: 'rgba(11,18,32,0.70)', backdropFilter: 'blur(28px) saturate(1.6)', WebkitBackdropFilter: 'blur(28px) saturate(1.6)', border: '1px solid rgba(245,208,0,0.18)', borderRadius: '22px', padding: '8px 18px 10px', pointerEvents: 'all', maxWidth: 'calc(100vw - 32px)', overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                onMouseEnter={onMouseEnterDock}
+                onMouseLeave={() => { setMouseX(null); setHoverIdx(null); if (onMouseLeaveDock) onMouseLeaveDock(); }}
+                style={{ display: 'flex', alignItems: 'flex-end', gap: `${GAP}px`, background: 'rgba(11,18,32,0.70)', backdropFilter: 'blur(28px) saturate(1.6)', WebkitBackdropFilter: 'blur(28px) saturate(1.6)', border: '1px solid rgba(245,208,0,0.18)', borderRadius: '22px', padding: '8px 18px 10px', pointerEvents: 'all', maxWidth: 'calc(100vw - 32px)', overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none', marginBottom: '12px' }}
             >
                 {dockOrder.map((type, i) => {
                     const app = APP_REGISTRY.find(a => a.type === type);
@@ -2582,6 +2630,8 @@ const ResourcePage = ({ session, currentUser }) => {
     const [dockOrder, setDockOrder] = useState(APP_REGISTRY.map(a => a.type));
     const [isStartMenuOpen, setIsStartMenuOpen] = useState(false);
     const [startMenuSearch, setStartMenuSearch] = useState('');
+    const [dockVisible, setDockVisible] = useState(false);
+    const dockHideTimerRef = useRef(null);
 
     const openApp = useCallback((type) => {
         const appCfg = APP_REGISTRY.find(a => a.type === type);
@@ -2633,6 +2683,13 @@ const ResourcePage = ({ session, currentUser }) => {
         setWindowStates(prev => ({ ...prev, [type]: { ...prev[type], x: Math.max(0, Math.min(x, vw - 100)), y: Math.max(0, Math.min(y, vh - 60)) } }));
     }, []);
 
+    const resizeApp = useCallback((type, w, h) => {
+        setWindowStates(prev => ({
+            ...prev,
+            [type]: { ...prev[type], w: Math.max(320, w), h: Math.max(220, h) }
+        }));
+    }, []);
+
     const reorderDock = useCallback((from, to) => {
         setDockOrder(prev => { const next = [...prev]; const [m] = next.splice(from, 1); next.splice(to, 0, m); return next; });
     }, []);
@@ -2667,6 +2724,9 @@ const ResourcePage = ({ session, currentUser }) => {
     const [bootLines, setBootLines] = useState([]);
     const [bootProgress, setBootProgress] = useState(0);
     const [bootMousePos, setBootMousePos] = useState(null);
+    const [isHolding, setIsHolding] = useState(false);
+    const [holdProgress, setHoldProgress] = useState(0);
+    const holdIntervalRef = useRef(null);
     const [speechBubble, setSpeechBubble] = useState('');
     // Bot free-roaming state
     const [botPos, setBotPos] = useState({ x: 40, y: 260, duration: 0 });
@@ -3211,228 +3271,141 @@ YOU DID IT. APP DEPLOYED!`);
         }
     };
 
-    if (!isBooted) {
-        const isIdle = bootPhase === 'idle';
-        const showBot = bootPhase !== 'idle';
-        const isReady = bootPhase === 'ready';
-        const touchHandler = (e) => {
-            const t = e.touches[0];
-            if (t) setBootMousePos({ x: t.clientX, y: t.clientY });
-        };
+    const HOLD_DURATION = 1500;
+    const onHoldStart = () => {
+        setIsHolding(true);
+        setHoldProgress(0);
+        const start = Date.now();
+        holdIntervalRef.current = setInterval(() => {
+            const pct = Math.min(100, ((Date.now() - start) / HOLD_DURATION) * 100);
+            setHoldProgress(pct);
+            if (pct >= 100) {
+                clearInterval(holdIntervalRef.current);
+                setIsHolding(false);
+                setHoldProgress(0);
+                confirmBoot();
+            }
+        }, 16);
+    };
+    const onHoldEnd = () => {
+        clearInterval(holdIntervalRef.current);
+        setIsHolding(false);
+        setHoldProgress(0);
+    };
 
+    if (!isBooted) {
         return (
-            <section
+            <motion.section
                 id="resources-page"
+                key="lock-screen"
+                initial={{ opacity: 1 }}
+                exit={{ opacity: 0, scale: 1.04 }}
+                transition={{ duration: 0.45, ease: 'easeIn' }}
                 onMouseMove={e => setBootMousePos({ x: e.clientX, y: e.clientY })}
-                onTouchMove={touchHandler}
-                onTouchStart={touchHandler}
-                onClick={showBot ? handleScreenClick : undefined}
-                style={{ ...sectionStyle, background: '#04070f', height: '100vh', position: 'relative', color: '#f8fafc', fontFamily: 'monospace', overflow: 'hidden', cursor: showBot ? 'crosshair' : 'default' }}
+                onTouchMove={e => { const t = e.touches[0]; if (t) setBootMousePos({ x: t.clientX, y: t.clientY }); }}
+                style={{ ...sectionStyle, background: 'radial-gradient(ellipse at 50% 30%, #1a0208 0%, #04070f 70%)', height: '100vh', position: 'relative', color: '#f8fafc', fontFamily: 'system-ui, -apple-system, sans-serif', overflow: 'hidden', userSelect: 'none' }}
             >
-                {/* CSS keyframes */}
                 <style>{`
-                    @keyframes ijam-scanline { 0% { transform: translateY(-100%); } 100% { transform: translateY(100vh); } }
-                    @keyframes ijam-blink-cursor { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-                    @keyframes ijam-pulse-glow { 0%, 100% { box-shadow: 0 0 20px rgba(245,208,0,0.2); } 50% { box-shadow: 0 0 40px rgba(245,208,0,0.45); } }
-                    @keyframes ijam-spin-dot { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                    @keyframes lock-pulse        { 0%,100%{transform:scale(1)} 50%{transform:scale(1.04)} }
+                    @keyframes lock-pulse-active { 0%,100%{transform:scale(1)} 50%{transform:scale(1.09)} }
+                    @keyframes lock-glow         { 0%,100%{opacity:0.35} 50%{opacity:0.65} }
+                    @keyframes lock-float        { 0%,100%{transform:translateY(0px)} 50%{transform:translateY(-8px)} }
                 `}</style>
 
-                {/* Dot grid wallpaper */}
-                <div style={{ position: 'absolute', inset: 0, opacity: 0.05, backgroundImage: 'radial-gradient(#f5d000 0.5px, transparent 0.5px)', backgroundSize: '28px 28px', pointerEvents: 'none' }} />
+                {/* Subtle dot grid */}
+                <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(rgba(200,16,46,0.06) 0.5px, transparent 0.5px)', backgroundSize: '28px 28px', pointerEvents: 'none' }} />
 
-                {/* Scanline */}
-                {isBooting && (
-                    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
-                        <div style={{ position: 'absolute', left: 0, right: 0, height: '2px', background: 'linear-gradient(transparent, rgba(245,208,0,0.06), transparent)', animation: 'ijam-scanline 4s linear infinite' }} />
+                {/* Ambient red glow behind bot */}
+                <div style={{ position: 'absolute', top: '52%', left: '50%', transform: 'translate(-50%,-50%)', width: '340px', height: '340px', background: 'radial-gradient(circle, rgba(200,16,46,0.18) 0%, transparent 68%)', pointerEvents: 'none', animation: 'lock-glow 3s ease-in-out infinite' }} />
+
+                {/* ── LOCK SCREEN CONTENT — centered column ── */}
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0', paddingBottom: '40px' }}>
+
+                    {/* Live clock */}
+                    <div style={{ fontSize: 'clamp(64px, 14vw, 92px)', fontWeight: 200, letterSpacing: '-0.04em', lineHeight: 1, color: '#f8fafc', textShadow: '0 4px 40px rgba(0,0,0,0.5)', marginBottom: '6px' }}>
+                        {systemTime}
                     </div>
-                )}
-
-                {/* ── FREE-ROAMING IJAM_BOT ── */}
-                <AnimatePresence>
-                    {showBot && (
-                        <motion.div
-                            key="free-bot"
-                            data-ijambot="1"
-                            initial={{ opacity: 0, scale: 0.5 }}
-                            animate={{ opacity: 1, scale: 1, x: botPos.x, y: botPos.y }}
-                            exit={{ opacity: 0, scale: 0.4 }}
-                            transition={{
-                                opacity: { duration: 0.4 },
-                                scale: { type: 'spring', stiffness: 180, damping: 20 },
-                                x: { type: 'tween', duration: botPos.duration, ease: 'linear' },
-                                y: { type: 'tween', duration: botPos.duration, ease: 'linear' },
-                            }}
-                            onClick={handleBotClick}
-                            style={{ position: 'absolute', left: 0, top: 0, cursor: 'pointer', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-                        >
-                            {/* Red ambient glow */}
-                            <div style={{ position: 'absolute', top: '60%', left: '50%', transform: 'translate(-50%,-50%)', width: '260px', height: '260px', background: 'radial-gradient(ellipse, rgba(200,16,46,0.25) 0%, transparent 68%)', pointerEvents: 'none', zIndex: -1 }} />
-
-                            {/* Speech bubble */}
-                            <AnimatePresence mode="wait">
-                                {speechBubble && (
-                                    <motion.div
-                                        key={speechBubble}
-                                        initial={{ opacity: 0, y: 10, scale: 0.9 }}
-                                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                                        exit={{ opacity: 0, y: -8, scale: 0.95 }}
-                                        transition={{ duration: 0.22 }}
-                                        style={{ background: 'rgba(11,18,32,0.96)', border: '2px solid rgba(245,208,0,0.45)', borderRadius: '14px', padding: '10px 16px', maxWidth: '210px', fontSize: '12px', lineHeight: 1.5, color: '#e2e8f0', marginBottom: '10px', position: 'relative', whiteSpace: 'pre-line', boxShadow: '0 8px 24px rgba(0,0,0,0.6)', textAlign: 'center' }}
-                                    >
-                                        {speechBubble}
-                                        <div style={{ position: 'absolute', bottom: '-10px', left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderTop: '10px solid rgba(245,208,0,0.45)' }} />
-                                        <div style={{ position: 'absolute', bottom: '-7px', left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '8px solid rgba(11,18,32,0.96)' }} />
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-
-                            {/* Bot — float-bob on celebrate, direction flip only on SVG wrapper */}
-                            <motion.div
-                                animate={['celebrating', 'excited', 'motivated'].includes(botEmotion) && !botWalking ? { y: [0, -10, 0] } : { y: 0 }}
-                                transition={{ duration: 1.3, repeat: Infinity, ease: 'easeInOut' }}
-                                style={{ filter: bootPhase === 'welcome' ? 'drop-shadow(0 0 18px rgba(245,208,0,0.5))' : 'none', transition: 'filter 0.6s' }}
-                            >
-                                <div style={{ transform: botFacing === -1 ? 'scaleX(-1)' : 'none' }}>
-                                    <IjamBotMascot size={180} mousePos={bootMousePos} emotion={botEmotion} isWalking={botWalking} direction={botFacing} />
-                                </div>
-                            </motion.div>
-
-                            {/* Name tag */}
-                            <div style={{ marginTop: '10px', background: 'rgba(245,208,0,0.1)', border: '1px solid rgba(245,208,0,0.35)', borderRadius: '8px', padding: '4px 14px', fontSize: '10px', fontWeight: 900, color: '#f5d000', letterSpacing: '0.1em', pointerEvents: 'none' }}>
-                                IJAM_BOT v3
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                {/* ── CENTERED TERMINAL WINDOW ── */}
-                <div
-                    onClick={e => e.stopPropagation()}
-                    style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 5, width: '100%', maxWidth: '520px', padding: '0 16px' }}
-                >
-                    <div style={{ background: 'rgba(11,18,32,0.98)', border: '1px solid rgba(245,208,0,0.28)', borderRadius: '14px', overflow: 'hidden', boxShadow: '0 32px 80px rgba(0,0,0,0.8)', animation: isReady ? 'ijam-pulse-glow 2s ease-in-out infinite' : 'none' }}>
-                        {/* Title bar */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'rgba(7,11,20,0.9)', borderBottom: '1px solid rgba(245,208,0,0.1)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#ef4444' }} />
-                                <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#f59e0b' }} />
-                                <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#22c55e' }} />
-                            </div>
-                            <div style={{ fontSize: '11px', fontWeight: 900, color: 'rgba(245,208,0,0.65)', letterSpacing: '0.08em' }}>
-                                IjamOS v3.0 — BOOT SEQUENCE
-                            </div>
-                            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.18)' }}>● ● ●</div>
-                        </div>
-
-                        {/* Terminal body */}
-                        <div style={{ padding: '20px 24px', minHeight: '240px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            {isIdle && (
-                                <div style={{ whiteSpace: 'pre-wrap', fontSize: '13px', lineHeight: 1.8, color: '#64748b' }}>
-                                    {'> IJAM_OS v3.0 KERNEL\n> Build: Selangor Builder Sprint 2026\n> Status: IDLE — Awaiting operator command...'}
-                                </div>
-                            )}
-
-                            <AnimatePresence>
-                                {bootLines.map((line, i) => (
-                                    <motion.div
-                                        key={i}
-                                        initial={{ opacity: 0, x: -12 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ duration: 0.2 }}
-                                        style={{ fontSize: '12px', color: i === bootLines.length - 1 ? '#86efac' : '#475569', fontFamily: 'monospace', lineHeight: 1.5, display: 'flex', alignItems: 'center', gap: '8px' }}
-                                    >
-                                        <span style={{ color: i === bootLines.length - 1 ? '#22c55e' : '#1e3a5f', flexShrink: 0 }}>{i === bootLines.length - 1 && isBooting ? '▶' : '✓'}</span>
-                                        {line}
-                                    </motion.div>
-                                ))}
-                            </AnimatePresence>
-
-                            <AnimatePresence>
-                                {bootProgress > 0 && (
-                                    <motion.div key="progress" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: '8px' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '10px', color: 'rgba(255,255,255,0.35)', fontWeight: 700 }}>
-                                            <span>BOOT PROGRESS</span>
-                                            <span>{bootProgress}%</span>
-                                        </div>
-                                        <div style={{ height: '4px', background: 'rgba(255,255,255,0.08)', borderRadius: '99px', overflow: 'hidden' }}>
-                                            <motion.div
-                                                initial={{ width: 0 }}
-                                                animate={{ width: `${bootProgress}%` }}
-                                                transition={{ duration: 0.45, ease: 'easeOut' }}
-                                                style={{ height: '100%', background: bootProgress === 100 ? '#22c55e' : '#f5d000', borderRadius: '99px', boxShadow: bootProgress === 100 ? '0 0 8px #22c55e' : '0 0 8px rgba(245,208,0,0.6)' }}
-                                            />
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-
-                            {isBooting && (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(245,208,0,0.6)', fontSize: '11px', fontWeight: 700, marginTop: '4px' }}>
-                                    <div style={{ width: '12px', height: '12px', border: '2px solid rgba(245,208,0,0.3)', borderTopColor: '#f5d000', borderRadius: '50%', animation: 'ijam-spin-dot 0.7s linear infinite' }} />
-                                    LOADING IJAM_OS...
-                                    <span style={{ animation: 'ijam-blink-cursor 1s step-end infinite' }}>_</span>
-                                </div>
-                            )}
-
-                            <div style={{ flex: 1 }} />
-
-                            <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                {isIdle && (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
-                                        <button
-                                            onClick={handleBoot}
-                                            style={{ background: '#c8102e', border: 'none', color: '#fff', padding: '13px 28px', fontWeight: 900, cursor: 'pointer', fontFamily: 'inherit', fontSize: '13px', borderRadius: '8px', letterSpacing: '0.06em', boxShadow: '0 4px 20px rgba(200,16,46,0.4)', transition: 'box-shadow 0.2s', display: 'flex', alignItems: 'center', gap: '8px' }}
-                                            onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 32px rgba(200,16,46,0.7)'}
-                                            onMouseLeave={e => e.currentTarget.style.boxShadow = '0 4px 20px rgba(200,16,46,0.4)'}
-                                        >
-                                            <Power size={14} /> INITIATE SYSTEM BOOT
-                                        </button>
-                                        <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.22)', letterSpacing: '0.05em' }}>v3 · Multi-window · iOS Dock</div>
-                                    </div>
-                                )}
-
-                                <AnimatePresence>
-                                    {isReady && (
-                                        <motion.button
-                                            key="start-btn"
-                                            initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                                            transition={{ type: 'spring', stiffness: 260, damping: 18 }}
-                                            onClick={confirmBoot}
-                                            style={{ background: 'rgba(34,197,94,0.12)', border: '2px solid #22c55e', color: '#22c55e', padding: '14px 32px', fontWeight: 900, cursor: 'pointer', fontFamily: 'inherit', fontSize: '14px', borderRadius: '10px', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '10px', width: '100%', justifyContent: 'center', boxShadow: '0 0 24px rgba(34,197,94,0.2)' }}
-                                            whileHover={{ scale: 1.02, boxShadow: '0 0 36px rgba(34,197,94,0.45)' }}
-                                            whileTap={{ scale: 0.97 }}
-                                        >
-                                            ▶&nbsp; YES, START MY JOURNEY
-                                        </motion.button>
-                                    )}
-                                </AnimatePresence>
-                            </div>
-                        </div>
+                    <div style={{ fontSize: 'clamp(16px, 3.5vw, 22px)', fontWeight: 300, color: 'rgba(248,250,252,0.72)', marginBottom: '48px', letterSpacing: '0.01em' }}>
+                        {systemDate}
                     </div>
 
-                    <div style={{ textAlign: 'center', marginTop: '12px', fontSize: '10px', color: 'rgba(255,255,255,0.12)', letterSpacing: '0.08em' }}>
-                        SELANGOR BUILDER SPRINT 2026 · NOW EVERYONE CAN BUILD
+                    {/* Bot avatar — hold to wake */}
+                    <motion.button
+                        onPointerDown={onHoldStart}
+                        onPointerUp={onHoldEnd}
+                        onPointerLeave={onHoldEnd}
+                        style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', marginBottom: '28px', touchAction: 'none', WebkitUserSelect: 'none' }}
+                        aria-label="Hold to wake IJAM_BOT"
+                    >
+                        {/* Outer glow ring */}
+                        <div style={{ width: '200px', height: '200px', borderRadius: '50%', background: `radial-gradient(circle, rgba(200,16,46,${isHolding ? 0.7 : 0.5}) 0%, rgba(200,16,46,0.2) 50%, rgba(200,16,46,0) 72%)`, display: 'grid', placeItems: 'center', animation: 'lock-float 3.6s ease-in-out infinite', transition: 'background 0.2s' }}>
+                            {/* Bot icon + progress ring wrapper */}
+                            <div style={{ position: 'relative', width: 148, height: 148 }}>
+                                {/* IJAM_BOT face icon — Selangor colorway */}
+                                <svg viewBox="0 0 120 120" width="148" height="148" style={{ filter: `drop-shadow(0 0 ${isHolding ? 28 : 18}px rgba(200,16,46,0.6)) drop-shadow(0 0 8px rgba(245,208,0,0.3))`, animation: isHolding ? 'lock-pulse-active 0.6s ease-in-out infinite' : 'lock-pulse 3.6s ease-in-out infinite', transition: 'filter 0.2s' }}>
+                                    {/* Red rounded-square body */}
+                                    <rect width="120" height="120" rx="24" fill="#C8102E"/>
+                                    {/* Gold inner screen */}
+                                    <rect x="12" y="12" width="96" height="96" rx="14" fill="#F5D000"/>
+                                    {/* Antenna */}
+                                    <rect x="55" y="0" width="10" height="16" rx="3" fill="#C8102E"/>
+                                    <circle cx="60" cy="0" r="8" fill="#F5D000" stroke="#C8102E" strokeWidth="3"/>
+                                    {/* Left eye */}
+                                    <rect x="26" y="40" width="28" height="18" rx="4" fill="white"/>
+                                    {/* Right eye */}
+                                    <rect x="66" y="40" width="28" height="18" rx="4" fill="white"/>
+                                    {/* Mouth bar */}
+                                    <rect x="32" y="78" width="56" height="10" rx="5" fill="white"/>
+                                </svg>
+                                {/* Gold progress ring — shown during hold */}
+                                {isHolding && (
+                                    <svg style={{ position: 'absolute', top: 0, left: 0, transform: 'rotate(-90deg)', pointerEvents: 'none' }}
+                                        viewBox="0 0 148 148" width="148" height="148">
+                                        <circle cx="74" cy="74" r="70" fill="none" stroke="rgba(245,208,0,0.18)" strokeWidth="5"/>
+                                        <circle cx="74" cy="74" r="70" fill="none"
+                                            stroke="#F5D000" strokeWidth="5" strokeLinecap="round"
+                                            strokeDasharray={`${(holdProgress / 100) * (2 * Math.PI * 70).toFixed(2)} ${(2 * Math.PI * 70).toFixed(2)}`}
+                                        />
+                                    </svg>
+                                )}
+                            </div>
+                        </div>
+                    </motion.button>
+
+                    {/* OS name */}
+                    <div style={{ fontSize: 'clamp(24px, 5vw, 34px)', fontWeight: 900, letterSpacing: '-0.02em', color: '#f8fafc', marginBottom: '6px' }}>
+                        IJAM_OS v3.0
+                    </div>
+                    <div style={{ fontSize: 'clamp(14px, 2.8vw, 18px)', color: 'rgba(248,250,252,0.55)', marginBottom: '32px', letterSpacing: '0.01em' }}>
+                        Selangor Builder Sprint 2026
+                    </div>
+
+                    {/* Hint */}
+                    <div style={{ fontSize: '13px', color: isHolding ? 'rgba(245,208,0,0.7)' : 'rgba(248,250,252,0.28)', letterSpacing: '0.06em', fontStyle: 'italic', transition: 'color 0.2s', minHeight: '18px' }}>
+                        {isHolding ? `Waking... ${Math.round(holdProgress)}%` : 'Hold avatar to wake IJAM_BOT'}
                     </div>
                 </div>
-
-                {/* Click-to-walk hint */}
-                {showBot && (
-                    <div style={{ position: 'absolute', bottom: '16px', left: '50%', transform: 'translateX(-50%)', fontSize: '10px', color: 'rgba(255,255,255,0.2)', letterSpacing: '0.06em', pointerEvents: 'none', whiteSpace: 'nowrap' }}>
-                        Click anywhere to move IJAM_BOT · Click the bot to interact
-                    </div>
-                )}
-            </section>
+            </motion.section>
         );
     }
 
     return (
-        <section id="resources-page" style={{ ...sectionStyle, background: '#0b131e', height: '100vh', overflow: 'hidden', position: 'relative' }}>
+        <section id="resources-page" style={{ ...sectionStyle, background: '#0b131e', height: '100vh', overflow: 'hidden', position: 'relative' }}
+            onMouseMove={(e) => {
+                if (e.clientY > window.innerHeight - 60) {
+                    clearTimeout(dockHideTimerRef.current);
+                    setDockVisible(true);
+                } else if (dockVisible) {
+                    clearTimeout(dockHideTimerRef.current);
+                    dockHideTimerRef.current = setTimeout(() => setDockVisible(false), 800);
+                }
+            }}
+        >
             {/* Desktop Wallpaper - Grid Pattern */}
             <div style={{ position: 'absolute', inset: 0, opacity: 0.1, backgroundImage: 'radial-gradient(#f5d000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px', pointerEvents: 'none' }} />
 
             {/* Desktop Icons Container */}
-            <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '40px 20px', height: '100%', position: 'relative', zIndex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, 100px)', gap: '24px', alignItems: 'start', contentVisibility: 'auto' }}>
+            <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '36px 20px 110px', height: '100%', position: 'relative', zIndex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, 100px)', gap: '24px', alignItems: 'start', contentVisibility: 'auto' }}>
                 {APP_REGISTRY.map(app => (
                     <DesktopIcon key={app.type} label={app.label} icon={app.icon} color={app.color} onClick={() => openApp(app.type)} />
                 ))}
@@ -3442,7 +3415,7 @@ YOU DID IT. APP DEPLOYED!`);
 
             {/* 1. Terminal Window */}
             {windowStates.terminal?.isOpen && (
-                <WindowFrame winState={windowStates.terminal} title="IJAM_TERMINAL // IjamOS v3" AppIcon={Bot} onClose={() => closeApp('terminal')} onMinimize={() => minimizeApp('terminal')} onMaximize={() => maximizeApp('terminal')} onFocus={() => focusApp('terminal')} onMove={(x, y) => moveApp('terminal', x, y)}>
+                <WindowFrame winState={windowStates.terminal} title="IJAM_TERMINAL // IjamOS v3" AppIcon={Bot} onClose={() => closeApp('terminal')} onMinimize={() => minimizeApp('terminal')} onMaximize={() => maximizeApp('terminal')} onFocus={() => focusApp('terminal')} onMove={(x, y) => moveApp('terminal', x, y)} onResize={(w,h) => resizeApp('terminal',w,h)}>
                     <div style={{ display: 'grid', gridTemplateColumns: isNarrowScreen ? '1fr' : (sidebarVisible ? 'minmax(220px, 320px) 1fr' : '0 1fr'), gridTemplateRows: isNarrowScreen ? 'auto minmax(0,1fr)' : 'minmax(0,1fr)', flex: 1, minHeight: 0 }}>
                         <aside style={{ borderRight: (isNarrowScreen || !sidebarVisible) ? 'none' : '3px solid #0b1220', borderBottom: isNarrowScreen ? '3px solid #0b1220' : 'none', padding: sidebarVisible || isNarrowScreen ? '10px' : '0', background: '#0b1220', minHeight: 0, overflow: 'hidden' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
@@ -3781,7 +3754,7 @@ YOU DID IT. APP DEPLOYED!`);
                 const itemIsSelected = (item) => explorerSelected?.id === item.id;
 
                 return (
-                    <WindowFrame winState={windowStates.files} title="FILE_EXPLORER // IjamOS v3" AppIcon={Folder} onClose={() => { closeApp('files'); setExplorerPath([]); setExplorerSearch(''); setExplorerSelected(null); }} onMinimize={() => minimizeApp('files')} onMaximize={() => maximizeApp('files')} onFocus={() => focusApp('files')} onMove={(x, y) => moveApp('files', x, y)}>
+                    <WindowFrame winState={windowStates.files} title="FILE_EXPLORER // IjamOS v3" AppIcon={Folder} onClose={() => { closeApp('files'); setExplorerPath([]); setExplorerSearch(''); setExplorerSelected(null); }} onMinimize={() => minimizeApp('files')} onMaximize={() => maximizeApp('files')} onFocus={() => focusApp('files')} onMove={(x, y) => moveApp('files', x, y)} onResize={(w,h) => resizeApp('files',w,h)}>
                         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
 
                             {/* ── TOOLBAR ── */}
@@ -3970,7 +3943,7 @@ YOU DID IT. APP DEPLOYED!`);
 
             {/* 3. Settings/Stats Window */}
             {windowStates.progress?.isOpen && (
-                <WindowFrame winState={windowStates.progress} title="BUILDER_STATS // PROGRESS" AppIcon={User} onClose={() => closeApp('progress')} onMinimize={() => minimizeApp('progress')} onMaximize={() => maximizeApp('progress')} onFocus={() => focusApp('progress')} onMove={(x,y) => moveApp('progress',x,y)}>
+                <WindowFrame winState={windowStates.progress} title="BUILDER_STATS // PROGRESS" AppIcon={User} onClose={() => closeApp('progress')} onMinimize={() => minimizeApp('progress')} onMaximize={() => maximizeApp('progress')} onFocus={() => focusApp('progress')} onMove={(x,y) => moveApp('progress',x,y)} onResize={(w,h) => resizeApp('progress',w,h)}>
                     <div style={{ padding: '24px', color: '#fff', overflowY: 'auto', height: '100%' }}>
                         {/* Builder Identity Card */}
                         <div style={{ background: 'linear-gradient(45deg, #0b1220 0%, #1e293b 100%)', border: '3px solid #f5d000', borderRadius: '16px', padding: '24px', marginBottom: '30px', display: 'flex', alignItems: 'center', gap: '20px', boxShadow: '8px 8px 0 #0b1220' }}>
@@ -4103,7 +4076,7 @@ YOU DID IT. APP DEPLOYED!`);
             )}
 
             {windowStates.settings?.isOpen && (
-                <WindowFrame winState={windowStates.settings} title="SYSTEM_SETTINGS // CONFIG" AppIcon={Settings} onClose={() => closeApp('settings')} onMinimize={() => minimizeApp('settings')} onMaximize={() => maximizeApp('settings')} onFocus={() => focusApp('settings')} onMove={(x,y) => moveApp('settings',x,y)}>
+                <WindowFrame winState={windowStates.settings} title="SYSTEM_SETTINGS // CONFIG" AppIcon={Settings} onClose={() => closeApp('settings')} onMinimize={() => minimizeApp('settings')} onMaximize={() => maximizeApp('settings')} onFocus={() => focusApp('settings')} onMove={(x,y) => moveApp('settings',x,y)} onResize={(w,h) => resizeApp('settings',w,h)}>
                     <div style={{ padding: '24px', color: '#fff', overflowY: 'auto', height: '100%' }}>
                         <form onSubmit={handleSaveSettings} style={{ maxWidth: '600px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
@@ -4255,7 +4228,7 @@ YOU DID IT. APP DEPLOYED!`);
 
             {/* 6. Arcade Window */}
             {windowStates.arcade?.isOpen && (
-                <WindowFrame winState={windowStates.arcade} title="BUILDER_ARCADE // STUDIO" AppIcon={Gamepad2} onClose={() => closeApp('arcade')} onMinimize={() => minimizeApp('arcade')} onMaximize={() => maximizeApp('arcade')} onFocus={() => focusApp('arcade')} onMove={(x,y) => moveApp('arcade',x,y)}>
+                <WindowFrame winState={windowStates.arcade} title="BUILDER_ARCADE // STUDIO" AppIcon={Gamepad2} onClose={() => closeApp('arcade')} onMinimize={() => minimizeApp('arcade')} onMaximize={() => maximizeApp('arcade')} onFocus={() => focusApp('arcade')} onMove={(x,y) => moveApp('arcade',x,y)} onResize={(w,h) => resizeApp('arcade',w,h)}>
                     <div style={{ flex: 1, minHeight: 0, background: '#f3f4f6', overflowY: 'auto' }}>
                         <BuilderStudioPage session={session} />
                     </div>
@@ -4264,7 +4237,7 @@ YOU DID IT. APP DEPLOYED!`);
 
             {/* 7. Simulator Window */}
             {windowStates.simulator?.isOpen && (
-                <WindowFrame winState={windowStates.simulator} title="VIBE_SIMULATOR // ARCHITECTURE" AppIcon={Activity} onClose={() => closeApp('simulator')} onMinimize={() => minimizeApp('simulator')} onMaximize={() => maximizeApp('simulator')} onFocus={() => focusApp('simulator')} onMove={(x,y) => moveApp('simulator',x,y)}>
+                <WindowFrame winState={windowStates.simulator} title="VIBE_SIMULATOR // ARCHITECTURE" AppIcon={Activity} onClose={() => closeApp('simulator')} onMinimize={() => minimizeApp('simulator')} onMaximize={() => maximizeApp('simulator')} onFocus={() => focusApp('simulator')} onMove={(x,y) => moveApp('simulator',x,y)} onResize={(w,h) => resizeApp('simulator',w,h)}>
                     <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
                         <VibeSimulator />
                     </div>
@@ -4273,7 +4246,7 @@ YOU DID IT. APP DEPLOYED!`);
 
             {/* 8. Mind Mapper Window */}
             {windowStates.mind_mapper?.isOpen && (
-                <WindowFrame winState={windowStates.mind_mapper} title="MIND_MAPPER // IDEATION" AppIcon={Waypoints} onClose={() => closeApp('mind_mapper')} onMinimize={() => minimizeApp('mind_mapper')} onMaximize={() => maximizeApp('mind_mapper')} onFocus={() => focusApp('mind_mapper')} onMove={(x,y) => moveApp('mind_mapper',x,y)}>
+                <WindowFrame winState={windowStates.mind_mapper} title="MIND_MAPPER // IDEATION" AppIcon={Waypoints} onClose={() => closeApp('mind_mapper')} onMinimize={() => minimizeApp('mind_mapper')} onMaximize={() => maximizeApp('mind_mapper')} onFocus={() => focusApp('mind_mapper')} onMove={(x,y) => moveApp('mind_mapper',x,y)} onResize={(w,h) => resizeApp('mind_mapper',w,h)}>
                     <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
                         <MindMapperApp />
                     </div>
@@ -4282,7 +4255,7 @@ YOU DID IT. APP DEPLOYED!`);
 
             {/* 9. Prompt Forge Window */}
             {windowStates.prompt_forge?.isOpen && (
-                <WindowFrame winState={windowStates.prompt_forge} title="PROMPT_FORGE // MASTER PROMPT" AppIcon={Wand2} onClose={() => closeApp('prompt_forge')} onMinimize={() => minimizeApp('prompt_forge')} onMaximize={() => maximizeApp('prompt_forge')} onFocus={() => focusApp('prompt_forge')} onMove={(x,y) => moveApp('prompt_forge',x,y)}>
+                <WindowFrame winState={windowStates.prompt_forge} title="PROMPT_FORGE // MASTER PROMPT" AppIcon={Wand2} onClose={() => closeApp('prompt_forge')} onMinimize={() => minimizeApp('prompt_forge')} onMaximize={() => maximizeApp('prompt_forge')} onFocus={() => focusApp('prompt_forge')} onMove={(x,y) => moveApp('prompt_forge',x,y)} onResize={(w,h) => resizeApp('prompt_forge',w,h)}>
                     <div style={{ flex: 1, minHeight: 0, background: '#0b1220', overflow: 'hidden' }}>
                         <PromptForgeApp />
                     </div>
@@ -4291,7 +4264,7 @@ YOU DID IT. APP DEPLOYED!`);
 
             {/* 4. Recycle Bin Window */}
             {windowStates.trash?.isOpen && (
-                <WindowFrame winState={windowStates.trash} title="RECYCLE_BIN // DELETED CONTENT" AppIcon={Trash2} onClose={() => closeApp('trash')} onMinimize={() => minimizeApp('trash')} onMaximize={() => maximizeApp('trash')} onFocus={() => focusApp('trash')} onMove={(x,y) => moveApp('trash',x,y)}>
+                <WindowFrame winState={windowStates.trash} title="RECYCLE_BIN // DELETED CONTENT" AppIcon={Trash2} onClose={() => closeApp('trash')} onMinimize={() => minimizeApp('trash')} onMaximize={() => maximizeApp('trash')} onFocus={() => focusApp('trash')} onMove={(x,y) => moveApp('trash',x,y)} onResize={(w,h) => resizeApp('trash',w,h)}>
                     <div style={{ padding: '60px 20px', textAlign: 'center', color: '#64748b' }}>
                         <Trash2 size={48} style={{ marginBottom: '20px', opacity: 0.3 }} />
                         <div style={{ fontFamily: 'monospace', fontWeight: 900, fontSize: '14px' }}>BOX IS CURRENTLY EMPTY</div>
@@ -4307,7 +4280,7 @@ YOU DID IT. APP DEPLOYED!`);
                     <div onClick={() => setIsStartMenuOpen(false)} style={{ position: 'absolute', inset: 0, zIndex: 9998 }} />
                     <div style={{
                         position: 'absolute',
-                        bottom: '148px', /* sits above dock (46px) + dock height (~90px) + 12px gap */
+                        top: '28px',
                         left: '16px',
                         width: '400px',
                         maxWidth: 'calc(100vw - 32px)',
@@ -4391,41 +4364,47 @@ YOU DID IT. APP DEPLOYED!`);
             )}
 
             {/* iOS-style Dock */}
-            <IjamDock dockOrder={dockOrder} windowStates={windowStates} onOpen={openApp} onReorder={reorderDock} />
+            <IjamDock
+                dockOrder={dockOrder}
+                windowStates={windowStates}
+                onOpen={openApp}
+                onReorder={reorderDock}
+                visible={dockVisible}
+                onMouseEnterDock={() => { clearTimeout(dockHideTimerRef.current); setDockVisible(true); }}
+                onMouseLeaveDock={() => { dockHideTimerRef.current = setTimeout(() => setDockVisible(false), 800); }}
+            />
 
-            {/* System Bar */}
-            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '40px', background: 'rgba(7,11,20,0.96)', borderTop: '1px solid rgba(245,208,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', zIndex: 499, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
-                {/* Left: Start button */}
-                <button
-                    onClick={() => setIsStartMenuOpen(!isStartMenuOpen)}
-                    style={{ background: isStartMenuOpen ? 'rgba(245,208,0,0.15)' : 'transparent', border: `1px solid ${isStartMenuOpen ? 'rgba(245,208,0,0.4)' : 'transparent'}`, borderRadius: '6px', color: isStartMenuOpen ? '#f5d000' : 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '7px', fontFamily: 'monospace', fontSize: '11px', fontWeight: 900, padding: '5px 12px', transition: 'all 0.15s', letterSpacing: '0.06em' }}
-                >
-                    <Power size={13} /> APPS
-                </button>
+            {/* macOS-style Menu Bar — top */}
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '28px', background: 'rgba(7,11,20,0.96)', borderBottom: '1px solid rgba(245,208,0,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px', zIndex: 499, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
+                {/* Left: ⚡ IJAM_OS logo + macOS menu items */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                    <button
+                        onClick={() => setIsStartMenuOpen(!isStartMenuOpen)}
+                        style={{ background: isStartMenuOpen ? 'rgba(245,208,0,0.15)' : 'transparent', border: 'none', borderRadius: '4px', color: '#f5d000', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontFamily: 'monospace', fontSize: '11px', fontWeight: 900, padding: '2px 8px', transition: 'background 0.15s', letterSpacing: '0.04em' }}
+                    >
+                        ⚡ IJAM_OS
+                    </button>
+                    {['File', 'View', 'Window', 'Help'].map(item => (
+                        <button key={item}
+                            style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.55)', fontFamily: 'monospace', fontSize: '11px', cursor: 'pointer', padding: '2px 8px', borderRadius: '4px', transition: 'background 0.1s' }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                        >{item}</button>
+                    ))}
+                </div>
 
-                {/* Center: open windows as pills */}
-                <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: '6px', maxWidth: '60vw', overflow: 'hidden' }}>
-                    {Object.entries(windowStates).filter(([, ws]) => ws?.isOpen && !ws?.isMinimized).map(([type]) => {
-                        const app = APP_REGISTRY.find(a => a.type === type);
-                        if (!app) return null;
-                        const isFocused = focusedWindow === type;
-                        return (
-                            <button key={type} onClick={() => focusApp(type)}
-                                style={{ background: isFocused ? 'rgba(245,208,0,0.18)' : 'rgba(255,255,255,0.06)', border: `1px solid ${isFocused ? 'rgba(245,208,0,0.5)' : 'rgba(255,255,255,0.08)'}`, borderRadius: '5px', color: isFocused ? '#f5d000' : 'rgba(255,255,255,0.5)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontFamily: 'monospace', fontSize: '10px', fontWeight: 900, padding: '3px 9px', letterSpacing: '0.04em', whiteSpace: 'nowrap', maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                <app.icon size={10} />
-                                {app.label}
-                            </button>
-                        );
-                    })}
+                {/* Center: focused app name */}
+                <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', fontSize: '11px', fontWeight: 700, fontFamily: 'monospace', color: focusedWindow ? (APP_REGISTRY.find(a => a.type === focusedWindow)?.color ?? 'rgba(255,255,255,0.5)') : 'rgba(255,255,255,0.25)', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>
+                    {focusedWindow ? APP_REGISTRY.find(a => a.type === focusedWindow)?.label : 'IJAM_OS v3.0'}
                 </div>
 
                 {/* Right: weather + clock */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.38)', fontFamily: 'monospace' }}>
                         {isWeatherLoading ? '●●●' : weather ? `${weather.temperature}°C · ${weather.description}` : 'SELANGOR'}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                        <div style={{ fontFamily: 'monospace', fontSize: '12px', fontWeight: 900, color: 'rgba(255,255,255,0.8)', letterSpacing: '0.08em' }}>
+                        <div style={{ fontFamily: 'monospace', fontSize: '11px', fontWeight: 900, color: 'rgba(255,255,255,0.8)', letterSpacing: '0.08em' }}>
                             {systemTime}
                         </div>
                         <div style={{ fontFamily: 'monospace', fontSize: '9px', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.04em' }}>
