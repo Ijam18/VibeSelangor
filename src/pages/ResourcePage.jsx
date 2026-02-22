@@ -2394,22 +2394,22 @@ const buildIjamBotLessonBrief = ({ lesson, tips, tone }) => {
 
 // ─── IjamOS v3 App Registry ─────────────────────────────────────────────────
 const APP_REGISTRY = [
-    { type: 'terminal',     label: 'TERMINAL',     icon: Bot,      color: '#bfdbfe', defaultW: 860, defaultH: 560, title: 'IJAM_TERMINAL // IjamOS v3' },
-    { type: 'files',        label: 'FILES',        icon: Folder,   color: '#f5d000', defaultW: 820, defaultH: 540, title: 'FILE_EXPLORER // IjamOS v3' },
-    { type: 'progress',     label: 'STATS',        icon: User,     color: '#86efac', defaultW: 700, defaultH: 580, title: 'BUILDER_STATS // PROGRESS' },
-    { type: 'settings',     label: 'SETTINGS',     icon: Settings, color: '#94a3b8', defaultW: 660, defaultH: 520, title: 'SYSTEM_SETTINGS // CONFIG' },
-    { type: 'arcade',       label: 'ARCADE',       icon: Gamepad2, color: '#f5d000', defaultW: 600, defaultH: 460, title: 'BUILDER_ARCADE // STUDIO' },
-    { type: 'mind_mapper',  label: 'MIND_MAP',     icon: Waypoints,color: '#fef08a', defaultW: 920, defaultH: 620, title: 'MIND_MAPPER // IDEATION' },
-    { type: 'prompt_forge', label: 'PROMPT_FORGE', icon: Wand2,    color: '#fb923c', defaultW: 860, defaultH: 580, title: 'PROMPT_FORGE // MASTER PROMPT' },
-    { type: 'simulator',    label: 'SIMULATOR',    icon: Activity, color: '#86efac', defaultW: 820, defaultH: 580, title: 'VIBE_SIMULATOR // ARCHITECTURE' },
-    { type: 'trash',        label: 'RECYCLE',      icon: Trash2,   color: '#ef4444', defaultW: 500, defaultH: 320, title: 'RECYCLE_BIN // DELETED CONTENT' },
+    { type: 'terminal', label: 'TERMINAL', icon: Bot, color: '#bfdbfe', defaultW: 860, defaultH: 560, title: 'IJAM_TERMINAL // IjamOS v3' },
+    { type: 'files', label: 'FILES', icon: Folder, color: '#f5d000', defaultW: 820, defaultH: 540, title: 'FILE_EXPLORER // IjamOS v3' },
+    { type: 'progress', label: 'STATS', icon: User, color: '#86efac', defaultW: 700, defaultH: 580, title: 'BUILDER_STATS // PROGRESS' },
+    { type: 'settings', label: 'SETTINGS', icon: Settings, color: '#94a3b8', defaultW: 660, defaultH: 520, title: 'SYSTEM_SETTINGS // CONFIG' },
+    { type: 'arcade', label: 'ARCADE', icon: Gamepad2, color: '#f5d000', defaultW: 600, defaultH: 460, title: 'BUILDER_ARCADE // STUDIO' },
+    { type: 'mind_mapper', label: 'MIND_MAP', icon: Waypoints, color: '#fef08a', defaultW: 920, defaultH: 620, title: 'MIND_MAPPER // IDEATION' },
+    { type: 'prompt_forge', label: 'PROMPT_FORGE', icon: Wand2, color: '#fb923c', defaultW: 860, defaultH: 580, title: 'PROMPT_FORGE // MASTER PROMPT' },
+    { type: 'simulator', label: 'SIMULATOR', icon: Activity, color: '#86efac', defaultW: 820, defaultH: 580, title: 'VIBE_SIMULATOR // ARCHITECTURE' },
+    { type: 'trash', label: 'RECYCLE', icon: Trash2, color: '#ef4444', defaultW: 500, defaultH: 320, title: 'RECYCLE_BIN // DELETED CONTENT' },
 ];
 
 // ─── IjamOS v3 Draggable Window Frame ───────────────────────────────────────
 const WindowFrame = ({ winState, title, AppIcon, onClose, onMinimize, onMaximize, onFocus, onMove, onResize, children }) => {
-    const frameRef   = useRef(null);
-    const dragRef    = useRef(null);
-    const resizeRef  = useRef(null); // { edge, sx, sy, ow, oh }
+    const frameRef = useRef(null);
+    const dragRef = useRef(null);
+    const resizeRef = useRef(null); // { edge, sx, sy, ow, oh }
 
     useEffect(() => {
         const onMM = (e) => {
@@ -2418,7 +2418,7 @@ const WindowFrame = ({ winState, title, AppIcon, onClose, onMinimize, onMaximize
                 const dy = e.clientY - dragRef.current.sy;
                 if (frameRef.current) {
                     frameRef.current.style.left = `${dragRef.current.wx + dx}px`;
-                    frameRef.current.style.top  = `${dragRef.current.wy + dy}px`;
+                    frameRef.current.style.top = `${dragRef.current.wy + dy}px`;
                 }
             }
             if (resizeRef.current) {
@@ -2431,7 +2431,7 @@ const WindowFrame = ({ winState, title, AppIcon, onClose, onMinimize, onMaximize
                 if (edge.includes('w')) nw = Math.max(320, ow - dx);
                 if (edge.includes('n')) nh = Math.max(220, oh - dy);
                 if (frameRef.current) {
-                    if (edge.includes('e') || edge.includes('w')) frameRef.current.style.width  = `${nw}px`;
+                    if (edge.includes('e') || edge.includes('w')) frameRef.current.style.width = `${nw}px`;
                     if (edge.includes('s') || edge.includes('n')) frameRef.current.style.height = `${nh}px`;
                 }
             }
@@ -2469,14 +2469,14 @@ const WindowFrame = ({ winState, title, AppIcon, onClose, onMinimize, onMaximize
         : { position: 'absolute', left: winState.x, top: winState.y, width: winState.w, height: winState.h, zIndex: winState.zIndex, borderRadius: '10px' };
 
     const RESIZE_HANDLES = [
-        { edge: 'e',  s: { right: 0,    top: '8px',  width: '6px',  height: 'calc(100% - 16px)', cursor: 'ew-resize'   } },
-        { edge: 's',  s: { bottom: 0,   left: '8px', height: '6px', width: 'calc(100% - 16px)',  cursor: 'ns-resize'   } },
-        { edge: 'w',  s: { left: 0,     top: '8px',  width: '6px',  height: 'calc(100% - 16px)', cursor: 'ew-resize'   } },
-        { edge: 'n',  s: { top: 0,      left: '8px', height: '6px', width: 'calc(100% - 16px)',  cursor: 'ns-resize'   } },
-        { edge: 'se', s: { right: 0,    bottom: 0,   width: '14px', height: '14px',              cursor: 'nwse-resize' } },
-        { edge: 'sw', s: { left: 0,     bottom: 0,   width: '14px', height: '14px',              cursor: 'nesw-resize' } },
-        { edge: 'ne', s: { right: 0,    top: 0,      width: '14px', height: '14px',              cursor: 'nesw-resize' } },
-        { edge: 'nw', s: { left: 0,     top: 0,      width: '14px', height: '14px',              cursor: 'nwse-resize' } },
+        { edge: 'e', s: { right: 0, top: '8px', width: '6px', height: 'calc(100% - 16px)', cursor: 'ew-resize' } },
+        { edge: 's', s: { bottom: 0, left: '8px', height: '6px', width: 'calc(100% - 16px)', cursor: 'ns-resize' } },
+        { edge: 'w', s: { left: 0, top: '8px', width: '6px', height: 'calc(100% - 16px)', cursor: 'ew-resize' } },
+        { edge: 'n', s: { top: 0, left: '8px', height: '6px', width: 'calc(100% - 16px)', cursor: 'ns-resize' } },
+        { edge: 'se', s: { right: 0, bottom: 0, width: '14px', height: '14px', cursor: 'nwse-resize' } },
+        { edge: 'sw', s: { left: 0, bottom: 0, width: '14px', height: '14px', cursor: 'nesw-resize' } },
+        { edge: 'ne', s: { right: 0, top: 0, width: '14px', height: '14px', cursor: 'nesw-resize' } },
+        { edge: 'nw', s: { left: 0, top: 0, width: '14px', height: '14px', cursor: 'nwse-resize' } },
     ];
 
     return (
@@ -2490,7 +2490,7 @@ const WindowFrame = ({ winState, title, AppIcon, onClose, onMinimize, onMaximize
             >
                 {/* Traffic lights */}
                 <div style={{ display: 'flex', gap: '6px', zIndex: 1 }}>
-                    {[['#ef4444','✕', onClose], ['#f59e0b','─', onMinimize], ['#22c55e', isMax ? '⊡' : '⊞', onMaximize]].map(([bg, sym, fn]) => (
+                    {[['#ef4444', '✕', onClose], ['#f59e0b', '─', onMinimize], ['#22c55e', isMax ? '⊡' : '⊞', onMaximize]].map(([bg, sym, fn]) => (
                         <button key={sym} onClick={(e) => { e.stopPropagation(); fn(); }}
                             style={{ width: 13, height: 13, borderRadius: '50%', background: bg, border: '1px solid rgba(0,0,0,0.2)', cursor: 'pointer', fontSize: '8px', color: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, fontWeight: 900, transition: 'color 0.1s' }}
                             onMouseEnter={e => e.currentTarget.style.color = '#000'}
@@ -2518,7 +2518,7 @@ const WindowFrame = ({ winState, title, AppIcon, onClose, onMinimize, onMaximize
 
 // ─── IjamOS v3 iOS-style Dock ────────────────────────────────────────────────
 const IjamDock = ({ dockOrder, windowStates, onOpen, onReorder, visible, onMouseEnterDock, onMouseLeaveDock }) => {
-    const [mouseX, setMouseX]   = useState(null);
+    const [mouseX, setMouseX] = useState(null);
     const [hoverIdx, setHoverIdx] = useState(null);
     const [dragIdx, setDragIdx] = useState(null);
     const dockRef = useRef(null);
@@ -3344,24 +3344,24 @@ YOU DID IT. APP DEPLOYED!`);
                                 {/* IJAM_BOT face icon — Selangor colorway */}
                                 <svg viewBox="0 0 120 120" width="148" height="148" style={{ filter: `drop-shadow(0 0 ${isHolding ? 28 : 18}px rgba(200,16,46,0.6)) drop-shadow(0 0 8px rgba(245,208,0,0.3))`, animation: isHolding ? 'lock-pulse-active 0.6s ease-in-out infinite' : 'lock-pulse 3.6s ease-in-out infinite', transition: 'filter 0.2s' }}>
                                     {/* Red rounded-square body */}
-                                    <rect width="120" height="120" rx="24" fill="#C8102E"/>
+                                    <rect width="120" height="120" rx="24" fill="#C8102E" />
                                     {/* Gold inner screen */}
-                                    <rect x="12" y="12" width="96" height="96" rx="14" fill="#F5D000"/>
+                                    <rect x="12" y="12" width="96" height="96" rx="14" fill="#F5D000" />
                                     {/* Antenna */}
-                                    <rect x="55" y="0" width="10" height="16" rx="3" fill="#C8102E"/>
-                                    <circle cx="60" cy="0" r="8" fill="#F5D000" stroke="#C8102E" strokeWidth="3"/>
+                                    <rect x="55" y="0" width="10" height="16" rx="3" fill="#C8102E" />
+                                    <circle cx="60" cy="0" r="8" fill="#F5D000" stroke="#C8102E" strokeWidth="3" />
                                     {/* Left eye */}
-                                    <rect x="26" y="40" width="28" height="18" rx="4" fill="white"/>
+                                    <rect x="26" y="40" width="28" height="18" rx="4" fill="white" />
                                     {/* Right eye */}
-                                    <rect x="66" y="40" width="28" height="18" rx="4" fill="white"/>
+                                    <rect x="66" y="40" width="28" height="18" rx="4" fill="white" />
                                     {/* Mouth bar */}
-                                    <rect x="32" y="78" width="56" height="10" rx="5" fill="white"/>
+                                    <rect x="32" y="78" width="56" height="10" rx="5" fill="white" />
                                 </svg>
                                 {/* Gold progress ring — shown during hold */}
                                 {isHolding && (
                                     <svg style={{ position: 'absolute', top: 0, left: 0, transform: 'rotate(-90deg)', pointerEvents: 'none' }}
                                         viewBox="0 0 148 148" width="148" height="148">
-                                        <circle cx="74" cy="74" r="70" fill="none" stroke="rgba(245,208,0,0.18)" strokeWidth="5"/>
+                                        <circle cx="74" cy="74" r="70" fill="none" stroke="rgba(245,208,0,0.18)" strokeWidth="5" />
                                         <circle cx="74" cy="74" r="70" fill="none"
                                             stroke="#F5D000" strokeWidth="5" strokeLinecap="round"
                                             strokeDasharray={`${(holdProgress / 100) * (2 * Math.PI * 70).toFixed(2)} ${(2 * Math.PI * 70).toFixed(2)}`}
@@ -3415,7 +3415,7 @@ YOU DID IT. APP DEPLOYED!`);
 
             {/* 1. Terminal Window */}
             {windowStates.terminal?.isOpen && (
-                <WindowFrame winState={windowStates.terminal} title="IJAM_TERMINAL // IjamOS v3" AppIcon={Bot} onClose={() => closeApp('terminal')} onMinimize={() => minimizeApp('terminal')} onMaximize={() => maximizeApp('terminal')} onFocus={() => focusApp('terminal')} onMove={(x, y) => moveApp('terminal', x, y)} onResize={(w,h) => resizeApp('terminal',w,h)}>
+                <WindowFrame winState={windowStates.terminal} title="IJAM_TERMINAL // IjamOS v3" AppIcon={Bot} onClose={() => closeApp('terminal')} onMinimize={() => minimizeApp('terminal')} onMaximize={() => maximizeApp('terminal')} onFocus={() => focusApp('terminal')} onMove={(x, y) => moveApp('terminal', x, y)} onResize={(w, h) => resizeApp('terminal', w, h)}>
                     <div style={{ display: 'grid', gridTemplateColumns: isNarrowScreen ? '1fr' : (sidebarVisible ? 'minmax(220px, 320px) 1fr' : '0 1fr'), gridTemplateRows: isNarrowScreen ? 'auto minmax(0,1fr)' : 'minmax(0,1fr)', flex: 1, minHeight: 0 }}>
                         <aside style={{ borderRight: (isNarrowScreen || !sidebarVisible) ? 'none' : '3px solid #0b1220', borderBottom: isNarrowScreen ? '3px solid #0b1220' : 'none', padding: sidebarVisible || isNarrowScreen ? '10px' : '0', background: '#0b1220', minHeight: 0, overflow: 'hidden' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
@@ -3754,7 +3754,7 @@ YOU DID IT. APP DEPLOYED!`);
                 const itemIsSelected = (item) => explorerSelected?.id === item.id;
 
                 return (
-                    <WindowFrame winState={windowStates.files} title="FILE_EXPLORER // IjamOS v3" AppIcon={Folder} onClose={() => { closeApp('files'); setExplorerPath([]); setExplorerSearch(''); setExplorerSelected(null); }} onMinimize={() => minimizeApp('files')} onMaximize={() => maximizeApp('files')} onFocus={() => focusApp('files')} onMove={(x, y) => moveApp('files', x, y)} onResize={(w,h) => resizeApp('files',w,h)}>
+                    <WindowFrame winState={windowStates.files} title="FILE_EXPLORER // IjamOS v3" AppIcon={Folder} onClose={() => { closeApp('files'); setExplorerPath([]); setExplorerSearch(''); setExplorerSelected(null); }} onMinimize={() => minimizeApp('files')} onMaximize={() => maximizeApp('files')} onFocus={() => focusApp('files')} onMove={(x, y) => moveApp('files', x, y)} onResize={(w, h) => resizeApp('files', w, h)}>
                         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
 
                             {/* ── TOOLBAR ── */}
@@ -3943,7 +3943,7 @@ YOU DID IT. APP DEPLOYED!`);
 
             {/* 3. Settings/Stats Window */}
             {windowStates.progress?.isOpen && (
-                <WindowFrame winState={windowStates.progress} title="BUILDER_STATS // PROGRESS" AppIcon={User} onClose={() => closeApp('progress')} onMinimize={() => minimizeApp('progress')} onMaximize={() => maximizeApp('progress')} onFocus={() => focusApp('progress')} onMove={(x,y) => moveApp('progress',x,y)} onResize={(w,h) => resizeApp('progress',w,h)}>
+                <WindowFrame winState={windowStates.progress} title="BUILDER_STATS // PROGRESS" AppIcon={User} onClose={() => closeApp('progress')} onMinimize={() => minimizeApp('progress')} onMaximize={() => maximizeApp('progress')} onFocus={() => focusApp('progress')} onMove={(x, y) => moveApp('progress', x, y)} onResize={(w, h) => resizeApp('progress', w, h)}>
                     <div style={{ padding: '24px', color: '#fff', overflowY: 'auto', height: '100%' }}>
                         {/* Builder Identity Card */}
                         <div style={{ background: 'linear-gradient(45deg, #0b1220 0%, #1e293b 100%)', border: '3px solid #f5d000', borderRadius: '16px', padding: '24px', marginBottom: '30px', display: 'flex', alignItems: 'center', gap: '20px', boxShadow: '8px 8px 0 #0b1220' }}>
@@ -4076,7 +4076,7 @@ YOU DID IT. APP DEPLOYED!`);
             )}
 
             {windowStates.settings?.isOpen && (
-                <WindowFrame winState={windowStates.settings} title="SYSTEM_SETTINGS // CONFIG" AppIcon={Settings} onClose={() => closeApp('settings')} onMinimize={() => minimizeApp('settings')} onMaximize={() => maximizeApp('settings')} onFocus={() => focusApp('settings')} onMove={(x,y) => moveApp('settings',x,y)} onResize={(w,h) => resizeApp('settings',w,h)}>
+                <WindowFrame winState={windowStates.settings} title="SYSTEM_SETTINGS // CONFIG" AppIcon={Settings} onClose={() => closeApp('settings')} onMinimize={() => minimizeApp('settings')} onMaximize={() => maximizeApp('settings')} onFocus={() => focusApp('settings')} onMove={(x, y) => moveApp('settings', x, y)} onResize={(w, h) => resizeApp('settings', w, h)}>
                     <div style={{ padding: '24px', color: '#fff', overflowY: 'auto', height: '100%' }}>
                         <form onSubmit={handleSaveSettings} style={{ maxWidth: '600px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
@@ -4228,7 +4228,7 @@ YOU DID IT. APP DEPLOYED!`);
 
             {/* 6. Arcade Window */}
             {windowStates.arcade?.isOpen && (
-                <WindowFrame winState={windowStates.arcade} title="BUILDER_ARCADE // STUDIO" AppIcon={Gamepad2} onClose={() => closeApp('arcade')} onMinimize={() => minimizeApp('arcade')} onMaximize={() => maximizeApp('arcade')} onFocus={() => focusApp('arcade')} onMove={(x,y) => moveApp('arcade',x,y)} onResize={(w,h) => resizeApp('arcade',w,h)}>
+                <WindowFrame winState={windowStates.arcade} title="BUILDER_ARCADE // STUDIO" AppIcon={Gamepad2} onClose={() => closeApp('arcade')} onMinimize={() => minimizeApp('arcade')} onMaximize={() => maximizeApp('arcade')} onFocus={() => focusApp('arcade')} onMove={(x, y) => moveApp('arcade', x, y)} onResize={(w, h) => resizeApp('arcade', w, h)}>
                     <div style={{ flex: 1, minHeight: 0, background: '#f3f4f6', overflowY: 'auto' }}>
                         <BuilderStudioPage session={session} />
                     </div>
@@ -4237,7 +4237,7 @@ YOU DID IT. APP DEPLOYED!`);
 
             {/* 7. Simulator Window */}
             {windowStates.simulator?.isOpen && (
-                <WindowFrame winState={windowStates.simulator} title="VIBE_SIMULATOR // ARCHITECTURE" AppIcon={Activity} onClose={() => closeApp('simulator')} onMinimize={() => minimizeApp('simulator')} onMaximize={() => maximizeApp('simulator')} onFocus={() => focusApp('simulator')} onMove={(x,y) => moveApp('simulator',x,y)} onResize={(w,h) => resizeApp('simulator',w,h)}>
+                <WindowFrame winState={windowStates.simulator} title="VIBE_SIMULATOR // ARCHITECTURE" AppIcon={Activity} onClose={() => closeApp('simulator')} onMinimize={() => minimizeApp('simulator')} onMaximize={() => maximizeApp('simulator')} onFocus={() => focusApp('simulator')} onMove={(x, y) => moveApp('simulator', x, y)} onResize={(w, h) => resizeApp('simulator', w, h)}>
                     <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
                         <VibeSimulator />
                     </div>
@@ -4246,7 +4246,7 @@ YOU DID IT. APP DEPLOYED!`);
 
             {/* 8. Mind Mapper Window */}
             {windowStates.mind_mapper?.isOpen && (
-                <WindowFrame winState={windowStates.mind_mapper} title="MIND_MAPPER // IDEATION" AppIcon={Waypoints} onClose={() => closeApp('mind_mapper')} onMinimize={() => minimizeApp('mind_mapper')} onMaximize={() => maximizeApp('mind_mapper')} onFocus={() => focusApp('mind_mapper')} onMove={(x,y) => moveApp('mind_mapper',x,y)} onResize={(w,h) => resizeApp('mind_mapper',w,h)}>
+                <WindowFrame winState={windowStates.mind_mapper} title="MIND_MAPPER // IDEATION" AppIcon={Waypoints} onClose={() => closeApp('mind_mapper')} onMinimize={() => minimizeApp('mind_mapper')} onMaximize={() => maximizeApp('mind_mapper')} onFocus={() => focusApp('mind_mapper')} onMove={(x, y) => moveApp('mind_mapper', x, y)} onResize={(w, h) => resizeApp('mind_mapper', w, h)}>
                     <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
                         <MindMapperApp />
                     </div>
@@ -4255,7 +4255,7 @@ YOU DID IT. APP DEPLOYED!`);
 
             {/* 9. Prompt Forge Window */}
             {windowStates.prompt_forge?.isOpen && (
-                <WindowFrame winState={windowStates.prompt_forge} title="PROMPT_FORGE // MASTER PROMPT" AppIcon={Wand2} onClose={() => closeApp('prompt_forge')} onMinimize={() => minimizeApp('prompt_forge')} onMaximize={() => maximizeApp('prompt_forge')} onFocus={() => focusApp('prompt_forge')} onMove={(x,y) => moveApp('prompt_forge',x,y)} onResize={(w,h) => resizeApp('prompt_forge',w,h)}>
+                <WindowFrame winState={windowStates.prompt_forge} title="PROMPT_FORGE // MASTER PROMPT" AppIcon={Wand2} onClose={() => closeApp('prompt_forge')} onMinimize={() => minimizeApp('prompt_forge')} onMaximize={() => maximizeApp('prompt_forge')} onFocus={() => focusApp('prompt_forge')} onMove={(x, y) => moveApp('prompt_forge', x, y)} onResize={(w, h) => resizeApp('prompt_forge', w, h)}>
                     <div style={{ flex: 1, minHeight: 0, background: '#0b1220', overflow: 'hidden' }}>
                         <PromptForgeApp />
                     </div>
@@ -4264,7 +4264,7 @@ YOU DID IT. APP DEPLOYED!`);
 
             {/* 4. Recycle Bin Window */}
             {windowStates.trash?.isOpen && (
-                <WindowFrame winState={windowStates.trash} title="RECYCLE_BIN // DELETED CONTENT" AppIcon={Trash2} onClose={() => closeApp('trash')} onMinimize={() => minimizeApp('trash')} onMaximize={() => maximizeApp('trash')} onFocus={() => focusApp('trash')} onMove={(x,y) => moveApp('trash',x,y)} onResize={(w,h) => resizeApp('trash',w,h)}>
+                <WindowFrame winState={windowStates.trash} title="RECYCLE_BIN // DELETED CONTENT" AppIcon={Trash2} onClose={() => closeApp('trash')} onMinimize={() => minimizeApp('trash')} onMaximize={() => maximizeApp('trash')} onFocus={() => focusApp('trash')} onMove={(x, y) => moveApp('trash', x, y)} onResize={(w, h) => resizeApp('trash', w, h)}>
                     <div style={{ padding: '60px 20px', textAlign: 'center', color: '#64748b' }}>
                         <Trash2 size={48} style={{ marginBottom: '20px', opacity: 0.3 }} />
                         <div style={{ fontFamily: 'monospace', fontWeight: 900, fontSize: '14px' }}>BOX IS CURRENTLY EMPTY</div>
@@ -4399,15 +4399,15 @@ YOU DID IT. APP DEPLOYED!`);
                 </div>
 
                 {/* Right: weather + clock */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.38)', fontFamily: 'monospace' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', fontFamily: 'monospace', letterSpacing: '0.02em' }}>
                         {isWeatherLoading ? '●●●' : weather ? `${weather.temperature}°C · ${weather.description}` : 'SELANGOR'}
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                        <div style={{ fontFamily: 'monospace', fontSize: '11px', fontWeight: 900, color: 'rgba(255,255,255,0.8)', letterSpacing: '0.08em' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ fontFamily: 'monospace', fontSize: '11px', fontWeight: 900, color: 'rgba(255,255,255,0.85)', letterSpacing: '0.08em' }}>
                             {systemTime}
                         </div>
-                        <div style={{ fontFamily: 'monospace', fontSize: '9px', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.04em' }}>
+                        <div style={{ fontFamily: 'monospace', fontSize: '10px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.02em' }}>
                             {systemDate}
                         </div>
                     </div>
