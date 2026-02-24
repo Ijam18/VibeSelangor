@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { ArrowRight, Sparkles, MapPin, MessageCircle } from 'lucide-react';
 import ThreadsIcon from './ThreadsIcon';
 import { SPRINT_MODULE_STEPS } from '../constants';
@@ -11,59 +11,39 @@ const GalleryShowcase = ({
     setSelectedDetailProfile,
     isMobileView,
     limit,
-    setPublicPage
+    setPublicPage,
+    certificates = []
 }) => {
 
 
-    let buildersToShow = profiles
-        .filter(p => {
+    const scrollRef = useRef(null);
+    const certificateByBuilderId = useMemo(() => {
+        const map = new Map();
+        (certificates || []).forEach((cert) => {
+            if (cert?.builder_id && !map.has(cert.builder_id)) map.set(cert.builder_id, cert);
+        });
+        return map;
+    }, [certificates]);
+    const buildersToShow = useMemo(() => {
+        const visible = (profiles || []).filter((p) => {
             const isSelf = session?.user && p.id === session.user.id;
             const isInternal = p.role === 'owner' || p.role === 'admin';
-            // Show if they have an idea title or a submission, even if day 0
-            return (p.idea_title || submissions.some(s => s.user_id === p.id)) && !isSelf && !isInternal;
-        })
-        .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+            return (p.idea_title || submissions.some((s) => s.user_id === p.id)) && !isSelf && !isInternal;
+        });
 
-    if (limit) buildersToShow = buildersToShow.slice(0, limit);
+        const sorted = visible.sort((a, b) => {
+            const aSubs = (submissions || []).filter((s) => s.user_id === a.id);
+            const bSubs = (submissions || []).filter((s) => s.user_id === b.id);
+            const aSteps = Math.min(aSubs.length, SPRINT_MODULE_STEPS.length);
+            const bSteps = Math.min(bSubs.length, SPRINT_MODULE_STEPS.length);
+            if (bSteps !== aSteps) return bSteps - aSteps;
+            const aLatest = aSubs[0]?.created_at || a.updated_at || a.created_at || 0;
+            const bLatest = bSubs[0]?.created_at || b.updated_at || b.created_at || 0;
+            return new Date(bLatest) - new Date(aLatest);
+        });
 
-    // Triplicate for seamless loop
-    const loopedBuilders = [...buildersToShow, ...buildersToShow, ...buildersToShow];
-
-    const scrollRef = useRef(null);
-    const [isAutoScrolling, setIsAutoScrolling] = useState(true);
-
-    useEffect(() => {
-        if (scrollRef.current && buildersToShow.length > 0) {
-            const container = scrollRef.current;
-            const singleSectionWidth = container.scrollWidth / 3;
-            // Start in the middle section
-            container.scrollLeft = singleSectionWidth;
-        }
-    }, [buildersToShow.length]);
-
-    const handleScroll = () => {
-        if (!scrollRef.current || buildersToShow.length === 0) return;
-        const container = scrollRef.current;
-        const singleSectionWidth = container.scrollWidth / 3;
-
-        if (container.scrollLeft <= 10) {
-            container.scrollLeft = singleSectionWidth + container.scrollLeft;
-        } else if (container.scrollLeft >= singleSectionWidth * 2 - 10) {
-            container.scrollLeft = container.scrollLeft - singleSectionWidth;
-        }
-    };
-
-    useEffect(() => {
-        let interval;
-        if (isAutoScrolling && scrollRef.current && buildersToShow.length > 0) {
-            interval = setInterval(() => {
-                if (scrollRef.current) {
-                    scrollRef.current.scrollLeft += 1;
-                }
-            }, 30);
-        }
-        return () => clearInterval(interval);
-    }, [isAutoScrolling, buildersToShow.length]);
+        return limit ? sorted.slice(0, limit) : sorted;
+    }, [profiles, session?.user, submissions, limit]);
 
 
 
@@ -97,10 +77,6 @@ const GalleryShowcase = ({
                 <div
                     className="builders-scroll-container"
                     ref={scrollRef}
-                    onScroll={handleScroll}
-                    onMouseEnter={() => setIsAutoScrolling(false)}
-                    onMouseLeave={() => setIsAutoScrolling(true)}
-                    onTouchStart={() => setIsAutoScrolling(false)}
                     style={{
                         width: '100%',
                         paddingLeft: 'max(16px, calc((100vw - 1200px) / 2))', // Dynamic padding to align first item with container
@@ -113,8 +89,10 @@ const GalleryShowcase = ({
                                 <h3 style={{ opacity: 0.5 }}>The gallery is preparing for takeoff...</h3>
                             </div>
                         ) : (
-                            loopedBuilders.map((p, idx) => {
-                                const builderSubmissions = submissions.filter(s => s.user_id === p.id);
+                            buildersToShow.map((p, idx) => {
+                                const builderSubmissions = submissions
+                                    .filter(s => s.user_id === p.id)
+                                    .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
                                 const latest = builderSubmissions[0];
                                 const stepIndex = builderSubmissions.length > 0 ? (builderSubmissions.length > SPRINT_MODULE_STEPS.length ? SPRINT_MODULE_STEPS.length : builderSubmissions.length) : 0;
 
@@ -153,8 +131,15 @@ const GalleryShowcase = ({
                                                 <div style={{ width: '32px', height: '32px', background: 'var(--selangor-red)', color: 'white', borderRadius: '8px', border: '2px solid black', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '950', fontSize: '14px' }}>
                                                     {p.full_name?.[0]}
                                                 </div>
-                                                <div className="pill pill-red" style={{ fontSize: '9px', padding: '2px 8px' }}>
-                                                    {stepIndex === 0 ? 'KICKOFF' : SPRINT_MODULE_STEPS[stepIndex - 1]?.split(':')[1]?.trim()?.toUpperCase()}
+                                                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                                                    {certificateByBuilderId.has(p.id) && (
+                                                        <div className="pill pill-teal" style={{ fontSize: '9px', padding: '2px 8px' }}>
+                                                            CERTIFIED
+                                                        </div>
+                                                    )}
+                                                    <div className="pill pill-red" style={{ fontSize: '9px', padding: '2px 8px' }}>
+                                                        {stepIndex === 0 ? 'KICKOFF' : SPRINT_MODULE_STEPS[stepIndex - 1]?.split(':')[1]?.trim()?.toUpperCase()}
+                                                    </div>
                                                 </div>
                                             </div>
 

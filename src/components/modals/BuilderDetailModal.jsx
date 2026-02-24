@@ -13,9 +13,11 @@ export default function BuilderDetailModal({
     submissions,
     currentUser,
     isMobileView,
-    onVisitStudio
+    onVisitStudio,
+    certificates = []
 }) {
     if (!isOpen || !builder) return null;
+    const builderCertificate = (certificates || []).find((c) => c.builder_id === builder.id) || null;
 
     return (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backdropFilter: 'blur(8px)' }}>
@@ -38,6 +40,17 @@ export default function BuilderDetailModal({
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                             <span className="pill pill-teal" style={{ padding: '4px 12px', fontSize: '10px' }}>{builder.role.toUpperCase()}</span>
                             <span className="pill" style={{ border: '2px solid black', padding: '4px 12px', fontSize: '10px' }}>{builder.district.toUpperCase()}</span>
+                            {builderCertificate && (
+                                <a
+                                    href={builderCertificate.certificate_url || '#'}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="pill pill-red"
+                                    style={{ padding: '4px 12px', fontSize: '10px', textDecoration: 'none' }}
+                                >
+                                    CERTIFIED
+                                </a>
+                            )}
                             {builder.threads_handle && (
                                 <a
                                     href={formatThreadsProfileUrl(builder.threads_handle)}

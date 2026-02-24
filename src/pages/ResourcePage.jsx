@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+    Home,
     Globe, Server,
     Sparkles,
     Brain,
@@ -37,6 +38,7 @@ import { useWeather } from '../utils/useWeather';
 import { useSoundEffects } from '../utils/useSoundEffects';
 import { motion, AnimatePresence } from 'framer-motion';
 import IjamBotMascot from '../components/IjamBotMascot';
+import MobileStatusBar from '../components/MobileStatusBar';
 
 const LESSONS_IJAM = [
     {
@@ -2406,12 +2408,33 @@ const APP_REGISTRY = [
 ];
 
 // ─── IjamOS v3 Draggable Window Frame ───────────────────────────────────────
-const WindowFrame = ({ winState, title, AppIcon, onClose, onMinimize, onMaximize, onFocus, onMove, onResize, children }) => {
+const WindowFrame = ({
+    winState,
+    title,
+    AppIcon,
+    onClose,
+    onMinimize,
+    onMaximize,
+    onFocus,
+    onMove,
+    onResize,
+    children,
+    mobileMode = false,
+    mobileInset = '58px 8px 14px 8px',
+    mobileMaxInset = '48px 0px 74px 0px'
+}) => {
     const frameRef = useRef(null);
     const dragRef = useRef(null);
     const resizeRef = useRef(null); // { edge, sx, sy, ow, oh }
+    const mobileInsets = useMemo(() => ([
+        '102px 16px 148px 16px',
+        '82px 12px 116px 12px',
+        mobileInset
+    ]), [mobileInset]);
+    const [mobileInsetIndex, setMobileInsetIndex] = useState(2);
 
     useEffect(() => {
+        if (mobileMode) return () => {};
         const onMM = (e) => {
             if (dragRef.current) {
                 const dx = e.clientX - dragRef.current.sx;
@@ -2459,12 +2482,23 @@ const WindowFrame = ({ winState, title, AppIcon, onClose, onMinimize, onMaximize
         document.addEventListener('mousemove', onMM);
         document.addEventListener('mouseup', onMU);
         return () => { document.removeEventListener('mousemove', onMM); document.removeEventListener('mouseup', onMU); };
-    }, [onMove, onResize]);
+    }, [mobileMode, onMove, onResize]);
+
+    useEffect(() => {
+        setMobileInsetIndex(2);
+    }, [mobileInset]);
 
     if (!winState?.isOpen || winState?.isMinimized) return null;
     const isMax = !!winState.isMaximized;
 
-    const boxStyle = isMax
+    const boxStyle = mobileMode
+        ? {
+            position: 'absolute',
+            inset: isMax ? mobileMaxInset : (mobileInsets[mobileInsetIndex] || mobileInset),
+            zIndex: winState.zIndex,
+            borderRadius: isMax ? '0px' : '18px'
+        }
+        : isMax
         ? { position: 'absolute', inset: '28px 0 0 0', zIndex: winState.zIndex, borderRadius: 0 }
         : { position: 'absolute', left: winState.x, top: winState.y, width: winState.w, height: winState.h, zIndex: winState.zIndex, borderRadius: '10px' };
 
@@ -2484,17 +2518,21 @@ const WindowFrame = ({ winState, title, AppIcon, onClose, onMinimize, onMaximize
             style={{ ...boxStyle, display: 'flex', flexDirection: 'column', background: '#111827', overflow: 'hidden', boxShadow: '0 28px 80px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,0.06)' }}>
             {/* ── Title bar ── */}
             <div
-                onMouseDown={(e) => { if (isMax) return; e.stopPropagation(); dragRef.current = { sx: e.clientX, sy: e.clientY, wx: winState.x, wy: winState.y }; }}
+                onMouseDown={(e) => {
+                    if (isMax || mobileMode) return;
+                    e.stopPropagation();
+                    dragRef.current = { sx: e.clientX, sy: e.clientY, wx: winState.x, wy: winState.y };
+                }}
                 onDoubleClick={onMaximize}
-                style={{ background: '#f5d000', padding: '7px 12px', display: 'flex', alignItems: 'center', cursor: isMax ? 'default' : 'grab', userSelect: 'none', flexShrink: 0, position: 'relative', borderBottom: '2px solid rgba(0,0,0,0.15)' }}
+                style={{ background: '#f5d000', padding: '7px 12px', display: 'flex', alignItems: 'center', cursor: (isMax || mobileMode) ? 'default' : 'grab', userSelect: 'none', flexShrink: 0, position: 'relative', borderBottom: '2px solid rgba(0,0,0,0.15)' }}
             >
                 {/* Traffic lights */}
                 <div style={{ display: 'flex', gap: '6px', zIndex: 1 }}>
-                    {[['#ef4444', '✕', onClose], ['#f59e0b', '─', onMinimize], ['#22c55e', isMax ? '⊡' : '⊞', onMaximize]].map(([bg, sym, fn]) => (
-                        <button key={sym} onClick={(e) => { e.stopPropagation(); fn(); }}
-                            style={{ width: 13, height: 13, borderRadius: '50%', background: bg, border: '1px solid rgba(0,0,0,0.2)', cursor: 'pointer', fontSize: '8px', color: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, fontWeight: 900, transition: 'color 0.1s' }}
-                            onMouseEnter={e => e.currentTarget.style.color = '#000'}
-                            onMouseLeave={e => e.currentTarget.style.color = 'transparent'}
+                    {[['#ef4444', 'x', onClose], ['#f59e0b', '-', onMinimize], ['#22c55e', isMax ? '+' : 'o', onMaximize]].map(([bg, sym, fn]) => (
+                        <button key={`${bg}-${sym}`} onClick={(e) => { e.stopPropagation(); fn(); }}
+                            style={{ width: 13, height: 13, borderRadius: '50%', background: bg, border: '1px solid rgba(0,0,0,0.2)', cursor: 'pointer', fontSize: '8px', color: mobileMode ? '#111827' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, fontWeight: 900, transition: 'color 0.1s' }}
+                            onMouseEnter={e => { if (!mobileMode) e.currentTarget.style.color = '#000'; }}
+                            onMouseLeave={e => { if (!mobileMode) e.currentTarget.style.color = 'transparent'; }}
                         >{sym}</button>
                     ))}
                 </div>
@@ -2503,10 +2541,34 @@ const WindowFrame = ({ winState, title, AppIcon, onClose, onMinimize, onMaximize
                     {AppIcon && <AppIcon size={14} />}
                     {title}
                 </div>
+                {mobileMode && !isMax && (
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setMobileInsetIndex((prev) => (prev + 1) % mobileInsets.length);
+                        }}
+                        style={{
+                            marginLeft: 'auto',
+                            zIndex: 1,
+                            border: '1px solid rgba(15,23,42,0.35)',
+                            borderRadius: 8,
+                            background: 'rgba(255,255,255,0.72)',
+                            color: '#0b1220',
+                            fontSize: 9,
+                            fontWeight: 800,
+                            letterSpacing: '0.02em',
+                            padding: '3px 7px',
+                            lineHeight: 1
+                        }}
+                    >
+                        SIZE
+                    </button>
+                )}
             </div>
             <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>{children}</div>
             {/* ── Resize handles (hidden when maximized) ── */}
-            {!isMax && onResize && RESIZE_HANDLES.map(({ edge, s }) => (
+            {!mobileMode && !isMax && onResize && RESIZE_HANDLES.map(({ edge, s }) => (
                 <div key={edge}
                     style={{ position: 'absolute', zIndex: 10, ...s }}
                     onMouseDown={(e) => { e.stopPropagation(); resizeRef.current = { edge, sx: e.clientX, sy: e.clientY, ow: winState.w, oh: winState.h }; }}
@@ -2581,16 +2643,34 @@ const IjamDock = ({ dockOrder, windowStates, onOpen, onReorder, visible, onMouse
     );
 };
 
-const DesktopIcon = ({ label, icon: Icon, onClick, color = '#f5d000' }) => (
+const DesktopIcon = ({ label, icon: Icon, onClick, color = '#f5d000', isPhoneMode = false, isTabletMode = false }) => (
     <button onClick={onClick}
-        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'transparent', border: 'none', cursor: 'pointer', padding: '12px', borderRadius: '12px', transition: 'background 0.2s' }}
+        style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: isPhoneMode ? '6px' : '8px',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            padding: isPhoneMode ? '8px 6px' : (isTabletMode ? '10px' : '12px'),
+            borderRadius: '12px',
+            transition: 'background 0.2s'
+        }}
         onMouseOver={(e) => e.currentTarget.style.background = 'rgba(245,208,0,0.12)'}
         onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
     >
-        <div style={{ background: '#0b1220', border: `2px solid ${color}`, color, padding: '12px', borderRadius: '14px', boxShadow: '4px 4px 0 rgba(0,0,0,0.4)' }}>
-            <Icon size={32} />
+        <div style={{
+            background: '#0b1220',
+            border: `2px solid ${color}`,
+            color,
+            padding: isPhoneMode ? '10px' : '12px',
+            borderRadius: '14px',
+            boxShadow: '4px 4px 0 rgba(0,0,0,0.4)'
+        }}>
+            <Icon size={isPhoneMode ? 24 : 32} />
         </div>
-        <span style={{ color: '#fff', fontSize: '11px', fontWeight: 900, fontFamily: 'monospace', textShadow: '1px 1px 4px #000' }}>{label}</span>
+        <span style={{ color: '#fff', fontSize: isPhoneMode ? '10px' : '11px', fontWeight: 800, fontFamily: 'monospace', textShadow: '1px 1px 4px #000' }}>{label}</span>
     </button>
 );
 
@@ -2605,7 +2685,18 @@ const StartMenuApp = ({ icon: Icon, label, onClick }) => (
     </button>
 );
 
-const ResourcePage = ({ session, currentUser }) => {
+const ResourcePage = ({ session, currentUser, isMobileView, deviceMode = 'desktop', ijamOsMode = 'mac_desktop', setPublicPage }) => {
+    const isMacMode = ijamOsMode === 'mac_desktop';
+    const isPhoneMode = ijamOsMode === 'ios_phone';
+    const isTabletMode = ijamOsMode === 'ios_tablet';
+    const isTouchIjamMode = isPhoneMode || isTabletMode;
+    const mobileWindowProps = isTouchIjamMode
+        ? {
+            mobileMode: true,
+            mobileInset: isPhoneMode ? '86px 8px 96px 8px' : '92px 12px 104px 12px',
+            mobileMaxInset: isPhoneMode ? '46px 0px 72px 0px' : '50px 0px 80px 0px'
+        }
+        : {};
     const [activeIndex, setActiveIndex] = useState(0);
     const [search, setSearch] = useState('');
     const [communityResources, setCommunityResources] = useState([]);
@@ -2632,6 +2723,10 @@ const ResourcePage = ({ session, currentUser }) => {
     const [startMenuSearch, setStartMenuSearch] = useState('');
     const [dockVisible, setDockVisible] = useState(false);
     const dockHideTimerRef = useRef(null);
+    const [batteryPct, setBatteryPct] = useState('--%');
+    const triggerHaptic = useCallback(() => {
+        if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
+    }, []);
 
     const openApp = useCallback((type) => {
         const appCfg = APP_REGISTRY.find(a => a.type === type);
@@ -2639,6 +2734,28 @@ const ResourcePage = ({ session, currentUser }) => {
         setZCounter(z => {
             const newZ = z + 1;
             setWindowStates(prev => {
+                if (isTouchIjamMode) {
+                    const vw = typeof window !== 'undefined' ? window.innerWidth : 430;
+                    const vh = typeof window !== 'undefined' ? window.innerHeight : 900;
+                    const reset = {};
+                    APP_REGISTRY.forEach((app) => {
+                        reset[app.type] = { ...(prev[app.type] || {}), isOpen: false, isMinimized: false, isMaximized: false, zIndex: 0 };
+                    });
+                    return {
+                        ...reset,
+                        [type]: {
+                            ...(prev[type] || {}),
+                            isOpen: true,
+                            isMinimized: false,
+                            isMaximized: false,
+                            x: 10,
+                            y: 58,
+                            w: Math.max(320, vw - 20),
+                            h: Math.max(400, vh - 84),
+                            zIndex: newZ
+                        }
+                    };
+                }
                 if (prev[type]?.isOpen) {
                     return { ...prev, [type]: { ...prev[type], isMinimized: false, zIndex: newZ } };
                 }
@@ -2652,12 +2769,27 @@ const ResourcePage = ({ session, currentUser }) => {
             setFocusedWindow(type);
             return newZ;
         });
-    }, []);
+    }, [isTouchIjamMode]);
 
     const closeApp = useCallback((type) => {
         setWindowStates(prev => ({ ...prev, [type]: { ...(prev[type] || {}), isOpen: false } }));
         setFocusedWindow(f => f === type ? null : f);
     }, []);
+    const closeAllApps = useCallback(() => {
+        setWindowStates((prev) => {
+            const next = { ...prev };
+            APP_REGISTRY.forEach((app) => {
+                next[app.type] = { ...(next[app.type] || {}), isOpen: false, isMinimized: false };
+            });
+            return next;
+        });
+        setFocusedWindow(null);
+    }, []);
+    const exitIjamOS = useCallback(() => {
+        triggerHaptic();
+        closeAllApps();
+        if (setPublicPage) setPublicPage('home');
+    }, [closeAllApps, setPublicPage, triggerHaptic]);
 
     const minimizeApp = useCallback((type) => {
         setWindowStates(prev => ({ ...prev, [type]: { ...prev[type], isMinimized: true } }));
@@ -2696,6 +2828,11 @@ const ResourcePage = ({ session, currentUser }) => {
 
     // Convenience: which type is currently open/focused (for backward compat in content)
     const activeWindow = focusedWindow;
+    const mobileActiveWindow = useMemo(() => {
+        if (focusedWindow && windowStates[focusedWindow]?.isOpen && !windowStates[focusedWindow]?.isMinimized) return focusedWindow;
+        const open = APP_REGISTRY.find((app) => windowStates[app.type]?.isOpen && !windowStates[app.type]?.isMinimized);
+        return open?.type || null;
+    }, [focusedWindow, windowStates]);
 
     const [chatMessages, setChatMessages] = useState([
         { role: 'bot', text: 'IJAM_OS_INITIALIZED: Greetings, Builder. I am Antigravity. Type your command or click on the lessons above to begin.' }
@@ -2736,6 +2873,32 @@ const ResourcePage = ({ session, currentUser }) => {
     const walkTimerRef = useRef(null);
     const [systemTime, setSystemTime] = useState('');
     const [systemDate, setSystemDate] = useState('');
+
+    useEffect(() => {
+        let battery = null;
+        const handleBatteryUpdate = () => {
+            if (!battery) return;
+            setBatteryPct(`${Math.round((battery.level || 0) * 100)}%`);
+        };
+
+        if (typeof navigator === 'undefined' || !navigator.getBattery) {
+            setBatteryPct('--%');
+            return undefined;
+        }
+
+        navigator.getBattery().then((manager) => {
+            battery = manager;
+            handleBatteryUpdate();
+            battery.addEventListener('levelchange', handleBatteryUpdate);
+            battery.addEventListener('chargingchange', handleBatteryUpdate);
+        }).catch(() => setBatteryPct('--%'));
+
+        return () => {
+            if (!battery) return;
+            battery.removeEventListener('levelchange', handleBatteryUpdate);
+            battery.removeEventListener('chargingchange', handleBatteryUpdate);
+        };
+    }, []);
 
     const [profileForm, setProfileForm] = useState({
         username: '',
@@ -3303,7 +3466,7 @@ YOU DID IT. APP DEPLOYED!`);
                 transition={{ duration: 0.45, ease: 'easeIn' }}
                 onMouseMove={e => setBootMousePos({ x: e.clientX, y: e.clientY })}
                 onTouchMove={e => { const t = e.touches[0]; if (t) setBootMousePos({ x: t.clientX, y: t.clientY }); }}
-                style={{ ...sectionStyle, background: 'radial-gradient(ellipse at 50% 30%, #1a0208 0%, #04070f 70%)', height: '100vh', position: 'relative', color: '#f8fafc', fontFamily: 'system-ui, -apple-system, sans-serif', overflow: 'hidden', userSelect: 'none' }}
+                style={{ ...sectionStyle, background: isMacMode ? 'radial-gradient(ellipse at 50% 30%, #1a0208 0%, #04070f 70%)' : 'transparent', height: '100vh', position: 'relative', color: '#f8fafc', fontFamily: 'system-ui, -apple-system, sans-serif', overflow: 'hidden', userSelect: 'none' }}
             >
                 <style>{`
                     @keyframes lock-pulse        { 0%,100%{transform:scale(1)} 50%{transform:scale(1.04)} }
@@ -3390,7 +3553,7 @@ YOU DID IT. APP DEPLOYED!`);
     }
 
     return (
-        <section id="resources-page" style={{ ...sectionStyle, background: '#0b131e', height: '100vh', overflow: 'hidden', position: 'relative' }}
+        <section id="resources-page" style={{ ...sectionStyle, background: isMacMode ? '#0b131e' : 'transparent', height: '100vh', overflow: 'hidden', position: 'relative' }}
             onMouseMove={(e) => {
                 if (e.clientY > window.innerHeight - 60) {
                     clearTimeout(dockHideTimerRef.current);
@@ -3401,13 +3564,91 @@ YOU DID IT. APP DEPLOYED!`);
                 }
             }}
         >
+            {isTouchIjamMode && (
+                <div style={{ position: 'absolute', top: 'max(2px, env(safe-area-inset-top, 0px))', left: 10, right: 10, zIndex: 1200 }}>
+                    <MobileStatusBar
+                        timeLabel={systemTime}
+                        batteryPct={batteryPct}
+                        marginBottom={0}
+                        centerContent={(
+                            <div
+                                style={{
+                                    position: 'absolute',
+                                    left: '50%',
+                                    top: '50%',
+                                    transform: 'translate(-50%, -50%)',
+                                    width: isPhoneMode ? 'min(58%, 246px)' : 'min(46%, 290px)',
+                                    background: 'rgba(10,10,10,0.95)',
+                                    color: '#fff',
+                                    borderRadius: 14,
+                                    padding: '5px 8px',
+                                    textAlign: 'center',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    gap: 6,
+                                    fontSize: 10,
+                                    fontWeight: 600,
+                                    lineHeight: 1.15,
+                                    boxShadow: '0 8px 18px rgba(0,0,0,0.2)',
+                                    pointerEvents: 'auto',
+                                    overflow: 'hidden'
+                                }}
+                            >
+                                <span style={{ pointerEvents: 'none', flex: 1, minWidth: 0, textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {mobileActiveWindow ? (APP_REGISTRY.find((a) => a.type === mobileActiveWindow)?.label || 'IJAM_OS') : 'IJAM_OS'}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={exitIjamOS}
+                                    style={{
+                                        border: '1px solid rgba(239,68,68,0.45)',
+                                        borderRadius: 999,
+                                        background: 'rgba(239,68,68,0.22)',
+                                        color: '#fff',
+                                        fontSize: 9,
+                                        fontWeight: 600,
+                                        padding: '3px 7px',
+                                        lineHeight: 1
+                                    }}
+                                >
+                                    Exit
+                                </button>
+                            </div>
+                        )}
+                    />
+                </div>
+            )}
+
             {/* Desktop Wallpaper - Grid Pattern */}
             <div style={{ position: 'absolute', inset: 0, opacity: 0.1, backgroundImage: 'radial-gradient(#f5d000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px', pointerEvents: 'none' }} />
 
             {/* Desktop Icons Container */}
-            <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '36px 20px 110px', height: '100%', position: 'relative', zIndex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, 100px)', gap: '24px', alignItems: 'start', contentVisibility: 'auto' }}>
+            <div style={{
+                maxWidth: isMacMode ? '1280px' : '100%',
+                margin: '0 auto',
+                padding: isPhoneMode ? '58px 10px 96px' : (isTabletMode ? '62px 14px 104px' : '36px 20px 110px'),
+                height: '100%',
+                position: 'relative',
+                zIndex: 1,
+                display: 'grid',
+                gridTemplateColumns: isMacMode
+                    ? 'repeat(auto-fill, 100px)'
+                    : (isTabletMode ? 'repeat(auto-fill, minmax(92px, 1fr))' : 'repeat(4, minmax(0, 1fr))'),
+                gap: isMacMode ? '24px' : '12px',
+                alignItems: 'start',
+                contentVisibility: 'auto'
+            }}>
                 {APP_REGISTRY.map(app => (
-                    <DesktopIcon key={app.type} label={app.label} icon={app.icon} color={app.color} onClick={() => openApp(app.type)} />
+                    <DesktopIcon
+                        key={app.type}
+                        label={app.label}
+                        icon={app.icon}
+                        color={app.color}
+                        onClick={() => openApp(app.type)}
+                        isPhoneMode={isPhoneMode}
+                        isTabletMode={isTabletMode}
+                    />
                 ))}
             </div>
 
@@ -3415,7 +3656,7 @@ YOU DID IT. APP DEPLOYED!`);
 
             {/* 1. Terminal Window */}
             {windowStates.terminal?.isOpen && (
-                <WindowFrame winState={windowStates.terminal} title="IJAM_TERMINAL // IjamOS v3" AppIcon={Bot} onClose={() => closeApp('terminal')} onMinimize={() => minimizeApp('terminal')} onMaximize={() => maximizeApp('terminal')} onFocus={() => focusApp('terminal')} onMove={(x, y) => moveApp('terminal', x, y)} onResize={(w, h) => resizeApp('terminal', w, h)}>
+                <WindowFrame {...mobileWindowProps} winState={windowStates.terminal} title="IJAM_TERMINAL // IjamOS v3" AppIcon={Bot} onClose={() => closeApp('terminal')} onMinimize={() => minimizeApp('terminal')} onMaximize={() => maximizeApp('terminal')} onFocus={() => focusApp('terminal')} onMove={(x, y) => moveApp('terminal', x, y)} onResize={(w, h) => resizeApp('terminal', w, h)}>
                     <div style={{ display: 'grid', gridTemplateColumns: isNarrowScreen ? '1fr' : (sidebarVisible ? 'minmax(220px, 320px) 1fr' : '0 1fr'), gridTemplateRows: isNarrowScreen ? 'auto minmax(0,1fr)' : 'minmax(0,1fr)', flex: 1, minHeight: 0 }}>
                         <aside style={{ borderRight: (isNarrowScreen || !sidebarVisible) ? 'none' : '3px solid #0b1220', borderBottom: isNarrowScreen ? '3px solid #0b1220' : 'none', padding: sidebarVisible || isNarrowScreen ? '10px' : '0', background: '#0b1220', minHeight: 0, overflow: 'hidden' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
@@ -3754,7 +3995,7 @@ YOU DID IT. APP DEPLOYED!`);
                 const itemIsSelected = (item) => explorerSelected?.id === item.id;
 
                 return (
-                    <WindowFrame winState={windowStates.files} title="FILE_EXPLORER // IjamOS v3" AppIcon={Folder} onClose={() => { closeApp('files'); setExplorerPath([]); setExplorerSearch(''); setExplorerSelected(null); }} onMinimize={() => minimizeApp('files')} onMaximize={() => maximizeApp('files')} onFocus={() => focusApp('files')} onMove={(x, y) => moveApp('files', x, y)} onResize={(w, h) => resizeApp('files', w, h)}>
+                    <WindowFrame {...mobileWindowProps} winState={windowStates.files} title="FILE_EXPLORER // IjamOS v3" AppIcon={Folder} onClose={() => { closeApp('files'); setExplorerPath([]); setExplorerSearch(''); setExplorerSelected(null); }} onMinimize={() => minimizeApp('files')} onMaximize={() => maximizeApp('files')} onFocus={() => focusApp('files')} onMove={(x, y) => moveApp('files', x, y)} onResize={(w, h) => resizeApp('files', w, h)}>
                         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
 
                             {/* ── TOOLBAR ── */}
@@ -3943,7 +4184,7 @@ YOU DID IT. APP DEPLOYED!`);
 
             {/* 3. Settings/Stats Window */}
             {windowStates.progress?.isOpen && (
-                <WindowFrame winState={windowStates.progress} title="BUILDER_STATS // PROGRESS" AppIcon={User} onClose={() => closeApp('progress')} onMinimize={() => minimizeApp('progress')} onMaximize={() => maximizeApp('progress')} onFocus={() => focusApp('progress')} onMove={(x, y) => moveApp('progress', x, y)} onResize={(w, h) => resizeApp('progress', w, h)}>
+                <WindowFrame {...mobileWindowProps} winState={windowStates.progress} title="BUILDER_STATS // PROGRESS" AppIcon={User} onClose={() => closeApp('progress')} onMinimize={() => minimizeApp('progress')} onMaximize={() => maximizeApp('progress')} onFocus={() => focusApp('progress')} onMove={(x, y) => moveApp('progress', x, y)} onResize={(w, h) => resizeApp('progress', w, h)}>
                     <div style={{ padding: '24px', color: '#fff', overflowY: 'auto', height: '100%' }}>
                         {/* Builder Identity Card */}
                         <div style={{ background: 'linear-gradient(45deg, #0b1220 0%, #1e293b 100%)', border: '3px solid #f5d000', borderRadius: '16px', padding: '24px', marginBottom: '30px', display: 'flex', alignItems: 'center', gap: '20px', boxShadow: '8px 8px 0 #0b1220' }}>
@@ -4076,7 +4317,7 @@ YOU DID IT. APP DEPLOYED!`);
             )}
 
             {windowStates.settings?.isOpen && (
-                <WindowFrame winState={windowStates.settings} title="SYSTEM_SETTINGS // CONFIG" AppIcon={Settings} onClose={() => closeApp('settings')} onMinimize={() => minimizeApp('settings')} onMaximize={() => maximizeApp('settings')} onFocus={() => focusApp('settings')} onMove={(x, y) => moveApp('settings', x, y)} onResize={(w, h) => resizeApp('settings', w, h)}>
+                <WindowFrame {...mobileWindowProps} winState={windowStates.settings} title="SYSTEM_SETTINGS // CONFIG" AppIcon={Settings} onClose={() => closeApp('settings')} onMinimize={() => minimizeApp('settings')} onMaximize={() => maximizeApp('settings')} onFocus={() => focusApp('settings')} onMove={(x, y) => moveApp('settings', x, y)} onResize={(w, h) => resizeApp('settings', w, h)}>
                     <div style={{ padding: '24px', color: '#fff', overflowY: 'auto', height: '100%' }}>
                         <form onSubmit={handleSaveSettings} style={{ maxWidth: '600px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
@@ -4228,7 +4469,7 @@ YOU DID IT. APP DEPLOYED!`);
 
             {/* 6. Arcade Window */}
             {windowStates.arcade?.isOpen && (
-                <WindowFrame winState={windowStates.arcade} title="BUILDER_ARCADE // STUDIO" AppIcon={Gamepad2} onClose={() => closeApp('arcade')} onMinimize={() => minimizeApp('arcade')} onMaximize={() => maximizeApp('arcade')} onFocus={() => focusApp('arcade')} onMove={(x, y) => moveApp('arcade', x, y)} onResize={(w, h) => resizeApp('arcade', w, h)}>
+                <WindowFrame {...mobileWindowProps} winState={windowStates.arcade} title="BUILDER_ARCADE // STUDIO" AppIcon={Gamepad2} onClose={() => closeApp('arcade')} onMinimize={() => minimizeApp('arcade')} onMaximize={() => maximizeApp('arcade')} onFocus={() => focusApp('arcade')} onMove={(x, y) => moveApp('arcade', x, y)} onResize={(w, h) => resizeApp('arcade', w, h)}>
                     <div style={{ flex: 1, minHeight: 0, background: '#f3f4f6', overflowY: 'auto' }}>
                         <BuilderStudioPage session={session} />
                     </div>
@@ -4237,7 +4478,7 @@ YOU DID IT. APP DEPLOYED!`);
 
             {/* 7. Simulator Window */}
             {windowStates.simulator?.isOpen && (
-                <WindowFrame winState={windowStates.simulator} title="VIBE_SIMULATOR // ARCHITECTURE" AppIcon={Activity} onClose={() => closeApp('simulator')} onMinimize={() => minimizeApp('simulator')} onMaximize={() => maximizeApp('simulator')} onFocus={() => focusApp('simulator')} onMove={(x, y) => moveApp('simulator', x, y)} onResize={(w, h) => resizeApp('simulator', w, h)}>
+                <WindowFrame {...mobileWindowProps} winState={windowStates.simulator} title="VIBE_SIMULATOR // ARCHITECTURE" AppIcon={Activity} onClose={() => closeApp('simulator')} onMinimize={() => minimizeApp('simulator')} onMaximize={() => maximizeApp('simulator')} onFocus={() => focusApp('simulator')} onMove={(x, y) => moveApp('simulator', x, y)} onResize={(w, h) => resizeApp('simulator', w, h)}>
                     <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
                         <VibeSimulator />
                     </div>
@@ -4246,7 +4487,7 @@ YOU DID IT. APP DEPLOYED!`);
 
             {/* 8. Mind Mapper Window */}
             {windowStates.mind_mapper?.isOpen && (
-                <WindowFrame winState={windowStates.mind_mapper} title="MIND_MAPPER // IDEATION" AppIcon={Waypoints} onClose={() => closeApp('mind_mapper')} onMinimize={() => minimizeApp('mind_mapper')} onMaximize={() => maximizeApp('mind_mapper')} onFocus={() => focusApp('mind_mapper')} onMove={(x, y) => moveApp('mind_mapper', x, y)} onResize={(w, h) => resizeApp('mind_mapper', w, h)}>
+                <WindowFrame {...mobileWindowProps} winState={windowStates.mind_mapper} title="MIND_MAPPER // IDEATION" AppIcon={Waypoints} onClose={() => closeApp('mind_mapper')} onMinimize={() => minimizeApp('mind_mapper')} onMaximize={() => maximizeApp('mind_mapper')} onFocus={() => focusApp('mind_mapper')} onMove={(x, y) => moveApp('mind_mapper', x, y)} onResize={(w, h) => resizeApp('mind_mapper', w, h)}>
                     <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
                         <MindMapperApp />
                     </div>
@@ -4255,7 +4496,7 @@ YOU DID IT. APP DEPLOYED!`);
 
             {/* 9. Prompt Forge Window */}
             {windowStates.prompt_forge?.isOpen && (
-                <WindowFrame winState={windowStates.prompt_forge} title="PROMPT_FORGE // MASTER PROMPT" AppIcon={Wand2} onClose={() => closeApp('prompt_forge')} onMinimize={() => minimizeApp('prompt_forge')} onMaximize={() => maximizeApp('prompt_forge')} onFocus={() => focusApp('prompt_forge')} onMove={(x, y) => moveApp('prompt_forge', x, y)} onResize={(w, h) => resizeApp('prompt_forge', w, h)}>
+                <WindowFrame {...mobileWindowProps} winState={windowStates.prompt_forge} title="PROMPT_FORGE // MASTER PROMPT" AppIcon={Wand2} onClose={() => closeApp('prompt_forge')} onMinimize={() => minimizeApp('prompt_forge')} onMaximize={() => maximizeApp('prompt_forge')} onFocus={() => focusApp('prompt_forge')} onMove={(x, y) => moveApp('prompt_forge', x, y)} onResize={(w, h) => resizeApp('prompt_forge', w, h)}>
                     <div style={{ flex: 1, minHeight: 0, background: '#0b1220', overflow: 'hidden' }}>
                         <PromptForgeApp />
                     </div>
@@ -4264,7 +4505,7 @@ YOU DID IT. APP DEPLOYED!`);
 
             {/* 4. Recycle Bin Window */}
             {windowStates.trash?.isOpen && (
-                <WindowFrame winState={windowStates.trash} title="RECYCLE_BIN // DELETED CONTENT" AppIcon={Trash2} onClose={() => closeApp('trash')} onMinimize={() => minimizeApp('trash')} onMaximize={() => maximizeApp('trash')} onFocus={() => focusApp('trash')} onMove={(x, y) => moveApp('trash', x, y)} onResize={(w, h) => resizeApp('trash', w, h)}>
+                <WindowFrame {...mobileWindowProps} winState={windowStates.trash} title="RECYCLE_BIN // DELETED CONTENT" AppIcon={Trash2} onClose={() => closeApp('trash')} onMinimize={() => minimizeApp('trash')} onMaximize={() => maximizeApp('trash')} onFocus={() => focusApp('trash')} onMove={(x, y) => moveApp('trash', x, y)} onResize={(w, h) => resizeApp('trash', w, h)}>
                     <div style={{ padding: '60px 20px', textAlign: 'center', color: '#64748b' }}>
                         <Trash2 size={48} style={{ marginBottom: '20px', opacity: 0.3 }} />
                         <div style={{ fontFamily: 'monospace', fontWeight: 900, fontSize: '14px' }}>BOX IS CURRENTLY EMPTY</div>
@@ -4364,58 +4605,120 @@ YOU DID IT. APP DEPLOYED!`);
             )}
 
             {/* iOS-style Dock */}
-            <IjamDock
-                dockOrder={dockOrder}
-                windowStates={windowStates}
-                onOpen={openApp}
-                onReorder={reorderDock}
-                visible={dockVisible}
-                onMouseEnterDock={() => { clearTimeout(dockHideTimerRef.current); setDockVisible(true); }}
-                onMouseLeaveDock={() => { dockHideTimerRef.current = setTimeout(() => setDockVisible(false), 800); }}
-            />
+            {isMacMode && (
+                <IjamDock
+                    dockOrder={dockOrder}
+                    windowStates={windowStates}
+                    onOpen={openApp}
+                    onReorder={reorderDock}
+                    visible={dockVisible}
+                    onMouseEnterDock={() => { clearTimeout(dockHideTimerRef.current); setDockVisible(true); }}
+                    onMouseLeaveDock={() => { dockHideTimerRef.current = setTimeout(() => setDockVisible(false), 800); }}
+                />
+            )}
+
+            {isTouchIjamMode && (
+                <div
+                    style={{
+                        position: 'absolute',
+                        left: 10,
+                        right: 10,
+                        bottom: 10,
+                        zIndex: 1200,
+                        borderRadius: 18,
+                        border: '1px solid rgba(255,255,255,0.24)',
+                        background: 'rgba(255,255,255,0.22)',
+                        backdropFilter: 'blur(22px) saturate(1.15)',
+                        WebkitBackdropFilter: 'blur(22px) saturate(1.15)',
+                        padding: '8px 10px',
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+                        gap: 8
+                    }}
+                >
+                    {[
+                        { id: 'files', label: 'Files', icon: Folder, onTap: () => openApp('files') },
+                        { id: 'terminal', label: 'Terminal', icon: Bot, onTap: () => openApp('terminal') },
+                        { id: 'home', label: 'Home', icon: Home, onTap: () => closeAllApps() },
+                        { id: 'progress', label: 'Stats', icon: User, onTap: () => openApp('progress') },
+                        { id: 'settings', label: 'Settings', icon: Settings, onTap: () => openApp('settings') }
+                    ].map((item) => {
+                        const active = item.id === mobileActiveWindow || (item.id === 'home' && !mobileActiveWindow);
+                        const Icon = item.icon;
+                        return (
+                            <button
+                                key={item.id}
+                                type="button"
+                                onClick={() => {
+                                    triggerHaptic();
+                                    item.onTap();
+                                }}
+                                style={{
+                                    borderRadius: 12,
+                                    border: active ? '1px solid rgba(245,208,0,0.55)' : '1px solid rgba(148,163,184,0.4)',
+                                    background: active ? 'rgba(245,208,0,0.18)' : 'rgba(15,23,42,0.42)',
+                                    color: '#f8fafc',
+                                    minHeight: 46,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: 3
+                                }}
+                            >
+                                <Icon size={14} />
+                                <span style={{ fontSize: 9, fontWeight: 600, lineHeight: 1 }}>{item.label}</span>
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
 
             {/* macOS-style Menu Bar — top */}
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '28px', background: 'rgba(7,11,20,0.96)', borderBottom: '1px solid rgba(245,208,0,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px', zIndex: 499, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
-                {/* Left: ⚡ IJAM_OS logo + macOS menu items */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                    <button
-                        onClick={() => setIsStartMenuOpen(!isStartMenuOpen)}
-                        style={{ background: isStartMenuOpen ? 'rgba(245,208,0,0.15)' : 'transparent', border: 'none', borderRadius: '4px', color: '#f5d000', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontFamily: 'monospace', fontSize: '11px', fontWeight: 900, padding: '2px 8px', transition: 'background 0.15s', letterSpacing: '0.04em' }}
-                    >
-                        ⚡ IJAM_OS
-                    </button>
-                    {['File', 'View', 'Window', 'Help'].map(item => (
-                        <button key={item}
-                            style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.55)', fontFamily: 'monospace', fontSize: '11px', cursor: 'pointer', padding: '2px 8px', borderRadius: '4px', transition: 'background 0.1s' }}
-                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
-                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                        >{item}</button>
-                    ))}
-                </div>
-
-                {/* Center: focused app name */}
-                <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', fontSize: '11px', fontWeight: 700, fontFamily: 'monospace', color: focusedWindow ? (APP_REGISTRY.find(a => a.type === focusedWindow)?.color ?? 'rgba(255,255,255,0.5)') : 'rgba(255,255,255,0.25)', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>
-                    {focusedWindow ? APP_REGISTRY.find(a => a.type === focusedWindow)?.label : 'IJAM_OS v3.0'}
-                </div>
-
-                {/* Right: weather + clock */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', fontFamily: 'monospace', letterSpacing: '0.02em' }}>
-                        {isWeatherLoading ? '●●●' : weather ? `${weather.temperature}°C · ${weather.description}` : 'SELANGOR'}
+            {isMacMode && (
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '28px', background: 'rgba(7,11,20,0.96)', borderBottom: '1px solid rgba(245,208,0,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px', zIndex: 499, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
+                    {/* Left: ⚡ IJAM_OS logo + macOS menu items */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                        <button
+                            onClick={() => setIsStartMenuOpen(!isStartMenuOpen)}
+                            style={{ background: isStartMenuOpen ? 'rgba(245,208,0,0.15)' : 'transparent', border: 'none', borderRadius: '4px', color: '#f5d000', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontFamily: 'monospace', fontSize: '11px', fontWeight: 900, padding: '2px 8px', transition: 'background 0.15s', letterSpacing: '0.04em' }}
+                        >
+                            ⚡ IJAM_OS
+                        </button>
+                        {['File', 'View', 'Window', 'Help'].map(item => (
+                            <button key={item}
+                                style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.55)', fontFamily: 'monospace', fontSize: '11px', cursor: 'pointer', padding: '2px 8px', borderRadius: '4px', transition: 'background 0.1s' }}
+                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                            >{item}</button>
+                        ))}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ fontFamily: 'monospace', fontSize: '11px', fontWeight: 900, color: 'rgba(255,255,255,0.85)', letterSpacing: '0.08em' }}>
-                            {systemTime}
+
+                    {/* Center: focused app name */}
+                    <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', fontSize: '11px', fontWeight: 700, fontFamily: 'monospace', color: focusedWindow ? (APP_REGISTRY.find(a => a.type === focusedWindow)?.color ?? 'rgba(255,255,255,0.5)') : 'rgba(255,255,255,0.25)', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>
+                        {focusedWindow ? APP_REGISTRY.find(a => a.type === focusedWindow)?.label : 'IJAM_OS v3.0'}
+                    </div>
+
+                    {/* Right: weather + clock */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', fontFamily: 'monospace', letterSpacing: '0.02em' }}>
+                            {isWeatherLoading ? '●●●' : weather ? `${weather.temperature}°C · ${weather.description}` : 'SELANGOR'}
                         </div>
-                        <div style={{ fontFamily: 'monospace', fontSize: '10px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.02em' }}>
-                            {systemDate}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ fontFamily: 'monospace', fontSize: '11px', fontWeight: 900, color: 'rgba(255,255,255,0.85)', letterSpacing: '0.08em' }}>
+                                {systemTime}
+                            </div>
+                            <div style={{ fontFamily: 'monospace', fontSize: '10px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.02em' }}>
+                                {systemDate}
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            )}
         </section>
     );
 
 };
 
 export default ResourcePage;
+

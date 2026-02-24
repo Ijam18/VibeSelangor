@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useToast } from './ToastNotification';
-import { Send, MessageCircle, X, Minimize2, Maximize2 } from 'lucide-react';
+import { Send, X, Minimize2, Maximize2 } from 'lucide-react';
 import { sanitizeAuthorText } from '../utils';
 
 export default function LiveChat({ session, activeClass }) {
@@ -92,29 +92,7 @@ export default function LiveChat({ session, activeClass }) {
 
     if (!activeClass) return null; // Don't render if no class is active
 
-    if (!isOpen) {
-        return (
-            <button
-                onClick={() => setIsOpen(true)}
-                className="btn btn-red heartbeat"
-                style={{
-                    position: 'fixed',
-                    bottom: '20px',
-                    right: '90px', // Next to chatbot
-                    zIndex: 999,
-                    borderRadius: '50%',
-                    width: '60px',
-                    height: '60px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '4px 4px 0px black'
-                }}
-            >
-                <MessageCircle size={24} />
-            </button>
-        );
-    }
+    if (!isOpen) return null;
 
     return (
         <div className="neo-card" style={{

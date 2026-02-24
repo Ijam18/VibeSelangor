@@ -8,7 +8,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['selangor-parlimen.svg', 'Threads_(app)_logo.svg.png'],
+      includeAssets: ['selangor-parlimen.svg', 'icons/icon-192.svg', 'icons/icon-512.svg'],
       manifest: {
         name: 'VibeSelangor',
         short_name: 'VibeSelangor',
@@ -20,15 +20,15 @@ export default defineConfig({
         orientation: 'portrait-primary',
         icons: [
           {
-            src: '/icons/icon-192.png',
+            src: '/icons/icon-192.svg',
             sizes: '192x192',
-            type: 'image/png',
+            type: 'image/svg+xml',
             purpose: 'any maskable'
           },
           {
-            src: '/icons/icon-512.png',
+            src: '/icons/icon-512.svg',
             sizes: '512x512',
-            type: 'image/png',
+            type: 'image/svg+xml',
             purpose: 'any maskable'
           }
         ],
@@ -38,14 +38,14 @@ export default defineConfig({
             short_name: 'Dashboard',
             description: 'Go to your builder dashboard',
             url: '/?page=dashboard',
-            icons: [{ src: '/icons/icon-192.png', sizes: '192x192' }]
+            icons: [{ src: '/icons/icon-192.svg', sizes: '192x192' }]
           },
           {
             name: 'Builder Showcase',
             short_name: 'Showcase',
             description: 'View all builder projects',
             url: '/?page=showcase',
-            icons: [{ src: '/icons/icon-192.png', sizes: '192x192' }]
+            icons: [{ src: '/icons/icon-192.svg', sizes: '192x192' }]
           }
         ],
         categories: ['education', 'productivity', 'social'],

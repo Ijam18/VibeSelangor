@@ -21,7 +21,7 @@ export const SPECTATOR_SIGNALS = [
 
 // ─── Room helpers ─────────────────────────────────────────────────────────────
 export async function fetchRoomBySlug(supabase, slug) {
-    const { data } = await supabase.from('forum_rooms').select('*').eq('slug', slug).single();
+    const { data } = await supabase.from('forum_rooms').select('*').eq('slug', slug).maybeSingle();
     return data;
 }
 

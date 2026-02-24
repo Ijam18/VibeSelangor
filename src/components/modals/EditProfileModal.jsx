@@ -7,7 +7,10 @@ export default function EditProfileModal({
     editProfileForm,
     setEditProfileForm,
     handleUpdateProfile,
-    isUpdatingProfile
+    isUpdatingProfile,
+    activeClass,
+    isPresentAtActive,
+    onCheckIn
 }) {
     if (!isOpen) return null;
 
@@ -16,6 +19,27 @@ export default function EditProfileModal({
             <div className="neo-card no-jitter" style={{ maxWidth: '500px', maxHeight: '85vh', overflowY: 'auto', width: '100%', background: 'white', border: '3px solid black' }}>
                 <h3 style={{ fontSize: '24px', marginBottom: '16px' }}>Edit Your Profile</h3>
                 <form style={{ display: 'flex', flexDirection: 'column', gap: '12px' }} onSubmit={handleUpdateProfile}>
+                    {typeof onCheckIn === 'function' && (
+                        <div style={{ border: '2px solid black', borderRadius: '10px', padding: '10px 12px', background: '#f8fafc' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+                                <div>
+                                    <div style={{ fontSize: '11px', fontWeight: '900' }}>CLASS CHECK-IN</div>
+                                    <div style={{ fontSize: '11px', opacity: 0.7, marginTop: 3 }}>
+                                        {activeClass ? `Live now: ${activeClass.title}` : 'No live class right now. Check-in opens when admin starts class.'}
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={onCheckIn}
+                                    disabled={!activeClass}
+                                    className={`btn ${activeClass ? (isPresentAtActive ? 'btn-outline' : 'btn-red') : 'btn-outline'}`}
+                                    style={{ padding: '8px 12px', fontSize: '11px', opacity: activeClass ? 1 : 0.55 }}
+                                >
+                                    {activeClass ? (isPresentAtActive ? 'Checked In' : 'Check In') : 'Class Not Live'}
+                                </button>
+                            </div>
+                        </div>
+                    )}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <label style={{ fontSize: '11px', fontWeight: '900' }}>FULL NAME</label>
                         <input

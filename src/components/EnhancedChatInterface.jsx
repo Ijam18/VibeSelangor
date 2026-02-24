@@ -3,7 +3,8 @@ import { emotionManager, emotionTriggers } from '../lib/emotionManager';
 import IjamBotMascot from './IjamBotMascot';
 import PresetQuestions from './PresetQuestions';
 import { enhancedLocalIntelligence } from '../lib/enhancedLocalIntelligence';
-import { callNvidiaLLM, localIntelligence } from '../lib/nvidia';
+import { callNvidiaLLM, localIntelligence, ZARULIJAM_SYSTEM_PROMPT } from '../lib/nvidia';
+import { callAssistantChat } from '../lib/assistantApi';
 import '../styles/emotionAnimations.css';
 
 /**
@@ -18,12 +19,16 @@ const EnhancedChatInterface = ({
     onTypingChange,
     size = 48,
     showMascot = true,
-    enableEyeTracking = true
+    enableEyeTracking = true,
+    currentUserId = null
 }) => {
     const [currentEmotion, setCurrentEmotion] = useState('neutral');
     const [mousePos, setMousePos] = useState(null);
     const [conversationHistory, setConversationHistory] = useState([]);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [useMemory, setUseMemory] = useState(true);
+    const [allowScrape, setAllowScrape] = useState(false);
+    const [lastSources, setLastSources] = useState([]);
     const containerRef = useRef(null);
 
     // Update emotion manager with current conversation state
@@ -116,18 +121,35 @@ const EnhancedChatInterface = ({
             emotionManager.setEmotion(analysis.emotion);
             setCurrentEmotion(analysis.emotion);
 
-            // Try NVIDIA API first, fallback to local intelligence
+            // Try assistant orchestration API first, then NVIDIA, then local fallback.
             let response;
             try {
-                response = await callNvidiaLLM(
-                    'ZARULIJAM_SYSTEM_PROMPT',
-                    message,
-                    'meta/llama-3.3-70b-instruct',
-                    updatedHistory.slice(-5) // Use last 5 messages for context
-                );
+                const result = await callAssistantChat({
+                    userMessage: message,
+                    history: updatedHistory.slice(-5),
+                    systemPrompt: ZARULIJAM_SYSTEM_PROMPT,
+                    model: 'meta/llama-3.3-70b-instruct',
+                    userId: currentUserId,
+                    sessionId: currentUserId || 'enhanced-chat-guest',
+                    context: { page: 'enhanced_chat' },
+                    options: { use_memory: useMemory, allow_scrape: allowScrape }
+                });
+                response = result.answer;
+                setLastSources(result.sources || []);
             } catch (error) {
-                console.warn('NVIDIA API failed, using local intelligence:', error);
-                response = localIntelligence(message, updatedHistory.slice(-5));
+                console.warn('Assistant API failed, trying NVIDIA fallback:', error);
+                try {
+                    response = await callNvidiaLLM(
+                        ZARULIJAM_SYSTEM_PROMPT,
+                        message,
+                        'meta/llama-3.3-70b-instruct',
+                        updatedHistory.slice(-5)
+                    );
+                } catch (nvidiaErr) {
+                    console.warn('NVIDIA API failed, using local intelligence:', nvidiaErr);
+                    response = localIntelligence(message, updatedHistory.slice(-5));
+                }
+                setLastSources([]);
             }
 
             // Add AI response to conversation
@@ -221,6 +243,18 @@ const EnhancedChatInterface = ({
                 <span>💬 Live Chat</span>
                 <span>🤖 IjamBot AI</span>
                 <span>📊 {getConversationStats().totalMessages} messages</span>
+            </div>
+
+
+            <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8rem', color: '#4b5563' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <input type="checkbox" checked={useMemory} onChange={(e) => setUseMemory(e.target.checked)} />
+                    Use memory
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <input type="checkbox" checked={allowScrape} onChange={(e) => setAllowScrape(e.target.checked)} />
+                    Analyze URL
+                </label>
             </div>
 
             {/* Chat Messages */}
@@ -440,6 +474,23 @@ const EnhancedChatInterface = ({
                 User sentiment: {getConversationStats().currentSentiment} |
                 Engagement: {getConversationStats().engagementLevel}/10
             </div>
+
+            {lastSources.length > 0 && (
+                <div style={{ fontSize: '0.75rem', color: '#374151' }}>
+                    Sources: {lastSources.map((source, idx) => (
+                        <a
+                            key={`${source.url || idx}`}
+                            href={source.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{ marginRight: '0.6rem' }}
+                        >
+                            [{idx + 1}] {source.title || source.url}
+                        </a>
+                    ))}
+                </div>
+            )}
+
         </div>
     );
 };

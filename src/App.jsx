@@ -5,7 +5,6 @@ import {
 } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { ToastProvider, useToast } from './components/ToastNotification';
-import { LiveBanner, LiveHeaderBadge } from './components/LiveBanner';
 import MobileNavSidebar from './components/MobileNavSidebar';
 import MobileBottomNav from './components/MobileBottomNav';
 import BuilderStudioPage from './pages/BuilderStudioPage';
@@ -21,8 +20,9 @@ import ThreadsIcon from './components/ThreadsIcon';
 import BuilderLeaderboard from './pages/BuilderLeaderboard';
 import ForumPage from './pages/ForumPage';
 import PublicStudioPage from './pages/PublicStudioPage';
+import BuilderVaultPage from './pages/BuilderVaultPage';
 import { awardGameRewards } from './lib/gameService';
-import LiveChat from './components/LiveChat';
+import MobileAssistiveTouch from './components/MobileAssistiveTouch';
 
 
 
@@ -33,6 +33,42 @@ import ResourcePage from './pages/ResourcePage';
 import { HEADER_LINKS, OWNER_EMAIL, ADMIN_EMAILS } from './constants';
 import { resolveRoleByEmail } from './utils';
 import { getCurrentHolidayTheme, getHolidayThemeConfig } from './utils/holidayUtils';
+import { getDeviceMode, getIjamOsMode } from './utils/deviceMode';
+import { issueProgramCertificates as svcIssueProgramCertificates } from './lib/certificateService';
+
+const getCurrentMonthISO = () => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+};
+
+const computeProgramWindow = (monthValue, weekValue) => {
+    if (!monthValue) return null;
+    const [yearRaw, monthRaw] = monthValue.split('-');
+    const year = Number(yearRaw);
+    const monthIndex = Number(monthRaw) - 1;
+    const week = Math.min(5, Math.max(1, Number(weekValue) || 1));
+    if (!year || monthIndex < 0 || monthIndex > 11) return null;
+
+    const firstDay = new Date(year, monthIndex, 1);
+    const firstSundayOffset = (7 - firstDay.getDay()) % 7;
+    let startDate = new Date(year, monthIndex, 1 + firstSundayOffset + (week - 1) * 7);
+
+    if (startDate.getMonth() !== monthIndex) {
+        const lastDay = new Date(year, monthIndex + 1, 0);
+        startDate = new Date(year, monthIndex, lastDay.getDate() - lastDay.getDay());
+    }
+
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + 7);
+
+    const toISO = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return {
+        startDate,
+        endDate,
+        startISO: toISO(startDate),
+        endISO: toISO(endDate)
+    };
+};
 
 const App = () => {
     // Navigation & User State
@@ -77,9 +113,15 @@ const App = () => {
     // Holiday Theming
     const holidayTheme = useMemo(() => getCurrentHolidayTheme(), []);
     const holidayConfig = useMemo(() => getHolidayThemeConfig(holidayTheme), [holidayTheme]);
-    const [isMobileView, setIsMobileView] = useState(typeof window !== 'undefined' && window.innerWidth <= 768);
+    const [deviceMode, setDeviceMode] = useState(typeof window !== 'undefined' ? getDeviceMode(window.innerWidth, navigator) : 'desktop');
+    const isMobileView = deviceMode !== 'desktop';
+    const isPhoneView = deviceMode === 'phone';
+    const isTabletView = deviceMode === 'tablet';
+    const themeFamily = deviceMode === 'desktop' ? 'neo' : 'ios';
+    const ijamOsMode = getIjamOsMode(deviceMode);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isTerminalEnlarged, setIsTerminalEnlarged] = useState(false);
+    const [terminalMode, setTerminalMode] = useState('ijam');
 
     // Real-time Data State
     const [classes, setClasses] = useState([]);
@@ -88,10 +130,11 @@ const App = () => {
     const [profilesError, setProfilesError] = useState(null);
     const [isProfilesLoading, setIsProfilesLoading] = useState(false);
     const [attendance, setAttendance] = useState([]);
+    const [certificates, setCertificates] = useState([]);
 
 
     // Form States
-    const [newClass, setNewClass] = useState({ title: '', date: '', time: '', startTime: '20:00', endTime: '22:00' });
+    const [newClass, setNewClass] = useState({ title: '', month: getCurrentMonthISO(), weekOfMonth: '1' });
 
     const [isAddClassModalOpen, setIsAddClassModalOpen] = useState(false);
     const [selectedDetailProfile, setSelectedDetailProfile] = useState(null);
@@ -179,9 +222,10 @@ const App = () => {
         const classSub = supabase.channel('classes').on('postgres_changes', { event: '*', schema: 'public', table: 'cohort_classes' }, fetchData).subscribe();
         const submissionSub = supabase.channel('submissions').on('postgres_changes', { event: '*', schema: 'public', table: 'builder_progress' }, fetchData).subscribe();
         const attendanceSub = supabase.channel('attendance').on('postgres_changes', { event: '*', schema: 'public', table: 'cohort_attendance' }, fetchData).subscribe();
+        const certificateSub = supabase.channel('certificates').on('postgres_changes', { event: '*', schema: 'public', table: 'builder_certificates' }, fetchData).subscribe();
 
         const handleScroll = () => setScrolled(window.scrollY > 20);
-        const handleResize = () => setIsMobileView(window.innerWidth <= 768);
+        const handleResize = () => setDeviceMode(getDeviceMode(window.innerWidth, navigator));
         window.addEventListener('scroll', handleScroll);
         window.addEventListener('resize', handleResize);
 
@@ -190,10 +234,18 @@ const App = () => {
             supabase.removeChannel(classSub);
             supabase.removeChannel(submissionSub);
             supabase.removeChannel(attendanceSub);
+            supabase.removeChannel(certificateSub);
             window.removeEventListener('scroll', handleScroll);
             window.removeEventListener('resize', handleResize);
         };
     }, []);
+
+    useEffect(() => {
+        document.documentElement.setAttribute('data-device-mode', deviceMode);
+        document.documentElement.setAttribute('data-theme-family', themeFamily);
+        document.body.setAttribute('data-device-mode', deviceMode);
+        document.body.setAttribute('data-theme-family', themeFamily);
+    }, [deviceMode, themeFamily]);
 
     const fetchData = async () => {
         const { data: classData } = await supabase.from('cohort_classes').select('*').order('date', { ascending: true });
@@ -222,6 +274,12 @@ const App = () => {
                 .from('cohort_attendance')
                 .select('*');
             if (attendanceData) setAttendance(attendanceData);
+
+            const { data: certificateData } = await supabase
+                .from('builder_certificates')
+                .select('*')
+                .order('issued_at', { ascending: false });
+            if (certificateData) setCertificates(certificateData);
 
         } catch (err) {
             console.error("Unexpected error fetching profiles/attendance:", err);
@@ -315,8 +373,8 @@ const App = () => {
         const roleFromProfile = profile?.role;
         const resolvedRole = roleByEmail !== 'builder' ? roleByEmail : (roleFromProfile || 'builder');
 
-        const finalRole = window.location.hostname === 'localhost' ? 'admin' : resolvedRole;
-        console.log('Setting user role:', { resolvedRole, finalRole, isLocalhost: window.location.hostname === 'localhost' });
+        const finalRole = resolvedRole;
+        console.log('Setting user role:', { resolvedRole, finalRole });
 
         setCurrentUser({
             id: user.id,
@@ -424,31 +482,29 @@ const App = () => {
             alert('Only owner/admin can create classes.');
             return;
         }
-
-        const formatTime = (t) => {
-            if (!t) return 'TBA';
-            const [h, m] = t.split(':');
-            const hour = parseInt(h);
-            const ampm = hour >= 12 ? 'PM' : 'AM';
-            const h12 = hour % 12 || 12;
-            return `${h12}:${m} ${ampm}`;
-        };
-        const timeString = `${formatTime(newClass.startTime)} - ${formatTime(newClass.endTime)}`;
+        const programWindow = computeProgramWindow(newClass.month, newClass.weekOfMonth);
+        if (!programWindow) {
+            alert('Please choose a valid month and week to start the program.');
+            return;
+        }
+        const week = Number(newClass.weekOfMonth) || 1;
+        const title = (newClass.title || '').trim() || `VibeSelangor Program (Week ${week})`;
+        const timeString = `${programWindow.startDate.toLocaleDateString()} to ${programWindow.endDate.toLocaleDateString()} (Sunday-Sunday)`;
 
         try {
-            const { startTime, endTime, ...classPayload } = newClass;
             const { error } = await supabase.from('cohort_classes').insert([{
-                ...classPayload,
+                title,
+                date: programWindow.startISO,
                 time: timeString,
-                status: 'Upcoming',
-                type: 'Standard'
+                status: 'Scheduled',
+                type: 'Program'
             }]);
 
             if (error) {
                 console.error("Supabase insert error:", error);
                 alert(`Failed to create class: ${error.message}\n\nTroubleshooting Tip:\nPlease check your Supabase Dashboard. Ensure the table 'cohort_classes' exists and has these columns:\n- id (uuid or int8, primary key, auto-generated)\n- title (text)\n- date (date)\n- time (text)\n- status (text)\n- type (text)`);
             } else {
-                setNewClass({ title: '', date: '', time: '', startTime: '20:00', endTime: '22:00' });
+                setNewClass({ title: '', month: getCurrentMonthISO(), weekOfMonth: '1' });
                 setIsAddClassModalOpen(false);
                 fetchData();
             }
@@ -539,6 +595,23 @@ const App = () => {
             .eq('id', classId);
 
         if (error) console.error("Toggle class status error:", error);
+        if (!error) {
+            const targetClass = classes.find((c) => c.id === classId);
+            const endingProgram = currentStatus === 'Active' && nextStatus === 'Scheduled';
+            const isProgram = String(targetClass?.type || '').toLowerCase() === 'program';
+            if (endingProgram && isProgram) {
+                try {
+                    await svcIssueProgramCertificates({
+                        supabase,
+                        programClass: targetClass,
+                        profiles,
+                        submissions
+                    });
+                } catch (certificateError) {
+                    console.error('Auto certificate issue failed:', certificateError);
+                }
+            }
+        }
         fetchData();
     };
 
@@ -575,6 +648,41 @@ const App = () => {
         fetchData();
     };
 
+    const activeClass = useMemo(() => classes.find(c => c.status === 'Active'), [classes]);
+
+    const activeClassAttendanceChecked = useMemo(() => {
+        if (!currentUser?.id || !activeClass?.id) return false;
+        return attendance.some((a) => a.profile_id === currentUser.id && a.class_id === activeClass.id && a.status === 'Present');
+    }, [attendance, currentUser?.id, activeClass?.id]);
+
+    const handleSettingsCheckIn = async () => {
+        if (!currentUser?.id || !activeClass?.id) return;
+        const existing = attendance.find((a) => a.profile_id === currentUser.id && a.class_id === activeClass.id);
+        if (existing?.status === 'Present') return;
+        if (existing) {
+            const { error } = await supabase
+                .from('cohort_attendance')
+                .update({ status: 'Present' })
+                .eq('id', existing.id);
+            if (error) {
+                console.error('Check-in update error:', error);
+                return;
+            }
+            await awardGameRewards(supabase, currentUser.id, 50, 25);
+            fetchData();
+            return;
+        }
+        const { error } = await supabase
+            .from('cohort_attendance')
+            .insert([{ profile_id: currentUser.id, class_id: activeClass.id, status: 'Present' }]);
+        if (error) {
+            console.error('Check-in insert error:', error);
+            return;
+        }
+        await awardGameRewards(supabase, currentUser.id, 50, 25);
+        fetchData();
+    };
+
     const handleJoinClick = (e) => {
         if (e) {
             e.preventDefault();
@@ -599,12 +707,10 @@ const App = () => {
 
     // ProgramDetailsPage and ComingSoonPage have been extracted to src/pages/
 
-    // Derived: active class for LIVE banner
-    const activeClass = useMemo(() => classes.find(c => c.status === 'Active'), [classes]);
-
     return (
         <ToastProvider>
-            <div className="vibe-selangor">
+            <div className={`vibe-selangor mode-${deviceMode} theme-${themeFamily}`} data-device-mode={deviceMode} data-theme-family={themeFamily}>
+                {isMobileView && <div className="app-wallpaper" />}
                 <MobileNavSidebar
                     isOpen={isSidebarOpen}
                     onClose={() => setIsSidebarOpen(false)}
@@ -620,7 +726,9 @@ const App = () => {
                         if (publicPage !== 'home') setPublicPage('home');
                         setIsTerminalEnlarged(true);
                     }}
-                    isMobileView={isMobileView}
+            isMobileView={isMobileView}
+            isPhoneView={isPhoneView}
+            isTabletView={isTabletView}
                     installPrompt={deferredPrompt}
                     onInstallClick={handleInstallClick}
                 />
@@ -648,6 +756,9 @@ const App = () => {
                     setEditProfileForm={setEditProfileForm}
                     handleUpdateProfile={handleUpdateProfile}
                     isUpdatingProfile={isUpdatingProfile}
+                    activeClass={currentUser?.type === 'builder' ? activeClass : null}
+                    isPresentAtActive={activeClassAttendanceChecked}
+                    onCheckIn={currentUser?.type === 'builder' ? handleSettingsCheckIn : null}
                 />
                 <AddClassModal
                     isOpen={isAddClassModalOpen}
@@ -655,6 +766,7 @@ const App = () => {
                     newClass={newClass}
                     setNewClass={setNewClass}
                     handleAdminAddClass={handleAdminAddClass}
+                    isMobileView={isMobileView}
                 />
                 <BuilderDetailModal
                     isOpen={!!selectedDetailProfile}
@@ -663,21 +775,15 @@ const App = () => {
                     submissions={submissions}
                     currentUser={currentUser}
                     isMobileView={isMobileView}
+                    certificates={certificates}
                     onVisitStudio={(builder) => {
                         setVisitingStudio({ id: builder.id, name: builder.full_name });
                         setPublicPage('public-studio');
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                 />
-                {/* Site-wide LIVE banner */}
-                {activeClass && publicPage !== 'dashboard' && (
-                    <LiveBanner
-                        activeClass={activeClass}
-                        onJoinClick={handleJoinClick}
-                    />
-                )}
-
-                {publicPage !== 'ijamos' && (
+                {/* Header: Hidden on mobile for all feature pages */}
+                {!isMobileView && publicPage !== 'ijamos' && (
                     <header className="glass-header">
                         <div className="header-container" style={{
                             display: 'flex',
@@ -760,10 +866,6 @@ const App = () => {
                                         )}
                                     </div>
 
-                                    {/* LIVE badge in header */}
-                                    {activeClass && (
-                                        <LiveHeaderBadge onClick={handleJoinClick} />
-                                    )}
                                 </div>
                             </div>
 
@@ -831,29 +933,61 @@ const App = () => {
                         <LandingPage
                             profiles={profiles}
                             submissions={submissions}
+                            classes={classes}
                             session={session}
                             handleJoinClick={handleJoinClick}
                             isMobileView={isMobileView}
+                            isPhoneView={isPhoneView}
+                            isTabletView={isTabletView}
                             setPublicPage={setPublicPage}
                             setSelectedDetailProfile={setSelectedDetailProfile}
                             isTerminalEnlarged={isTerminalEnlarged}
                             setIsTerminalEnlarged={setIsTerminalEnlarged}
+                            terminalMode={terminalMode}
+                            setTerminalMode={setTerminalMode}
                             holidayConfig={holidayConfig}
                         />
                     )
                 }
                 {
-                    !currentUser && !['home', 'how-it-works', 'coming-soon', 'showcase', 'leaderboard', 'forum', 'studio', 'public-studio', 'ijamos'].includes(publicPage) && (
+                    publicPage === 'map' && (
                         <LandingPage
                             profiles={profiles}
                             submissions={submissions}
+                            classes={classes}
                             session={session}
                             handleJoinClick={handleJoinClick}
                             isMobileView={isMobileView}
+                            isPhoneView={isPhoneView}
+                            isTabletView={isTabletView}
                             setPublicPage={setPublicPage}
                             setSelectedDetailProfile={setSelectedDetailProfile}
                             isTerminalEnlarged={isTerminalEnlarged}
                             setIsTerminalEnlarged={setIsTerminalEnlarged}
+                            terminalMode={terminalMode}
+                            setTerminalMode={setTerminalMode}
+                            holidayConfig={holidayConfig}
+                            viewMode="map"
+                        />
+                    )
+                }
+                {
+                    !currentUser && !['home', 'map', 'how-it-works', 'coming-soon', 'showcase', 'leaderboard', 'forum', 'studio', 'public-studio', 'ijamos'].includes(publicPage) && (
+                        <LandingPage
+                            profiles={profiles}
+                            submissions={submissions}
+                            classes={classes}
+                            session={session}
+                            handleJoinClick={handleJoinClick}
+                            isMobileView={isMobileView}
+                            isPhoneView={isPhoneView}
+                            isTabletView={isTabletView}
+                            setPublicPage={setPublicPage}
+                            setSelectedDetailProfile={setSelectedDetailProfile}
+                            isTerminalEnlarged={isTerminalEnlarged}
+                            setIsTerminalEnlarged={setIsTerminalEnlarged}
+                            terminalMode={terminalMode}
+                            setTerminalMode={setTerminalMode}
                             holidayConfig={holidayConfig}
                         />
                     )
@@ -861,7 +995,7 @@ const App = () => {
                 {publicPage === 'how-it-works' && <ProgramDetailsPage classes={classes} handleJoinClick={handleJoinClick} setPublicPage={setPublicPage} isMobileView={isMobileView} />}
                 {publicPage === 'coming-soon' && <ComingSoonPage setPublicPage={setPublicPage} />}
                 {publicPage === 'leaderboard' && <BuilderLeaderboard isMobileView={isMobileView} />}
-                {publicPage === 'forum' && <ForumPage session={session} currentUser={currentUser} />}
+                {publicPage === 'forum' && <ForumPage session={session} currentUser={currentUser} isMobileView={isMobileView} setPublicPage={setPublicPage} classes={classes} />}
                 {publicPage === 'studio' && session && <BuilderStudioPage session={session} />}
                 {
                     publicPage === 'studio' && !session && (
@@ -899,6 +1033,20 @@ const App = () => {
                             setSelectedDetailProfile={setSelectedDetailProfile}
                             isMobileView={isMobileView}
                             handleJoinClick={handleJoinClick}
+                            classes={classes}
+                            certificates={certificates}
+                        />
+                    )
+                }
+                {
+                    publicPage === 'builder-vault' && (
+                        <BuilderVaultPage
+                            session={session}
+                            currentUser={currentUser}
+                            submissions={submissions}
+                            fetchData={fetchData}
+                            isMobileView={isMobileView}
+                            setPublicPage={setPublicPage}
                         />
                     )
                 }
@@ -907,11 +1055,15 @@ const App = () => {
                         <ResourcePage
                             session={session}
                             currentUser={currentUser}
+                            isMobileView={isMobileView}
+                            deviceMode={deviceMode}
+                            ijamOsMode={ijamOsMode}
+                            setPublicPage={setPublicPage}
                         />
                     )
                 }
                 {
-                    currentUser && (publicPage === 'dashboard' || !['home', 'how-it-works', 'coming-soon', 'showcase', 'forum', 'studio', 'leaderboard', 'ijamos'].includes(publicPage)) && (
+                    currentUser && (publicPage === 'dashboard' || !['home', 'map', 'how-it-works', 'coming-soon', 'showcase', 'forum', 'studio', 'leaderboard', 'ijamos', 'builder-vault'].includes(publicPage)) && (
                         <>
                             {(currentUser?.type === 'admin' || currentUser?.type === 'owner') && (
                                 <AdminDashboard
@@ -927,6 +1079,8 @@ const App = () => {
                                     setSelectedDetailProfile={setSelectedDetailProfile}
                                     isProfilesLoading={isProfilesLoading}
                                     profilesError={profilesError}
+                                    isMobileView={isMobileView}
+                                    setPublicPage={setPublicPage}
                                 />
                             )}
                             {currentUser?.type === 'builder' && (
@@ -942,40 +1096,13 @@ const App = () => {
                                     session={session}
                                     fetchData={fetchData}
                                     isMobileView={isMobileView}
+                                    setPublicPage={setPublicPage}
                                 />
                             )}
                         </>
                     )
                 }
 
-                {
-                    publicPage !== 'ijamos' && (
-                        <footer style={{ padding: '16px 0', borderTop: '3px solid black', background: 'linear-gradient(180deg, #fff 0%, #fff8dc 100%)' }}>
-                            <div className="container">
-                                <div className="neo-card no-jitter" style={{ border: '2px solid black', boxShadow: '6px 6px 0px black', textAlign: 'center', padding: '24px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                    <p style={{ fontWeight: '900', marginBottom: '8px', fontSize: '14px', width: '100%' }}>
-                                        Built by <span style={{ color: 'var(--selangor-red)' }}>_zarulijam</span>
-                                    </p>
-                                    <a
-                                        href="https://www.threads.net/@_zarulijam"
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', color: 'black', textDecoration: 'none', fontWeight: '800', fontSize: '13px', marginBottom: '8px', width: '100%', flexWrap: 'wrap' }}
-                                    >
-                                        <ThreadsIcon size={16} /> DM me on Threads to connect
-                                    </a>
-                                    <p style={{ fontWeight: '800', fontSize: '12px', marginBottom: '8px', lineHeight: '1.4', width: '100%' }}>
-                                        Support me in becoming the KrackedDevs Selangor Ambassador
-                                    </p>
-                                    <p style={{ fontWeight: '700', fontSize: '11px', opacity: 0.78, marginBottom: '6px', lineHeight: '1.4', maxWidth: '400px' }}>
-                                        If you are outside Selangor, join the KrackedDevs Discord server to connect with your state ambassador.
-                                    </p>
-                                    <p style={{ fontWeight: '800', opacity: 0.45, fontSize: '10px', marginTop: '4px' }}>(c) 2026 VIBESELANGOR. NO CODE. JUST VIBES.</p>
-                                </div>
-                            </div>
-                        </footer>
-                    )
-                }
                 {/* Zarulijam AI Chatbot removed in favor of IJAM_BOT terminal console */}
 
                 {/* Mobile Navigation Sidebar */}
@@ -997,22 +1124,6 @@ const App = () => {
                     isMobileView={isMobileView}
                 />
 
-                {/* Live Class Chat */}
-                <LiveChat session={session} activeClass={activeClass} />
-
-                {/* Floating Menu Button (Desktop Only) */}
-                {
-                    !isSidebarOpen && !isMobileView && publicPage !== 'ijamos' && (
-                        <button
-                            className="mobile-floating-menu"
-                            onClick={() => setIsSidebarOpen(true)}
-                            aria-label="Toggle Menu"
-                        >
-                            <Menu size={24} />
-                        </button>
-                    )
-                }
-
                 {/* Mobile Bottom Navigation */}
                 {
                     isMobileView && publicPage !== 'ijamos' && (
@@ -1021,10 +1132,26 @@ const App = () => {
                             isLoggedIn={!!session}
                             onNavigate={(id) => {
                                 const authPages = ['dashboard', 'studio'];
+                                if (id === 'map') {
+                                    setPublicPage('map');
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    return;
+                                }
+                                if (id === 'how-it-works') {
+                                    setPublicPage('how-it-works');
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    return;
+                                }
+                                if (id === 'chat') {
+                                    setPublicPage('home');
+                                    setTerminalMode('live');
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    return;
+                                }
                                 if (authPages.includes(id)) {
                                     if (session) { setPublicPage(id); window.scrollTo({ top: 0, behavior: 'smooth' }); }
                                     else setIsAuthModalOpen(true);
-                                } else if (['leaderboard', 'forum', 'showcase', 'ijamos'].includes(id)) {
+                                } else if (['leaderboard', 'forum', 'showcase', 'ijamos', 'promptforge', 'coming-soon'].includes(id)) {
                                     setPublicPage(id);
                                     window.scrollTo({ top: 0, behavior: 'smooth' });
                                 } else {
@@ -1035,6 +1162,41 @@ const App = () => {
                         />
                     )
                 }
+
+                {/* Global Mobile Assistive Touch */}
+                {isMobileView && publicPage !== 'ijamos' && (
+                    <MobileAssistiveTouch
+                        onNavigate={(id) => {
+                            const authPages = ['dashboard', 'studio'];
+                            if (id === 'map') {
+                                setPublicPage('map');
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                                return;
+                            }
+                            if (id === 'how-it-works') {
+                                setPublicPage('how-it-works');
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                                return;
+                            }
+                            if (id === 'chat') {
+                                setPublicPage('home');
+                                setTerminalMode('live');
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                                return;
+                            }
+                            if (authPages.includes(id)) {
+                                if (session) { setPublicPage(id); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+                                else setIsAuthModalOpen(true);
+                            } else if (['leaderboard', 'forum', 'showcase', 'ijamos', 'promptforge', 'coming-soon'].includes(id)) {
+                                setPublicPage(id);
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                            } else {
+                                setPublicPage('home');
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }
+                        }}
+                    />
+                )}
             </div >
         </ToastProvider >
     );

@@ -1,0 +1,16 @@
+﻿{
+  "name": "quotes_portable",
+  "source": "quotes.toscrape.com",
+  "start_urls": [
+    "https://quotes.toscrape.com/"
+  ],
+  "allowed_domains": [
+    "quotes.toscrape.com"
+  ],
+  "selectors": {
+    "quote": "div.quote",
+    "quote_text": "span.text::text",
+    "quote_author": "small.author::text",
+    "next_page": "li.next a::attr(href)"
+  }
+}

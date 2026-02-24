@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Users, Folder, Sunrise, Sun, Moon, Coffee, Flag, PartyPopper, Gift, Hammer, Zap, Cpu, MessageSquare, Bot, Cloud, CloudRain, CloudLightning, Wind, Maximize2, Minimize2, X, HelpCircle } from 'lucide-react';
-import GalleryShowcase from '../components/GalleryShowcase';
+import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
+import { Users, Folder, Sunrise, Sun, Moon, Coffee, Flag, PartyPopper, Gift, Hammer, Zap, Cpu, MessageSquare, Bot, Cloud, CloudRain, CloudLightning, Wind, Maximize2, Minimize2, X, Signal, Wifi } from 'lucide-react';
 import { localIntelligence, callNvidiaLLM, ZARULIJAM_SYSTEM_PROMPT } from '../lib/nvidia';
+import { callAssistantChat } from '../lib/assistantApi';
 import {
     DISTRICT_INFO,
     ANCHOR_PATH_TO_DISTRICT,
@@ -22,25 +22,42 @@ import {
     downloadCSV
 } from '../utils';
 import { useLiveEvents } from '../utils/useLiveEvents';
+import MobileHomeScreen from '../components/MobileHomeScreen';
+import LiveIslandBlip from '../components/LiveIslandBlip';
+import MobileStatusBar from '../components/MobileStatusBar';
+import { getLiveProgramMeta } from '../utils/liveProgram';
+
+const GalleryShowcase = lazy(() => import('../components/GalleryShowcase'));
 
 const LandingPage = ({
     profiles,
     submissions,
+    classes = [],
     session,
+    currentUser,
     handleJoinClick,
     isMobileView,
+    isPhoneView,
+    isTabletView,
     setPublicPage,
     setSelectedDetailProfile,
     isTerminalEnlarged,
     setIsTerminalEnlarged,
-    holidayConfig
+    terminalMode = 'ijam',
+    setTerminalMode = () => {},
+    holidayConfig,
+    viewMode = 'home'
 }) => {
+    const isMapOnlyView = viewMode === 'map';
     // Map State
     const [activeRegion, setActiveRegion] = useState(null);
     const [activeDistrictHoverKey, setActiveDistrictHoverKey] = useState(null);
     const [selectedDistrictKey, setSelectedDistrictKey] = useState(null);
+    const [mapPopupOpen, setMapPopupOpen] = useState(false);
+    const [mapPopupAnchor, setMapPopupAnchor] = useState({ x: 0, y: 0 });
     const [mapRegions, setMapRegions] = useState([]);
     const [mapViewMode, setMapViewMode] = useState('builders'); // 'builders' or 'projects'
+    const [isMapInsightCollapsed, setIsMapInsightCollapsed] = useState(false);
 
     // Live Events (Public Holidays & Hijri Date)
     const { liveEventMessage, eventGreeting } = useLiveEvents();
@@ -53,6 +70,88 @@ const LandingPage = ({
         return `[LIVE STATUS] ${builderCount} Builders / ${projectCount} Projects. Vibe Level: MAXIMUM!`;
     }, [profiles, submissions]);
 
+    const programTerminalLines = useMemo(() => {
+        const list = classes || [];
+        const programRows = list.filter((c) => String(c?.type || '').toLowerCase() === 'program');
+        if (!programRows.length) return ['[PROGRAM] No active program window found.'];
+
+        const now = new Date();
+        const withWindow = programRows
+            .map((row) => {
+                const start = row?.date ? new Date(`${row.date}T00:00:00`) : null;
+                if (!start || Number.isNaN(start.getTime())) return null;
+                const end = new Date(start);
+                end.setDate(end.getDate() + 7);
+                return { row, start, end };
+            })
+            .filter(Boolean);
+        if (!withWindow.length) return ['[PROGRAM] Program schedule exists but date is invalid.'];
+
+        const active = withWindow.find((x) => x.row?.status === 'Active') ||
+            withWindow.find((x) => now >= x.start && now <= x.end) ||
+            withWindow
+                .slice()
+                .sort((a, b) => Math.abs(a.start - now) - Math.abs(b.start - now))[0];
+
+        const programSubs = (submissions || []).filter((s) => {
+            const created = new Date(s?.created_at || 0);
+            return created >= active.start && created <= active.end && s?.status !== 'Archived';
+        });
+
+        const hasProjectLink = (s) => Boolean((s?.submission_url || s?.project_url || s?.demo_url || s?.github_url || '').trim());
+        const buildersSet = new Set(programSubs.map((s) => s.user_id).filter(Boolean));
+        const ideaCount = programSubs.filter((s) => !hasProjectLink(s)).length;
+        const projectCount = programSubs.filter((s) => hasProjectLink(s)).length;
+
+        return [
+            `[PROGRAM] ${active.row?.title || 'VibeSelangor Program'} (${active.row?.status || 'Scheduled'})`,
+            `[WINDOW] ${active.start.toLocaleDateString()} -> ${active.end.toLocaleDateString()}`,
+            `[METRIC] Builders: ${buildersSet.size} | Ideas: ${ideaCount} | Projects: ${projectCount}`
+        ];
+    }, [classes, submissions]);
+    const liveProgram = useMemo(() => getLiveProgramMeta(classes), [classes]);
+    const activeClass = useMemo(
+        () => (classes || []).find((c) => {
+            const status = String(c?.status || '').toLowerCase();
+            return status === 'active' || status === 'live';
+        }) || null,
+        [classes]
+    );
+    const mobileBuildersCount = useMemo(
+        () => (profiles || []).filter((p) => !['owner', 'admin'].includes(p.role)).length,
+        [profiles]
+    );
+    const isWebsiteLiveMode = !isMobileView && terminalMode === 'live';
+    const districtNameEntries = useMemo(
+        () =>
+            Object.entries(DISTRICT_INFO)
+                .map(([districtKey, info]) => [districtKey, normalizeDistrict(info?.name || '')])
+                .filter(([, normalizedName]) => Boolean(normalizedName))
+                .sort((a, b) => b[1].length - a[1].length),
+        []
+    );
+    const districtAliasToKey = useMemo(
+        () => ({
+            wpputrajaya: 'putrajaya',
+            wilayahpersekutuanputrajaya: 'putrajaya',
+            federalterritoryputrajaya: 'putrajaya',
+            putrajayawp: 'putrajaya',
+            wpkualalumpur: 'kuala_lumpur',
+            wilayahpersekutuankualalumpur: 'kuala_lumpur',
+            federalterritorykualalumpur: 'kuala_lumpur'
+        }),
+        []
+    );
+    const resolveDistrictKey = (districtValue) => {
+        const normalizedInput = normalizeDistrict(districtValue || '');
+        if (!normalizedInput) return null;
+        const directMatch = districtNameEntries.find(([, normalizedName]) => normalizedName === normalizedInput);
+        if (directMatch) return directMatch[0];
+        if (districtAliasToKey[normalizedInput]) return districtAliasToKey[normalizedInput];
+        const fuzzyMatch = districtNameEntries.find(([, normalizedName]) => normalizedInput.includes(normalizedName));
+        return fuzzyMatch ? fuzzyMatch[0] : null;
+    };
+
     // Mascot & Weather State
     const [showMascotModal, setShowMascotModal] = useState(false);
     const [weatherData, setWeatherData] = useState({ temp: '--', condition: 'Loading...' });
@@ -61,6 +160,7 @@ const LandingPage = ({
     const [chatInput, setChatInput] = useState('');
     const [chatMode, setChatMode] = useState('local'); // 'ai' or 'local'
     const [isAiLoading, setIsAiLoading] = useState(false);
+    const [showHeroDetails, setShowHeroDetails] = useState(false);
     const chatEndRef = React.useRef(null);
 
     // Auto-scroll chat
@@ -69,6 +169,49 @@ const LandingPage = ({
             chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
         }
     }, [chatMessages]);
+
+    useEffect(() => {
+        if (!(isMobileView && isMapOnlyView)) return;
+        const targets = [document.documentElement, document.body, document.getElementById('root')].filter(Boolean);
+        const previous = targets.map((el) => ({
+            el,
+            overflowY: el.style.overflowY,
+            overscrollBehaviorY: el.style.overscrollBehaviorY
+        }));
+
+        targets.forEach((el) => {
+            el.style.overflowY = 'hidden';
+            el.style.overscrollBehaviorY = 'none';
+        });
+
+        return () => {
+            previous.forEach(({ el, overflowY, overscrollBehaviorY }) => {
+                el.style.overflowY = overflowY;
+                el.style.overscrollBehaviorY = overscrollBehaviorY;
+            });
+        };
+    }, [isMobileView, isMapOnlyView]);
+
+    useEffect(() => {
+        if (!(isMobileView && isMapOnlyView)) return;
+        if (!selectedDistrictKey) {
+            setMapPopupOpen(false);
+            return;
+        }
+        const raf = requestAnimationFrame(() => setMapPopupOpen(true));
+        return () => cancelAnimationFrame(raf);
+    }, [selectedDistrictKey, isMobileView, isMapOnlyView]);
+
+    useEffect(() => {
+        if (!(isMobileView && isMapOnlyView)) {
+            setIsMapInsightCollapsed(false);
+        }
+    }, [isMobileView, isMapOnlyView]);
+
+    const closeMapPopup = () => {
+        setMapPopupOpen(false);
+        setTimeout(() => setSelectedDistrictKey(null), 180);
+    };
 
     // Mascot Responses — Focused on site navigation with chill Malaysian vibe
     const handleSendMessage = async (e, text = null) => {
@@ -112,15 +255,34 @@ const LandingPage = ({
                     role: m.role === 'bot' ? 'assistant' : 'user',
                     content: m.text
                 }));
-                const response = await callNvidiaLLM(ZARULIJAM_SYSTEM_PROMPT, input, 'meta/llama-3.3-70b-instruct', history);
-                setChatMessages(prev => [...prev, { role: 'bot', text: response }]);
+                const { answer } = await callAssistantChat({
+                    userMessage: input,
+                    history,
+                    systemPrompt: ZARULIJAM_SYSTEM_PROMPT,
+                    model: 'meta/llama-3.3-70b-instruct',
+                    userId: session?.user?.id || null,
+                    sessionId: session?.user?.id || 'landing-guest',
+                    context: { page: 'landing' },
+                    options: { use_memory: true, allow_scrape: false }
+                });
+                setChatMessages(prev => [...prev, { role: 'bot', text: answer }]);
             } catch (error) {
                 console.error('AI Error:', error);
-                // Fallback to local if AI fails
-                const fallback = localIntelligence(input, chatMessages.map(m => ({
-                    role: m.role === 'bot' ? 'assistant' : 'user',
-                    content: m.text
-                })));
+                // Fallback to direct NVIDIA call, then local intelligence.
+                let fallback = '';
+                try {
+                    const history = chatMessages.map(m => ({
+                        role: m.role === 'bot' ? 'assistant' : 'user',
+                        content: m.text
+                    }));
+                    fallback = await callNvidiaLLM(ZARULIJAM_SYSTEM_PROMPT, input, 'meta/llama-3.3-70b-instruct', history);
+                } catch (nvidiaErr) {
+                    console.warn('Direct NVIDIA fallback failed:', nvidiaErr);
+                    fallback = localIntelligence(input, chatMessages.map(m => ({
+                        role: m.role === 'bot' ? 'assistant' : 'user',
+                        content: m.text
+                    })));
+                }
                 setChatMessages(prev => [...prev, { role: 'bot', text: `(AI Offline) ${fallback}` }]);
             } finally {
                 setIsAiLoading(false);
@@ -160,6 +322,7 @@ const LandingPage = ({
 
     // Sequential Animation State
     const [currentTime, setCurrentTime] = useState(new Date());
+    const [batteryPct, setBatteryPct] = useState('--%');
     const [typedCommand, setTypedCommand] = useState('');
     const [typedTimestamp, setTypedTimestamp] = useState('');
     const [typedGreeting, setTypedGreeting] = useState('');
@@ -303,6 +466,32 @@ const LandingPage = ({
         return () => clearInterval(timer);
     }, []);
 
+    useEffect(() => {
+        let battery = null;
+        const handleBatteryUpdate = () => {
+            if (!battery) return;
+            setBatteryPct(`${Math.round((battery.level || 0) * 100)}%`);
+        };
+
+        if (typeof navigator === 'undefined' || !navigator.getBattery) {
+            setBatteryPct('--%');
+            return undefined;
+        }
+
+        navigator.getBattery().then((manager) => {
+            battery = manager;
+            handleBatteryUpdate();
+            battery.addEventListener('levelchange', handleBatteryUpdate);
+            battery.addEventListener('chargingchange', handleBatteryUpdate);
+        }).catch(() => setBatteryPct('--%'));
+
+        return () => {
+            if (!battery) return;
+            battery.removeEventListener('levelchange', handleBatteryUpdate);
+            battery.removeEventListener('chargingchange', handleBatteryUpdate);
+        };
+    }, []);
+
     // Snapshot of greeting info once to avoid typing restarts
     const staticGreeting = useMemo(() => {
         const now = new Date();
@@ -313,10 +502,10 @@ const LandingPage = ({
 
         // Kaomoji Collections
         const KAOMOJI = {
-            MORNING: ['(o^▽^o)', '(´• ω •`)', '(⌒_⌒;)', '(*/ω＼)', '(o_ _)o'],
+            MORNING: ['(o^▽^o)', '(´• ω •`)', '(⌒_⌒;)', '(*/ω＼)', ':)'],
             AFTERNOON: ['(⌐■_■)', '(¯h¯)', '(¬‿¬)', '(^_−)☆', '(˙꒳˙)'],
-            EVENING: ['( ☕_☕ )', '(￣▽￣)', '( ´ ▽ ` )', '(o_ _)o', '(・・ ) ?'],
-            NIGHT: ['( ☾ )', '(－_－) zzZ', '(x_x)', '(o_ _)o 💤', '(⇀‸↼‶)'],
+            EVENING: ['( ☕_☕ )', '(￣▽￣)', '( ´ ▽ ` )', ':)', '(・・ ) ?'],
+            NIGHT: ['( ☾ )', '(－_－) zzZ', '(x_x)', ':) 💤', '(⇀‸↼‶)'],
             VIBE: ['(ﾉ^ヮ^)ﾉ*:・ﾟ✧', '(✿◠‿◠)', '(☆▽☆)', '( ˙꒳​˙ )', '(b ᵔ▽ᵔ)b']
         };
 
@@ -340,13 +529,19 @@ const LandingPage = ({
             }
             finalGreetingLines.push("Semua orang boleh akses IjamOS sekarang!");
         }
-        finalGreetingLines.push("Click anywhere on this terminal to initialize IjamOS (b ᵔ▽ᵔ)b");
+        if (isMobileView) {
+            finalGreetingLines.push("Use the IjamOS icon on Home to open IjamOS.");
+            finalGreetingLines.push("This website is optimized for PWA.");
+        } else {
+            finalGreetingLines.push("Use OPEN IJAMOS to launch IjamOS.");
+            finalGreetingLines.push("Use OPEN CHAT for IJAM_BOT conversation.");
+        }
 
         return {
             timestamp: `${year}-${String(month).padStart(2, '0')}-${String(date).padStart(2, '0')} ${String(hour).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`,
             text: finalGreetingLines.join('\n')
         };
-    }, [holidayConfig, eventGreeting]);
+    }, [holidayConfig, eventGreeting, isMobileView]);
 
     // Sequential Typing
     useEffect(() => {
@@ -478,13 +673,11 @@ const LandingPage = ({
     const districtShowcase = useMemo(() => {
         if (!selectedDistrictName) return [];
 
-        const normalizedSelected = normalizeDistrict(selectedDistrictName);
+        const selectedDistrictResolvedKey = resolveDistrictKey(selectedDistrictName);
         const isDistrictMatch = (districtValue) => {
-            const itemDistrict = normalizeDistrict(districtValue || '');
-            if (!itemDistrict || !normalizedSelected) return false;
-            return itemDistrict === normalizedSelected ||
-                itemDistrict.includes(normalizedSelected) ||
-                normalizedSelected.includes(itemDistrict);
+            const itemDistrictKey = resolveDistrictKey(districtValue);
+            if (!itemDistrictKey || !selectedDistrictResolvedKey) return false;
+            return itemDistrictKey === selectedDistrictResolvedKey;
         };
 
         if (mapViewMode === 'builders') {
@@ -502,22 +695,24 @@ const LandingPage = ({
             return districtBuilders;
         }
 
-        // Project Showcase Logic: Deduplicate and Include Day 0
-        const submissionMap = new Map();
-        submissions.forEach(s => {
-            const profile = profiles.find(p => p.id === s.user_id);
+        // Project Showcase Logic: latest submission per builder (no duplicate daily rows)
+        const latestSubmissionByUser = new Map();
+        submissions.forEach((s) => {
+            const profile = profiles.find((p) => p.id === s.user_id);
             if (profile && ['owner', 'admin'].includes(profile.role)) return;
-
-            if (isDistrictMatch(s.district || profile?.district)) {
-                const existing = submissionMap.get(s.user_id);
-                if (!existing || new Date(s.created_at) > new Date(existing.created_at)) {
-                    submissionMap.set(s.user_id, s);
-                }
+            const existing = latestSubmissionByUser.get(s.user_id);
+            if (!existing || new Date(s.created_at) > new Date(existing.created_at)) {
+                latestSubmissionByUser.set(s.user_id, s);
             }
         });
 
-        // Convert Map to list
-        const districtSubmissions = Array.from(submissionMap.values()).map(item => ({
+        const districtSubmissions = Array.from(latestSubmissionByUser.values())
+            .filter((s) => {
+                const profile = profiles.find((p) => p.id === s.user_id);
+                return isDistrictMatch(s.district || profile?.district);
+            })
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+            .map((item) => ({
             id: `project-${item.id}`,
             submission_url: item.submission_url,
             project_name: item.project_name || 'Untitled Project',
@@ -525,35 +720,16 @@ const LandingPage = ({
             builder_profile: profiles.find(p => p.id === item.user_id)
         }));
 
-        // Add Day 0 Builders who don't have submissions yet
-        const day0Builders = profiles
-            .filter(p => !['owner', 'admin'].includes(p.role))
-            .filter(p => {
-                if (!p.district || !p.idea_title) return false;
-                if (submissionMap.has(p.id)) return false; // Already have a submission
-
-                return isDistrictMatch(p.district);
-            })
-            .map(p => ({
-                id: `day0-${p.id}`,
-                submission_url: '#',
-                project_name: p.idea_title,
-                one_liner: p.problem_statement || 'Building the future of Selangor.',
-                builder_profile: p
-            }));
-
-        const combined = [...day0Builders, ...districtSubmissions];
-
         if (selectedDistrictKey === 'kuala_lumpur') {
             const enrichedKL = kualaLumpurShowcase.map(record => ({
                 ...record,
                 isKD: true,
                 favicon: 'https://www.google.com/s2/favicons?sz=64&domain=krackeddevs.com'
             }));
-            return [...enrichedKL, ...combined];
+            return [...enrichedKL, ...districtSubmissions];
         }
 
-        return combined;
+        return districtSubmissions;
     }, [selectedDistrictKey, selectedDistrictName, submissions, kualaLumpurShowcase, mapViewMode, profiles]);
 
     const builderCountsByDistrict = useMemo(() => {
@@ -562,8 +738,9 @@ const LandingPage = ({
             .filter(p => !['owner', 'admin'].includes(p.role))
             .forEach(p => {
                 if (!p.district) return;
-                const norm = normalizeDistrict(p.district);
-                counts[norm] = (counts[norm] || 0) + 1;
+                const districtKey = resolveDistrictKey(p.district);
+                if (!districtKey) return;
+                counts[districtKey] = (counts[districtKey] || 0) + 1;
             });
 
         return counts;
@@ -572,44 +749,25 @@ const LandingPage = ({
     const submissionCountsByDistrict = useMemo(() => {
         const counts = {};
         const latestSubmissionByUser = new Map();
-        const uniqueUsersWithProjects = new Set();
-
-        // 1. Identify users with formal submissions
-        submissions.forEach(s => {
-            const profile = profiles.find(p => p.id === s.user_id);
+        submissions.forEach((s) => {
+            const profile = profiles.find((p) => p.id === s.user_id);
             if (profile && ['owner', 'admin'].includes(profile.role)) return;
-            uniqueUsersWithProjects.add(s.user_id);
-
             const existing = latestSubmissionByUser.get(s.user_id);
             if (!existing || new Date(s.created_at) > new Date(existing.created_at)) {
                 latestSubmissionByUser.set(s.user_id, s);
             }
         });
 
-        // 2. Add users with idea titles (Day 0) who don't have submissions yet
-        profiles.forEach(p => {
-            if (['owner', 'admin'].includes(p.role)) return;
-            if (p.idea_title && !uniqueUsersWithProjects.has(p.id)) {
-                uniqueUsersWithProjects.add(p.id);
-            }
-        });
-
-        // 3. Map these unique project owners to their district
-        uniqueUsersWithProjects.forEach(userId => {
-            const profile = profiles.find(p => p.id === userId);
-            // Check submission district first, then profile district
-            const latestSub = latestSubmissionByUser.get(userId);
-            const districtText = (latestSub?.district || profile?.district || '').trim();
-
-            if (districtText) {
-                const norm = normalizeDistrict(districtText);
-                counts[norm] = (counts[norm] || 0) + 1;
-            }
+        latestSubmissionByUser.forEach((s) => {
+            const profile = profiles.find((p) => p.id === s.user_id);
+            const districtText = (s.district || profile?.district || '').trim();
+            const districtKey = resolveDistrictKey(districtText);
+            if (!districtKey) return;
+            counts[districtKey] = (counts[districtKey] || 0) + 1;
         });
 
         // Include KrackedDevs showcase projects for Kuala Lumpur
-        const klNorm = normalizeDistrict('Kuala Lumpur');
-        counts[klNorm] = (counts[klNorm] || 0) + kualaLumpurShowcase.length;
+        counts.kuala_lumpur = (counts.kuala_lumpur || 0) + kualaLumpurShowcase.length;
 
         return counts;
     }, [profiles, submissions, kualaLumpurShowcase]);
@@ -636,14 +794,12 @@ const LandingPage = ({
             groups[key].count += 1;
         });
         return Object.values(groups).map(g => {
-            const districtInfo = DISTRICT_INFO[g.districtKey];
-            const normName = districtInfo ? normalizeDistrict(districtInfo.name) : null;
             return {
                 districtKey: g.districtKey,
                 x: g.sumX / g.count,
                 y: g.sumY / g.count,
-                builderCount: normName ? (builderCountsByDistrict[normName] || 0) : 0,
-                submissionCount: normName ? (submissionCountsByDistrict[normName] || 0) : 0
+                builderCount: builderCountsByDistrict[g.districtKey] || 0,
+                submissionCount: submissionCountsByDistrict[g.districtKey] || 0
             };
         });
     }, [mapRegions, builderCountsByDistrict, submissionCountsByDistrict]);
@@ -651,10 +807,10 @@ const LandingPage = ({
     const topDistricts = useMemo(() => {
         const source = mapViewMode === 'builders' ? builderCountsByDistrict : submissionCountsByDistrict;
         return Object.entries(source)
-            .map(([norm, count]) => {
-                const matchedInfo = Object.values(DISTRICT_INFO).find(info => normalizeDistrict(info.name) === norm);
-                const isKL = norm === 'kualalumpur' || norm === 'kuala_lumpur' || (matchedInfo && normalizeDistrict(matchedInfo.name) === 'kualalumpur');
-                const displayLabel = matchedInfo ? matchedInfo.name : (isKL ? 'Kuala Lumpur' : norm);
+            .map(([districtKey, count]) => {
+                const matchedInfo = DISTRICT_INFO[districtKey];
+                const isKL = districtKey === 'kuala_lumpur';
+                const displayLabel = matchedInfo ? matchedInfo.name : districtKey;
                 const finalLabel = isKL ? `${displayLabel} [HQ]` : displayLabel;
                 return [finalLabel, count];
             })
@@ -662,7 +818,10 @@ const LandingPage = ({
             .slice(0, 3);
     }, [builderCountsByDistrict, submissionCountsByDistrict, mapViewMode]);
 
+    const shouldLoadMapData = !isMobileView || isMapOnlyView;
+
     useEffect(() => {
+        if (!shouldLoadMapData) return;
         let isCancelled = false;
         const loadKualaLumpurShowcase = async () => {
             const cached = readKualaLumpurShowcaseCache('kl_showcase_cache_v1');
@@ -732,7 +891,7 @@ const LandingPage = ({
         return () => {
             isCancelled = true;
         };
-    }, []);
+    }, [shouldLoadMapData]);
 
     useEffect(() => {
         if (!pendingKualaLumpurOpen) return;
@@ -741,22 +900,133 @@ const LandingPage = ({
         setPendingKualaLumpurOpen(false);
     }, [pendingKualaLumpurOpen, isKualaLumpurLoading]);
 
+    useEffect(() => {
+        if (!isMobileView || isMapOnlyView) return;
+        const rootEl = document.getElementById('root');
+        const htmlEl = document.documentElement;
+        const prevBodyTouch = document.body.style.touchAction;
+        const prevRootTouch = rootEl?.style.touchAction ?? '';
+        const prevBodyOverflow = document.body.style.overflowY;
+        const prevRootOverflow = rootEl?.style.overflowY ?? '';
+        const prevHtmlTouch = htmlEl.style.touchAction;
+        const prevHtmlOverflow = htmlEl.style.overflowY;
+        const prevBodyOverscroll = document.body.style.overscrollBehaviorY;
+        const prevHtmlOverscroll = htmlEl.style.overscrollBehaviorY;
+
+        document.body.style.touchAction = 'pan-x';
+        document.body.style.overflowY = 'hidden';
+        document.body.style.overscrollBehaviorY = 'none';
+        htmlEl.style.touchAction = 'pan-x';
+        htmlEl.style.overflowY = 'hidden';
+        htmlEl.style.overscrollBehaviorY = 'none';
+        if (rootEl) {
+            rootEl.style.touchAction = 'pan-x';
+            rootEl.style.overflowY = 'hidden';
+        }
+
+        return () => {
+            document.body.style.touchAction = prevBodyTouch;
+            document.body.style.overflowY = prevBodyOverflow;
+            document.body.style.overscrollBehaviorY = prevBodyOverscroll;
+            htmlEl.style.touchAction = prevHtmlTouch;
+            htmlEl.style.overflowY = prevHtmlOverflow;
+            htmlEl.style.overscrollBehaviorY = prevHtmlOverscroll;
+            if (rootEl) {
+                rootEl.style.touchAction = prevRootTouch;
+                rootEl.style.overflowY = prevRootOverflow;
+            }
+        };
+    }, [isMobileView, isMapOnlyView]);
+
+    const mapMobileBackdropStyle = isMobileView && isMapOnlyView
+        ? {
+            position: 'relative',
+            minHeight: 'var(--app-vh, 100vh)',
+            background: "linear-gradient(160deg, rgba(120,0,16,0.42), rgba(198,20,42,0.26) 42%, rgba(234,179,8,0.24) 100%), url('/wallpapers/selangor-mobile.jpg') center / cover no-repeat"
+        }
+        : { position: 'relative' };
+
     return (
-        <div style={{ position: 'relative' }}>
-            <LiveMarquee profiles={profiles} submissions={submissions} />
-            <section id="how-it-works" className="hero hero-glow-container" style={{ paddingTop: '8px', paddingBottom: '40px' }}>
+        <div style={mapMobileBackdropStyle}>
+            {/* Live marquee removed per mobile/homepage requirements */}
+            {!isMapOnlyView && isMobileView && (
+                <MobileHomeScreen
+                    weatherData={weatherData}
+                    onNavigate={(id) => {
+                        if (id === 'kd') {
+                            window.open('https://krackeddevs.com', '_blank', 'noopener,noreferrer');
+                            return;
+                        }
+                        if (!session && (id === 'settings' || id === 'myapp')) {
+                            handleJoinClick();
+                            return;
+                        }
+                        if (id === 'settings') {
+                            setPublicPage('dashboard');
+                        } else if (id === 'myapp') {
+                            setPublicPage('builder-vault');
+                        } else if (id === 'chat' || id === 'promptforge') {
+                            setPublicPage('home');
+                            setTerminalMode('live');
+                        } else {
+                            setPublicPage(id);
+                        }
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    onSendChat={(text) => handleSendMessage(null, text)}
+                    chatMessages={chatMessages}
+                    chatInput={chatInput}
+                    onChatInputChange={setChatInput}
+                    isAiLoading={isAiLoading}
+                    buildersCount={mobileBuildersCount}
+                    terminalContext={TERMINAL_CONTEXT}
+                    terminalTime={currentTime.toLocaleTimeString()}
+                    typedCommand={typedCommand}
+                    typingPhase={typingPhase}
+                    typedTimestamp={typedTimestamp}
+                    typedGreeting={typedGreeting}
+                    liveStatusText={liveStatusText}
+                    liveEventMessage={liveEventMessage}
+                    programTerminalLines={programTerminalLines}
+                    isTabletView={isTabletView}
+                    session={session}
+                    activeClass={activeClass}
+                    terminalMode={terminalMode}
+                    onTerminalModeChange={setTerminalMode}
+                    liveBlip={{
+                        isLive: Boolean(liveProgram),
+                        title: liveProgram?.title,
+                        windowText: liveProgram?.windowText,
+                        onJoin: () => setPublicPage('how-it-works')
+                    }}
+                />
+            )}
+            {!isMapOnlyView && !isMobileView && <section id="how-it-works" className="hero hero-glow-container" style={{ paddingTop: '8px', paddingBottom: '40px' }}>
                 <div className="hero-aura" />
                 <div className="container grid-12">
-                    <div style={{ gridColumn: 'span 5' }}>
+                    {!isMobileView && <div style={{ gridColumn: 'span 5' }}>
                         <div className="pill pill-red" style={{ marginBottom: '12px' }}>SELANGOR BUILDER SPRINT 2026</div>
-                        <h1 className="text-huge">Built for <span style={{ color: 'var(--selangor-red)' }}>Selangor</span>. Connecting and growing the builder community.</h1>
-                        <button className="btn btn-red" style={{ marginTop: '12px' }} onClick={handleJoinClick}>Join the Cohort</button>
-                    </div>
-                    <div style={{ gridColumn: 'span 7' }}>
+                        <h1 className="text-huge">Build real apps in 7 days.<br />No code. Just vibes.</h1>
+                        <button className="btn btn-outline" style={{ marginTop: '10px', padding: '8px 14px', fontSize: '11px' }} onClick={() => setShowHeroDetails((prev) => !prev)}>
+                            {showHeroDetails ? 'Hide details' : 'Show details'}
+                        </button>
+                        {showHeroDetails && (
+                            <p style={{ marginTop: '12px', fontSize: '13px', lineHeight: 1.55, maxWidth: '560px' }}>
+                                VibeSelangor helps anyone ship a practical app using AI tools, guided sprint tasks, and community support.
+                                Start small, launch fast, and improve with real feedback.
+                            </p>
+                        )}
+                    </div>}
+                    <div style={{ gridColumn: isMobileView ? 'span 12' : 'span 7' }}>
                         <div className="neo-card no-jitter" style={{ border: '3px solid black', boxShadow: '12px 12px 0px black', padding: '32px', height: '100%', display: 'flex', flexDirection: 'column' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'auto', gap: '12px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    <span className="pill" style={{ background: 'black', color: 'white', cursor: 'pointer', fontSize: '11px', whiteSpace: 'nowrap' }} onClick={handleJoinClick}>PORTAL_ACCESS</span>
+                                    <button className="btn btn-red" style={{ padding: '8px 12px', fontSize: '10px' }} onClick={handleJoinClick}>
+                                        Join Cohort
+                                    </button>
+                                    <button className="btn btn-outline" style={{ padding: '8px 12px', fontSize: '10px' }} onClick={() => { setPublicPage('ijamos'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+                                        Open IjamOS
+                                    </button>
                                     <button
                                         onClick={() => setIsTerminalEnlarged(true)}
                                         style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -774,13 +1044,6 @@ const LandingPage = ({
                             </div>
                             <div
                                 className="terminal-shell"
-                                onClick={() => {
-                                    setChatMessages(prev => [...prev, { role: 'bot', text: "[ SYSTEM ] BOOT_SEQUENCE: INITIALIZING_IJAM_OS... (b ᵔ▽ᵔ)b" }]);
-                                    setTimeout(() => {
-                                        setPublicPage('ijamos');
-                                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                                    }, 1200);
-                                }}
                                 style={{ background: '#000', borderRadius: '12px', padding: '16px 20px', marginTop: '20px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '210px' }}
                             >
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -788,7 +1051,67 @@ const LandingPage = ({
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                             <span style={{ wordBreak: 'break-all' }}>{TERMINAL_CONTEXT}</span>
                                         </div>
-                                        <span style={{ opacity: 0.7, marginLeft: 'auto' }}>{currentTime.toLocaleTimeString()}</span>
+                                        <div style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                                            <span
+                                                style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: 6,
+                                                    border: '1px solid #000',
+                                                    borderRadius: 999,
+                                                    background: activeClass ? '#ef4444' : '#f8fafc',
+                                                    color: activeClass ? '#fff' : '#111827',
+                                                    fontSize: 10,
+                                                    fontWeight: 800,
+                                                    fontFamily: 'monospace',
+                                                    padding: '3px 8px',
+                                                    boxShadow: '2px 2px 0 #000'
+                                                }}
+                                            >
+                                                <span style={{ width: 7, height: 7, borderRadius: '50%', background: activeClass ? '#fef2f2' : '#94a3b8' }} />
+                                                {activeClass ? 'CLASS LIVE' : 'CLASS IDLE'}
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsTerminalEnlarged(true)}
+                                                style={{
+                                                    border: '1px solid rgba(59,130,246,0.7)',
+                                                    borderRadius: 999,
+                                                    background: 'rgba(30,58,138,0.5)',
+                                                    color: '#fff',
+                                                    fontSize: 10,
+                                                    fontWeight: 700,
+                                                    fontFamily: 'monospace',
+                                                    padding: '4px 8px',
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                OPEN CHAT
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    if (!activeClass && terminalMode !== 'live') return;
+                                                    setTerminalMode(terminalMode === 'live' ? 'ijam' : 'live');
+                                                }}
+                                                disabled={!activeClass && terminalMode !== 'live'}
+                                                style={{
+                                                    border: '1px solid rgba(239,68,68,0.6)',
+                                                    borderRadius: 999,
+                                                    background: terminalMode === 'live' ? 'rgba(239,68,68,0.95)' : 'rgba(15,23,42,0.45)',
+                                                    color: '#fff',
+                                                    fontSize: 10,
+                                                    fontWeight: 700,
+                                                    fontFamily: 'monospace',
+                                                    padding: '4px 8px',
+                                                    opacity: (!activeClass && terminalMode !== 'live') ? 0.45 : 1,
+                                                    cursor: (!activeClass && terminalMode !== 'live') ? 'not-allowed' : 'pointer'
+                                                }}
+                                            >
+                                                {terminalMode === 'live' ? 'LIVE ON' : 'LIVE CLASS CHAT'}
+                                            </button>
+                                            <span style={{ opacity: 0.7 }}>{currentTime.toLocaleTimeString()}</span>
+                                        </div>
                                     </div>
 
                                     <p className="terminal-line" style={{ color: 'white', fontFamily: 'monospace', fontSize: '14px', marginTop: '0', width: 'auto', animation: 'none' }}>
@@ -796,10 +1119,29 @@ const LandingPage = ({
                                         {typingPhase === 'command' && <span className="terminal-caret">|</span>}
                                     </p>
 
-                                    {typingPhase !== 'command' && (
+                                    {typingPhase !== 'command' && !isWebsiteLiveMode && (
                                         <div style={{ color: '#22c55e', fontFamily: 'monospace', fontSize: '12px', lineHeight: 1.5, marginTop: '2px', marginBottom: '14px' }}>
                                             <div>{liveStatusText}</div>
                                             {liveEventMessage && <div>[LIVE EVENT] {liveEventMessage}</div>}
+                                            {programTerminalLines.map((line) => (
+                                                <div key={line}>{line}</div>
+                                            ))}
+                                        </div>
+                                    )}
+                                    {isWebsiteLiveMode && (
+                                        <div style={{ color: '#22c55e', fontFamily: 'monospace', fontSize: '12px', lineHeight: 1.5, marginTop: '2px', marginBottom: '14px' }}>
+                                            {activeClass ? (
+                                                <>
+                                                    <div>[LIVE CLASS] {activeClass.title || 'Class Session'}</div>
+                                                    <div>[WINDOW] {activeClass.date ? new Date(activeClass.date).toLocaleDateString() : 'TBD'} | {activeClass.time || 'TBD'}</div>
+                                                    <div>[STATUS] Streaming from class chat in terminal.</div>
+                                                    {(chatMessages || []).slice(-2).map((msg, idx) => (
+                                                        <div key={`website-live-${idx}`}>[{msg.role === 'user' ? 'YOU' : 'IJAM'}] {String(msg.text || '').slice(0, 88)}</div>
+                                                    ))}
+                                                </>
+                                            ) : (
+                                                <div>[LIVE CLASS] No active class right now.</div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -848,19 +1190,29 @@ const LandingPage = ({
 
                             {/* Enlarged Terminal View with Chat */}
                             {isTerminalEnlarged && (
-                                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)', zIndex: 10000, padding: '20px', display: 'flex', flexDirection: 'column' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', padding: '0 20px' }}>
+                                <div style={{ position: 'fixed', inset: 0, background: '#020202', zIndex: 10000, padding: isMobileView ? '0' : '20px', display: 'flex', flexDirection: 'column' }}>
+                                    {isMobileView && (
+                                        <div style={{ padding: '10px 16px 6px', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', fontWeight: 800, letterSpacing: '0.03em', borderBottom: '1px solid #1f1f1f' }}>
+                                            <span>{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', opacity: 0.9 }}>
+                                                <Signal size={13} />
+                                                <Wifi size={13} />
+                                                <span style={{ fontSize: 11, fontWeight: 500 }}>{batteryPct}</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isMobileView ? '8px' : '20px', padding: isMobileView ? '10px 12px' : '0 20px', borderBottom: isMobileView ? '1px solid #1f1f1f' : 'none' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                                             <Bot size={24} color="var(--selangor-red)" />
-                                            <h2 style={{ color: 'white', fontFamily: 'monospace', margin: 0 }}>IJAM_BOT_CONSOLE v1.0</h2>
+                                            <h2 style={{ color: 'white', fontFamily: 'monospace', margin: 0, fontSize: isMobileView ? '13px' : '24px' }}>IJAM_BOT_CONSOLE v1.0</h2>
 
                                             {/* Mode Toggle */}
-                                            <div style={{ display: 'flex', background: '#222', padding: '2px', borderRadius: '6px', marginLeft: '20px', border: '1px solid #444' }}>
+                                            <div style={{ display: 'flex', background: '#222', padding: '2px', borderRadius: '6px', marginLeft: isMobileView ? '6px' : '20px', border: '1px solid #444' }}>
                                                 <button
                                                     onClick={() => setChatMode('local')}
                                                     style={{
                                                         background: chatMode === 'local' ? 'var(--selangor-red)' : 'transparent',
-                                                        color: 'white', border: 'none', padding: '4px 12px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s', fontFamily: 'monospace'
+                                                        color: 'white', border: 'none', padding: isMobileView ? '3px 8px' : '4px 12px', borderRadius: '4px', fontSize: isMobileView ? '9px' : '10px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s', fontFamily: 'monospace'
                                                     }}
                                                 >
                                                     LOCAL_INTEL
@@ -869,7 +1221,7 @@ const LandingPage = ({
                                                     onClick={() => setChatMode('ai')}
                                                     style={{
                                                         background: chatMode === 'ai' ? '#3b82f6' : 'transparent',
-                                                        color: 'white', border: 'none', padding: '4px 12px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s', fontFamily: 'monospace'
+                                                        color: 'white', border: 'none', padding: isMobileView ? '3px 8px' : '4px 12px', borderRadius: '4px', fontSize: isMobileView ? '9px' : '10px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s', fontFamily: 'monospace'
                                                     }}
                                                 >
                                                     HYPER_AI
@@ -878,21 +1230,21 @@ const LandingPage = ({
                                         </div>
                                         <button
                                             onClick={() => setIsTerminalEnlarged(false)}
-                                            style={{ background: 'var(--selangor-red)', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}
+                                            style={{ background: 'var(--selangor-red)', color: 'white', border: 'none', padding: isMobileView ? '8px 10px' : '10px 20px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold', fontSize: isMobileView ? '11px' : '14px' }}
                                         >
-                                            <Minimize2 size={18} /> CLOSE_TERMINAL
+                                            <Minimize2 size={16} /> {isMobileView ? 'CLOSE' : 'CLOSE_TERMINAL'}
                                         </button>
                                     </div>
 
-                                    <div style={{ flex: 1, background: '#0a0a0a', border: '2px solid #333', borderRadius: '12px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                                    <div style={{ flex: 1, background: '#0a0a0a', border: isMobileView ? 'none' : '2px solid #333', borderRadius: isMobileView ? '0' : '12px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                                         {/* Boot Logs */}
-                                        <div style={{ padding: '24px 40px', background: '#000', borderBottom: '1px solid #222' }}>
+                                        <div style={{ padding: isMobileView ? '14px 14px' : '24px 40px', background: '#000', borderBottom: '1px solid #222' }}>
                                             <div style={{ color: 'var(--selangor-red)', fontFamily: 'monospace', fontSize: '14px', marginBottom: '8px' }}>{TERMINAL_CONTEXT} {currentTime.toLocaleTimeString()}</div>
                                             <p style={{ color: 'white', fontFamily: 'monospace', margin: 0 }}>{typedCommand}</p>
                                         </div>
 
                                         {/* Chat Area */}
-                                        <div style={{ flex: 1, padding: '20px 40px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                                        <div style={{ flex: 1, padding: isMobileView ? '14px' : '20px 40px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
                                             {/* IJAM_BOT Initial Greeting */}
                                             <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
                                                 <IjamBotMascot size={48} mousePos={mousePos} />
@@ -918,7 +1270,7 @@ const LandingPage = ({
                                         </div>
 
                                         {/* Suggested Questions */}
-                                        <div style={{ padding: '10px 40px', background: '#050505', display: 'flex', gap: '10px', flexWrap: 'wrap', borderTop: '1px solid #222' }}>
+                                        <div style={{ padding: isMobileView ? '8px 12px' : '10px 40px', background: '#050505', display: 'flex', gap: '10px', flexWrap: 'wrap', borderTop: '1px solid #222' }}>
                                             {SUGGESTED_QUESTIONS.map((q, i) => (
                                                 <button
                                                     key={i}
@@ -933,19 +1285,19 @@ const LandingPage = ({
                                         </div>
 
                                         {/* Input Area */}
-                                        <form onSubmit={handleSendMessage} style={{ padding: '20px 40px', background: '#000', borderTop: '2px solid #222', display: 'flex', gap: '20px' }}>
+                                        <form onSubmit={handleSendMessage} style={{ padding: isMobileView ? '10px 12px' : '20px 40px', background: '#000', borderTop: '2px solid #222', display: 'flex', gap: isMobileView ? '8px' : '20px' }}>
                                             <input
                                                 type="text"
                                                 value={chatInput}
                                                 onChange={(e) => setChatInput(e.target.value)}
                                                 placeholder={isAiLoading ? "Thinking..." : "Type a message to IJAM_BOT..."}
                                                 disabled={isAiLoading}
-                                                style={{ flex: 1, background: '#0a0a0a', border: '1px solid #333', color: 'white', padding: '16px 24px', borderRadius: '8px', outline: 'none', fontFamily: 'monospace', fontSize: '16px', opacity: isAiLoading ? 0.5 : 1 }}
+                                                style={{ flex: 1, background: '#0a0a0a', border: '1px solid #333', color: 'white', padding: isMobileView ? '11px 12px' : '16px 24px', borderRadius: '8px', outline: 'none', fontFamily: 'monospace', fontSize: isMobileView ? '14px' : '16px', opacity: isAiLoading ? 0.5 : 1 }}
                                             />
                                             <button
                                                 type="submit"
                                                 disabled={isAiLoading}
-                                                style={{ background: 'var(--selangor-red)', color: 'white', border: 'none', padding: '16px 32px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', opacity: isAiLoading ? 0.5 : 1 }}
+                                                style={{ background: 'var(--selangor-red)', color: 'white', border: 'none', padding: isMobileView ? '11px 14px' : '16px 32px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: isMobileView ? '12px' : '14px', opacity: isAiLoading ? 0.5 : 1 }}
                                             >
                                                 {isAiLoading ? 'THINKING...' : 'SEND_VIBE'}
                                             </button>
@@ -956,12 +1308,75 @@ const LandingPage = ({
                         </div>
                     </div>
                 </div>
-            </section>
+            </section>}
 
             {/* Map Section */}
-            <section id="map" style={{ borderTop: '3px solid black', padding: '40px 0' }}>
-                <div className="container grid-12">
-                    <div style={{ gridColumn: 'span 5' }}>
+            {(!isMobileView || isMapOnlyView) && <section id="map" style={isMobileView ? { borderTop: 'none', padding: '28px 12px 92px', height: 'var(--app-vh, 100vh)', overflow: 'hidden', position: 'relative', background: isMapOnlyView ? 'transparent' : "linear-gradient(160deg, rgba(120,0,16,0.42), rgba(198,20,42,0.26) 42%, rgba(234,179,8,0.24) 100%), url('/wallpapers/selangor-mobile.jpg') center / cover no-repeat" } : { borderTop: '3px solid black', padding: '40px 0' }}>
+                {isMobileView && isMapOnlyView && (
+                    <div style={{ position: 'relative', zIndex: 3, width: '100%', maxWidth: 980, margin: '0 auto' }}>
+                        <MobileStatusBar
+                            timeLabel={currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            batteryPct={batteryPct}
+                            marginBottom={0}
+                            centerContent={(
+                                <div
+                                    style={{
+                                        position: 'absolute',
+                                        left: '50%',
+                                        top: '50%',
+                                        transform: 'translate(-50%, -50%)',
+                                        background: 'rgba(10,10,10,0.94)',
+                                        color: '#fff',
+                                        borderRadius: 12,
+                                        padding: '4px 9px',
+                                        fontSize: 9,
+                                        fontWeight: 600,
+                                        lineHeight: 1.1,
+                                        boxShadow: '0 8px 16px rgba(0,0,0,0.18)',
+                                        whiteSpace: 'nowrap',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        gap: 6,
+                                        maxWidth: liveProgram ? '76%' : '60%',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        pointerEvents: 'auto'
+                                    }}
+                                >
+                                    <span style={{ pointerEvents: 'none', flex: 1, minWidth: 0, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        {mapViewMode === 'builders' ? 'Builder Map' : 'Project Heatmap'}
+                                    </span>
+                                    {liveProgram && (
+                                        <LiveIslandBlip
+                                            title={liveProgram.title}
+                                            windowText={liveProgram.windowText}
+                                            growLeft
+                                        />
+                                    )}
+                                </div>
+                            )}
+                        />
+                    </div>
+                )}
+                {isMobileView && isMapOnlyView && (
+                    <div
+                        style={{
+                            position: 'absolute',
+                            left: 0,
+                            right: 0,
+                            top: 0,
+                            bottom: 0,
+                            backdropFilter: 'blur(8px) saturate(1.08)',
+                            background: 'linear-gradient(180deg, rgba(17,24,39,0.24) 0%, rgba(17,24,39,0.08) 40%, rgba(255,255,255,0.05) 100%)',
+                            pointerEvents: 'none',
+                            zIndex: 0
+                        }}
+                    />
+                )}
+                <div className="container grid-12" style={isMobileView ? { gap: 10, maxWidth: isTabletView ? '980px' : '100%', margin: '22px auto 0', position: 'relative', zIndex: 1, height: 'calc(100% - 56px)', alignContent: 'stretch', justifyItems: 'center' } : undefined}>
+                    {!isMobileView && (
+                        <div style={{ gridColumn: 'span 5' }}>
                         <h2 style={{ fontSize: 'clamp(32px, 7vw, 48px)' }}>Community Map</h2>
                         <p>
                             {selectedDistrictKey
@@ -972,13 +1387,12 @@ const LandingPage = ({
                             {(selectedDistrictKey || hoveredRegionData?.districtKey) && (
                                 <span style={{ fontWeight: '900', color: 'var(--selangor-red)', marginLeft: '12px' }}>
                                     | {(() => {
-                                        const districtName = DISTRICT_INFO[selectedDistrictKey || hoveredRegionData.districtKey]?.name;
-                                        const norm = districtName ? normalizeDistrict(districtName) : null;
+                                        const districtKey = selectedDistrictKey || hoveredRegionData.districtKey;
                                         if (mapViewMode === 'builders') {
-                                            const count = norm ? (builderCountsByDistrict[norm] || 0) : 0;
+                                            const count = districtKey ? (builderCountsByDistrict[districtKey] || 0) : 0;
                                             return `${count} Builder${count === 1 ? '' : 's'}`;
                                         } else {
-                                            const count = norm ? (submissionCountsByDistrict[norm] || 0) : 0;
+                                            const count = districtKey ? (submissionCountsByDistrict[districtKey] || 0) : 0;
                                             return `${count} Project${count === 1 ? '' : 's'}`;
                                         }
                                     })()}
@@ -988,7 +1402,7 @@ const LandingPage = ({
                         <p style={{ fontSize: '12px', marginTop: '8px', opacity: 0.72 }}>
                             Discover what Selangor builders are shipping this week and get inspired to launch your own project.
                         </p>
-                        <div className={`neo-card no-jitter showcase-card${selectedDistrictName ? ' is-open' : ''}`} style={{ marginTop: '20px', border: '2px solid black', boxShadow: '6px 6px 0px black', padding: '20px' }}>
+                        <div className={`neo-card no-jitter showcase-card${selectedDistrictName ? ' is-open' : ''}`} style={isMobileView ? { marginTop: 12, border: '1px solid rgba(255,255,255,0.82)', boxShadow: 'none', borderRadius: 18, backdropFilter: 'blur(12px)', background: 'rgba(255,255,255,0.64)', padding: 14 } : { marginTop: '20px', border: '2px solid black', boxShadow: '6px 6px 0px black', padding: '20px' }}>
                             <h3 style={{ fontSize: '22px', marginBottom: '10px' }}>
                                 {mapViewMode === 'builders'
                                     ? (selectedDistrictName ? `${selectedDistrictName}${selectedDistrictKey === 'kuala_lumpur' ? ' [HQ]' : ''} Builders` : 'District Builders')
@@ -1066,9 +1480,10 @@ const LandingPage = ({
                                 </div>
                             )}
                         </div>
-                    </div>
-                    <div style={{ gridColumn: 'span 7' }}>
-                        <div className="neo-card no-jitter map-card" style={{ border: '3px solid black', boxShadow: '12px 12px 0px black', display: 'flex', justifyContent: 'center', position: 'relative' }}>
+                        </div>
+                    )}
+                    <div style={{ gridColumn: isMobileView ? 'span 12' : 'span 7', minHeight: 0, display: 'flex', justifyContent: 'center', width: '100%' }}>
+                        <div className="neo-card no-jitter map-card" style={isMobileView ? { border: '1px solid rgba(255,255,255,0.58)', boxShadow: '0 10px 24px rgba(15,23,42,0.14)', borderRadius: 22, backdropFilter: 'blur(18px) saturate(1.08)', background: 'rgba(255,244,244,0.34)', display: 'flex', justifyContent: isMapInsightCollapsed ? 'center' : 'flex-start', alignItems: 'center', position: 'relative', padding: isTabletView ? 18 : 14, width: '100%', maxWidth: isTabletView ? 'min(94vw, 900px)' : 'min(99vw, 620px)', height: '100%', minHeight: isTabletView ? 'calc(var(--app-vh, 100vh) - 200px)' : (isMapInsightCollapsed ? 'calc(var(--app-vh, 100vh) - 176px)' : 'calc(var(--app-vh, 100vh) - 190px)'), margin: '16px auto 0' } : { border: '3px solid black', boxShadow: '12px 12px 0px black', display: 'flex', justifyContent: 'center', position: 'relative' }}>
                             <a
                                 href="https://www.selangor.gov.my/"
                                 target="_blank"
@@ -1078,28 +1493,52 @@ const LandingPage = ({
                             >
                                 <div className="selangor-title" style={{ fontSize: '14px', fontWeight: '950', letterSpacing: '2px', opacity: 0.6 }}>SELANGOR DARUL EHSAN</div>
                             </a>
-                            <div style={{ position: 'absolute', bottom: '24px', right: '24px', display: 'flex', gap: '10px', zIndex: 10 }}>
+                            <div style={{ position: 'absolute', bottom: '24px', right: isMobileView ? '12px' : '24px', display: 'flex', gap: '10px', zIndex: 10 }}>
                                 <button
                                     className={`btn ${mapViewMode === 'builders' ? 'btn-red' : 'btn-outline'}`}
                                     onClick={() => setMapViewMode('builders')}
                                     title="Show Builders"
-                                    style={{ padding: '10px', border: '2px solid black', borderRadius: '10px', boxShadow: mapViewMode === 'builders' ? '3px 3px 0px black' : 'none' }}
+                                    style={isMobileView
+                                        ? {
+                                            width: 50,
+                                            height: 50,
+                                            padding: 0,
+                                            borderRadius: 14,
+                                            border: mapViewMode === 'builders' ? '1px solid rgba(239,68,68,0.55)' : '1px solid rgba(15,23,42,0.24)',
+                                            background: mapViewMode === 'builders' ? 'rgba(239,68,68,0.92)' : 'rgba(255,244,244,0.52)',
+                                            color: mapViewMode === 'builders' ? '#fff' : '#0f172a',
+                                            boxShadow: mapViewMode === 'builders' ? '0 8px 16px rgba(239,68,68,0.28)' : '0 6px 14px rgba(15,23,42,0.14)',
+                                            backdropFilter: 'blur(10px)'
+                                        }
+                                        : { padding: '10px', border: '2px solid black', borderRadius: '10px', boxShadow: mapViewMode === 'builders' ? '3px 3px 0px black' : 'none' }}
                                 >
-                                    <Users size={20} />
+                                    <Users size={22} />
                                 </button>
                                 <button
                                     className={`btn ${mapViewMode === 'projects' ? 'btn-red' : 'btn-outline'}`}
                                     onClick={() => setMapViewMode('projects')}
                                     title="Project Heatmap"
-                                    style={{ padding: '10px', border: '2px solid black', borderRadius: '10px', boxShadow: mapViewMode === 'projects' ? '3px 3px 0px black' : 'none' }}
+                                    style={isMobileView
+                                        ? {
+                                            width: 50,
+                                            height: 50,
+                                            padding: 0,
+                                            borderRadius: 14,
+                                            border: mapViewMode === 'projects' ? '1px solid rgba(239,68,68,0.55)' : '1px solid rgba(15,23,42,0.24)',
+                                            background: mapViewMode === 'projects' ? 'rgba(239,68,68,0.92)' : 'rgba(255,244,244,0.52)',
+                                            color: mapViewMode === 'projects' ? '#fff' : '#0f172a',
+                                            boxShadow: mapViewMode === 'projects' ? '0 8px 16px rgba(239,68,68,0.28)' : '0 6px 14px rgba(15,23,42,0.14)',
+                                            backdropFilter: 'blur(10px)'
+                                        }
+                                        : { padding: '10px', border: '2px solid black', borderRadius: '10px', boxShadow: mapViewMode === 'projects' ? '3px 3px 0px black' : 'none' }}
                                 >
-                                    <Folder size={20} />
+                                    <Folder size={22} />
                                 </button>
                             </div>
                             <svg
                                 viewBox="0 0 660.01999 724.20393"
                                 className="map-svg"
-                                style={{ width: '100%', maxWidth: '500px' }}
+                                style={isMobileView ? { width: '100%', maxWidth: isTabletView ? 'min(90vw, 820px)' : (isMapInsightCollapsed ? 'min(99vw, 640px)' : 'min(96vw, 600px)'), marginTop: isMapInsightCollapsed ? 2 : 12, flex: '1 1 auto', minHeight: 0 } : { width: '100%', maxWidth: '500px' }}
                                 onMouseLeave={() => {
                                     setActiveRegion(null);
                                     setActiveDistrictHoverKey(null);
@@ -1120,8 +1559,7 @@ const LandingPage = ({
                                                 if (region.districtKey === 'kuala_lumpur' && mapViewMode !== 'projects') return '#22c55e';
 
                                                 if (mapViewMode === 'projects') {
-                                                    const normName = DISTRICT_INFO[region.districtKey]?.name ? normalizeDistrict(DISTRICT_INFO[region.districtKey].name) : null;
-                                                    const subCount = normName ? (submissionCountsByDistrict[normName] || 0) : 0;
+                                                    const subCount = submissionCountsByDistrict[region.districtKey] || 0;
                                                     return getHeatmapColor(subCount);
                                                 }
 
@@ -1137,8 +1575,7 @@ const LandingPage = ({
                                                     || (activeDistrictHoverKey && region.districtKey === activeDistrictHoverKey);
                                                 if (!isHighlighted) return '';
                                                 if (mapViewMode === 'projects') {
-                                                    const normName = DISTRICT_INFO[region.districtKey]?.name ? normalizeDistrict(DISTRICT_INFO[region.districtKey].name) : null;
-                                                    const subCount = normName ? (submissionCountsByDistrict[normName] || 0) : 0;
+                                                    const subCount = submissionCountsByDistrict[region.districtKey] || 0;
                                                     if (subCount >= 5) return 'map-region-pulse-fast';
                                                     if (subCount >= 2) return 'map-region-pulse-med';
                                                     return 'map-region-pulse';
@@ -1150,9 +1587,24 @@ const LandingPage = ({
                                                 setActiveRegion(region.id);
                                                 setActiveDistrictHoverKey(BUNDLED_HOVER_DISTRICTS.has(region.districtKey) ? region.districtKey : null);
                                             }}
-                                            onClick={() => {
+                                            onPointerEnter={() => {
+                                                setActiveRegion(region.id);
+                                                setActiveDistrictHoverKey(BUNDLED_HOVER_DISTRICTS.has(region.districtKey) ? region.districtKey : null);
+                                            }}
+                                            onPointerDown={() => {
+                                                setActiveRegion(region.id);
+                                                setActiveDistrictHoverKey(BUNDLED_HOVER_DISTRICTS.has(region.districtKey) ? region.districtKey : null);
+                                            }}
+                                            onTouchStart={() => {
+                                                setActiveRegion(region.id);
+                                                setActiveDistrictHoverKey(BUNDLED_HOVER_DISTRICTS.has(region.districtKey) ? region.districtKey : null);
+                                            }}
+                                            onClick={(event) => {
                                                 if (region.districtKey === 'kuala_lumpur' && isKualaLumpurLoading && kualaLumpurShowcase.length === 0) {
                                                     setPendingKualaLumpurOpen(true);
+                                                }
+                                                if (isMobileView && isMapOnlyView) {
+                                                    setMapPopupAnchor({ x: event.clientX, y: event.clientY });
                                                 }
                                                 setSelectedDistrictKey(region.districtKey);
                                             }}
@@ -1190,30 +1642,202 @@ const LandingPage = ({
                                     })}
                                 </g>
                             </svg>
-                            <div className="map-insight">
-                                <div className="map-insight-subtitle">
-                                    Top 3 Areas by {mapViewMode === 'builders' ? 'Builder Count' : 'Projects Submitted'}
-                                </div>
-                                {topDistricts.length === 0 && <div className="map-insight-empty">No data yet</div>}
-                                {topDistricts.map(([name, count], index) => (
-                                    <div key={name} className="map-insight-row">
-                                        {index + 1}. {name} ({count} {mapViewMode === 'builders' ? `Builder${count === 1 ? '' : 's'}` : `Project${count === 1 ? '' : 's'}`})
+                            {isMobileView && isMapOnlyView && isMapInsightCollapsed ? (
+                                <button
+                                    type="button"
+                                    onClick={() => setIsMapInsightCollapsed(false)}
+                                    title="Expand map insight"
+                                    style={{
+                                        position: 'absolute',
+                                        left: 14,
+                                        bottom: 14,
+                                        width: 46,
+                                        height: 46,
+                                        borderRadius: 14,
+                                        border: '1px solid rgba(239,68,68,0.55)',
+                                        background: 'linear-gradient(160deg, rgba(239,68,68,0.96), rgba(234,179,8,0.94))',
+                                        color: '#fff',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        boxShadow: '0 10px 20px rgba(239,68,68,0.24)',
+                                        zIndex: 11
+                                    }}
+                                >
+                                    <Maximize2 size={20} />
+                                </button>
+                            ) : (
+                                <div className="map-insight">
+                                    {isMobileView && isMapOnlyView && (
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                                            <div className="map-insight-subtitle">
+                                                Top 3 Areas by {mapViewMode === 'builders' ? 'Builder Count' : 'Projects Submitted'}
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsMapInsightCollapsed(true)}
+                                                title="Collapse map insight"
+                                                style={{
+                                                    width: 24,
+                                                    height: 24,
+                                                    borderRadius: 8,
+                                                    border: '1px solid rgba(15,23,42,0.2)',
+                                                    background: 'rgba(255,255,255,0.75)',
+                                                    color: '#0f172a',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    padding: 0
+                                                }}
+                                            >
+                                                <Minimize2 size={12} />
+                                            </button>
+                                        </div>
+                                    )}
+                                    {!(isMobileView && isMapOnlyView) && (
+                                        <div className="map-insight-subtitle">
+                                            Top 3 Areas by {mapViewMode === 'builders' ? 'Builder Count' : 'Projects Submitted'}
+                                        </div>
+                                    )}
+                                    {topDistricts.length === 0 && <div className="map-insight-empty">No data yet</div>}
+                                    {topDistricts.map(([name, count], index) => (
+                                        <div key={name} className="map-insight-row">
+                                            {index + 1}. {name} ({count} {mapViewMode === 'builders' ? `Builder${count === 1 ? '' : 's'}` : `Project${count === 1 ? '' : 's'}`})
+                                        </div>
+                                    ))}
+                                    <div className="map-legend">
+                                        <div className="map-legend-title">Legend</div>
+                                        <div className="map-legend-row"><span className="legend-dot legend-default" />Selangor district</div>
+                                        <div className="map-legend-row"><span className="legend-dot legend-hover" />Selected/Hovered district</div>
+                                        <div className="map-legend-row"><span className="legend-dot legend-kl" />Kuala Lumpur</div>
+                                        <div className="map-legend-row"><span className="legend-dot legend-putrajaya" />Putrajaya</div>
                                     </div>
-                                ))}
-                                <div className="map-legend">
-                                    <div className="map-legend-title">Legend</div>
-                                    <div className="map-legend-row"><span className="legend-dot legend-default" />Selangor district</div>
-                                    <div className="map-legend-row"><span className="legend-dot legend-hover" />Selected/Hovered district</div>
-                                    <div className="map-legend-row"><span className="legend-dot legend-kl" />Kuala Lumpur</div>
-                                    <div className="map-legend-row"><span className="legend-dot legend-putrajaya" />Putrajaya</div>
                                 </div>
-                            </div>
+                            )}
                         </div>
                     </div>
                 </div>
-            </section>
+                {isMobileView && isMapOnlyView && selectedDistrictName && (
+                    <div
+                        onClick={closeMapPopup}
+                        style={{
+                            position: 'fixed',
+                            inset: 0,
+                            zIndex: 1200,
+                            background: 'rgba(2,6,23,0.5)',
+                            opacity: mapPopupOpen ? 1 : 0,
+                            transition: 'opacity 180ms ease'
+                        }}
+                    >
+                        <div
+                            onClick={(event) => event.stopPropagation()}
+                            style={{
+                                position: 'absolute',
+                                left: '50%',
+                                top: '50%',
+                                transform: mapPopupOpen ? 'translate(-50%, -50%) scale(1)' : 'translate(-50%, -50%) scale(0.35)',
+                                transformOrigin: '50% 50%',
+                                transition: 'transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 180ms ease',
+                                opacity: mapPopupOpen ? 1 : 0,
+                                width: 'min(92vw, 360px)',
+                                maxHeight: '62vh',
+                                overflowY: 'auto',
+                                borderRadius: 18,
+                                border: '1px solid rgba(148,163,184,0.4)',
+                                background: 'rgba(255,255,255,0.92)',
+                                backdropFilter: 'blur(16px)',
+                                boxShadow: '0 16px 34px rgba(15,23,42,0.22)',
+                                padding: 12
+                            }}
+                        >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, gap: 8 }}>
+                                <div style={{ minWidth: 0 }}>
+                                    <div style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', lineHeight: 1.15 }}>
+                                        {selectedDistrictName}
+                                    </div>
+                                    <div style={{ fontSize: 11, color: '#475569' }}>
+                                        {mapViewMode === 'builders'
+                                            ? `${districtShowcase.length} Builder${districtShowcase.length === 1 ? '' : 's'}`
+                                            : `${districtShowcase.length} Project${districtShowcase.length === 1 ? '' : 's'}`}
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={closeMapPopup}
+                                    style={{
+                                        border: '1px solid rgba(148,163,184,0.5)',
+                                        background: 'rgba(255,255,255,0.8)',
+                                        borderRadius: 10,
+                                        width: 30,
+                                        height: 30,
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}
+                                >
+                                    <X size={14} />
+                                </button>
+                            </div>
 
-            <GalleryShowcase
+                            {districtShowcase.length === 0 ? (
+                                <div style={{ fontSize: 12, color: '#64748b' }}>
+                                    {mapViewMode === 'builders'
+                                        ? 'No builders found for this district yet.'
+                                        : 'No submissions yet for this district.'}
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                    {districtShowcase.map((item) => (
+                                        <div key={item.id} style={{ border: '1px solid #e2e8f0', borderRadius: 10, background: '#fff', padding: '8px 9px' }}>
+                                            {mapViewMode === 'builders' ? (
+                                                <>
+                                                    <button
+                                                        onClick={() => {
+                                                            if (item.builder_profile) {
+                                                                setSelectedDetailProfile(item.builder_profile);
+                                                                closeMapPopup();
+                                                            }
+                                                        }}
+                                                        style={{
+                                                            border: 'none',
+                                                            background: 'transparent',
+                                                            padding: 0,
+                                                            margin: 0,
+                                                            color: '#0f172a',
+                                                            fontSize: 13,
+                                                            fontWeight: 600,
+                                                            cursor: 'pointer',
+                                                            textDecoration: 'underline',
+                                                            textDecorationColor: 'rgba(15,23,42,0.28)',
+                                                            textUnderlineOffset: 2
+                                                        }}
+                                                    >
+                                                        {item.name || item.builder_profile?.full_name || 'Builder'}
+                                                    </button>
+                                                    <div style={{ fontSize: 11, color: '#2563eb', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                        @{(item.handle || item.builder_profile?.threads_handle || 'builder').toString().replace(/^@+/, '')}
+                                                    </div>
+                                                    <div style={{ fontSize: 11, color: '#475569', marginTop: 2, lineHeight: 1.35 }}>
+                                                        {(item.builder_profile?.about_yourself || item.builder_profile?.problem_statement || 'Builder in progress.').slice(0, 100)}
+                                                        {(item.builder_profile?.about_yourself || item.builder_profile?.problem_statement || '').length > 100 ? '...' : ''}
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a' }}>{item.project_name || 'Untitled Project'}</div>
+                                                    <div style={{ fontSize: 11, color: '#475569', marginTop: 2 }}>{item.one_liner || 'No transmission log.'}</div>
+                                                </>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+            </section>}
+
+            {!isMobileView && !isMapOnlyView && <Suspense fallback={<div className="container" style={{ padding: '24px 16px' }}>Loading showcase...</div>}>
+                <GalleryShowcase
                 profiles={profiles}
                 session={session}
                 submissions={submissions}
@@ -1222,8 +1846,12 @@ const LandingPage = ({
                 setPublicPage={setPublicPage}
                 setSelectedDetailProfile={setSelectedDetailProfile}
             />
+            </Suspense>}
         </div>
     );
 };
 
 export default LandingPage;
+
+
+

@@ -260,11 +260,11 @@ class ResponseGenerator {
 
         // Adjust tone based on sentiment
         if (sentiment === 'positive') {
-            response += ` ${this.getRandomKaomoji(['(b ᵔ▽ᵔ)b', '(☆▽☆)', '(ง •̀_•́)ง'])}`;
+            response += ` ${this.getRandomEmoticon(['(b ᵔ▽ᵔ)b', '(☆▽☆)', '(ง •̀_•́)ง'])}`;
         } else if (sentiment === 'negative') {
             response += ` Jangan stress bro, kita solve sama-sama (✿◠‿◠)`;
         } else {
-            response += ` ${this.getRandomKaomoji(['(o^▽^o)', '(¬‿¬)', '( ˙꒳​˙ )'])}`;
+            response += ` ${this.getRandomEmoticon(['(o^▽^o)', '(¬‿¬)', '( ˙꒳​˙ )'])}`;
         }
 
         // Add follow-up question based on intent
@@ -279,9 +279,9 @@ class ResponseGenerator {
         return array[Math.floor(Math.random() * array.length)];
     }
 
-    getRandomKaomoji(exclude = []) {
-        const kaomojis = ['(o^▽^o)', '(¬‿¬)', '(b ᵔ▽ᵔ)b', '( ˙꒳​˙ )', '(☆▽☆)', '(ง •̀_•́)ง', '(✿◠‿◠)', '(ﾉ^ヮ^)ﾉ*:・ﾟ✧'];
-        const available = kaomojis.filter(k => !exclude.includes(k));
+    getRandomEmoticon(exclude = []) {
+        const emoticons = ['(o^▽^o)', '(¬‿¬)', '(b ᵔ▽ᵔ)b', '( ˙꒳​˙ )', '(☆▽☆)', '(ง •̀_•́)ง', '(✿◠‿◠)', '(ﾉ^ヮ^)ﾉ*:・ﾟ✧'];
+        const available = emoticons.filter(k => !exclude.includes(k));
         return this.getRandomElement(available);
     }
 }
@@ -330,7 +330,7 @@ export class EnhancedLocalIntelligence {
             },
             {
                 keywords: ['antigravity', 'ai tool', 'cursor', 'tool', 'tools', 'supabase', 'vercel'],
-                answer: `tools yang kita pakai semua standard free tier. antigravity, supabase, cursor, vercel.\n\nantigravity tu ai tool utama. kau describe je apa nak buat, dia codekan (o_ _)o. database pakai supabase, hosting vercel.`,
+                answer: `tools yang kita pakai semua standard free tier. antigravity, supabase, cursor, vercel.\n\nantigravity tu ai tool utama. kau describe je apa nak buat, dia codekan :). database pakai supabase, hosting vercel.`,
                 followUp: `nak guna antigravity download je kat antigravity.dev. tips dia bagi arahan spesifik. contoh "buat butang merah tulis hantar" lagi okay dari "buat butang" (b ᵔ▽ᵔ)b.`,
                 relatedTopics: ['apa itu vibe coding', 'macam mana nak deploy ke vercel', 'apa itu supabase']
             },
@@ -473,7 +473,7 @@ export class EnhancedLocalIntelligence {
             },
             {
                 keywords: ['connect database', 'fetch data', 'api call', 'environment variables', 'env', 'supabase client'],
-                answer: `vercel tak tau password supabase. kena set environment variable (o_ _)o.\n\nwayar dah sambung local, tapi vercel perlukan credentials.`,
+                answer: `vercel tak tau password supabase. kena set environment variable :).\n\nwayar dah sambung local, tapi vercel perlukan credentials.`,
                 followUp: `vercel settings > environment variables > paste supabase url dan anon key.\n\nsuruh antigravity tulis fetchdata logic untuk panggil data. map data kat ui table atau cards. push github, vercel auto deploy. boom website dah live dengan database!`,
                 relatedTopics: ['supabase setup', 'api integration', 'vercel env'],
                 linkUrl: 'https://vercel.com/docs/environment-variables'
@@ -751,3 +751,5 @@ export const enhancedLocalIntelligence = new EnhancedLocalIntelligence();
 export function localIntelligence(userMessage, history = []) {
     return enhancedLocalIntelligence.getResponse(userMessage, history);
 }
+
+

@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Settings, LogOut, Check, Calendar, Rocket, Camera, ChevronRight, Gamepad2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { awardGameRewards } from '../lib/gameService';
 import BuilderStudioPage from './BuilderStudioPage'; // Sibling import
 import { SPRINT_MODULE_STEPS, DEPLOY_COMMAND, TERMINAL_CONTEXT } from '../constants';
+import MobileFeatureShell from '../components/MobileFeatureShell';
 
 export default function BuilderDashboard({
     currentUser,
@@ -16,9 +17,11 @@ export default function BuilderDashboard({
     isUpdatingProfile,
     session,
     fetchData,
-    isMobileView
+    isMobileView,
+    setPublicPage
 }) {
     const [activeTab, setActiveTab] = useState('sprint');
+    const [islandIndex, setIslandIndex] = useState(0);
 
     // Form States reused from App.jsx, now local
     const [newUpload, setNewUpload] = useState({ project: '', link: '', details: '', type: 'log' });
@@ -30,12 +33,13 @@ export default function BuilderDashboard({
         const today = new Date().toLocaleDateString();
         return submissions.some(s =>
             s.user_id === session.user.id &&
+            s.status !== 'Archived' &&
             new Date(s.created_at).toLocaleDateString() === today
         );
     }, [submissions, session]);
 
     const builderSubs = useMemo(() => {
-        return submissions.filter(s => s.user_id === currentUser?.id || s.user_id === session?.user?.id);
+        return submissions.filter(s => (s.user_id === currentUser?.id || s.user_id === session?.user?.id) && s.status !== 'Archived');
     }, [submissions, currentUser?.id, session?.user?.id]);
 
     const totalSubs = builderSubs.length;
@@ -46,6 +50,13 @@ export default function BuilderDashboard({
         if (!activeClass || !attendance) return false;
         return attendance.some(a => a.profile_id === currentUser?.id && a.class_id === activeClass.id && a.status === 'Present');
     }, [activeClass, attendance, currentUser?.id]);
+
+    useEffect(() => {
+        if (!isMobileView) return undefined;
+        const timer = setInterval(() => setIslandIndex((prev) => (prev + 1) % 3), 3400);
+        return () => clearInterval(timer);
+    }, [isMobileView]);
+
 
 
     const handleBuilderUpload = async (e) => {
@@ -92,6 +103,95 @@ export default function BuilderDashboard({
         }
         setIsUploading(false);
     };
+
+
+    const progressPct = Math.min(100, Math.round((totalSubs / Math.max(1, SPRINT_MODULE_STEPS.length)) * 100));
+
+    const encouragementText = useMemo(() => {
+        const messages = [
+            'Ship one small improvement today. Momentum beats perfection.',
+            'Keep vibe coding: 1 clear commit now is better than 10 ideas later.',
+            'Focus on user value first, polish second.',
+            'Progress over pressure. Build, test, and post your log.',
+            'Today goal: make one thing clearer for your users.'
+        ];
+        const userKey = session?.user?.id || currentUser?.id || 'builder';
+        const dayKey = new Date().toISOString().slice(0, 10);
+        const seed = `${userKey}-${dayKey}`.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+        return messages[seed % messages.length];
+    }, [session?.user?.id, currentUser?.id]);
+
+    if (isMobileView) {
+        const iosPrimaryBtn = {
+            borderRadius: 14,
+            border: '1px solid rgba(239,68,68,0.55)',
+            background: 'rgba(239,68,68,0.92)',
+            color: '#fff',
+            boxShadow: '0 6px 14px rgba(239,68,68,0.25)',
+            fontSize: 11,
+            fontWeight: 600,
+            padding: '9px 10px'
+        };
+        const iosSecondaryBtn = {
+            borderRadius: 14,
+            border: '1px solid rgba(15,23,42,0.24)',
+            background: 'rgba(255,255,255,0.82)',
+            color: '#0f172a',
+            boxShadow: '0 5px 12px rgba(15,23,42,0.12)',
+            fontSize: 11,
+            fontWeight: 600,
+            padding: '9px 10px'
+        };
+        const islandMessages = [
+            `${totalSubs} Logs • ${progressPct}% Sprint`,
+            checkedInToday ? 'Checked in today' : 'Check in and ship your log',
+            activeClass ? `Live: ${activeClass.title}` : 'No live class now'
+        ];
+        return (
+            <MobileFeatureShell title="Builder Dashboard" subtitle="Your sprint cockpit" islandContent={<span style={{ fontSize: 10, fontWeight: 600 }}>{islandMessages[islandIndex]}</span>} onNavigate={setPublicPage}>
+                <div style={{ display: 'grid', gap: 10 }}>
+                    <section style={{ borderRadius: 14, border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(255,255,255,0.78)', padding: '10px 11px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                            <div style={{ fontSize: 12, color: '#0f172a', fontWeight: 600 }}>{currentUser?.name || 'Builder'}</div>
+                            <button
+                                aria-label="Edit profile"
+                                onClick={openEditProfileModal}
+                                disabled={isUpdatingProfile}
+                                style={{ width: 30, height: 30, borderRadius: 999, border: '1px solid rgba(15,23,42,0.24)', background: 'rgba(255,255,255,0.86)', color: '#0f172a', display: 'grid', placeItems: 'center', boxShadow: '0 4px 10px rgba(15,23,42,0.14)' }}
+                            >
+                                <Settings size={14} />
+                            </button>
+                        </div>
+                        <div style={{ marginTop: 2, fontSize: 11, color: '#64748b' }}>{currentUser?.district || 'Selangor'}</div>
+                        <div style={{ marginTop: 8, display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 7 }}>
+                            <div style={{ borderRadius: 10, border: '1px solid #e2e8f0', background: '#f8fafc', padding: '7px 8px' }}><div style={{ fontSize: 10, color: '#64748b' }}>Logs Submitted</div><div style={{ fontSize: 16, color: '#0f172a', fontWeight: 600 }}>{totalSubs}</div></div>
+                            <div style={{ borderRadius: 10, border: '1px solid #e2e8f0', background: '#f8fafc', padding: '7px 8px' }}><div style={{ fontSize: 10, color: '#64748b' }}>Sprint Progress</div><div style={{ fontSize: 16, color: '#0f172a', fontWeight: 600 }}>{progressPct}%</div></div>
+                        </div>
+                        <div style={{ marginTop: 8, height: 6, borderRadius: 999, background: '#e2e8f0', overflow: 'hidden' }}><div style={{ width: `${progressPct}%`, height: '100%', background: '#ef4444' }} /></div>
+                    </section>
+                    <section style={{ borderRadius: 14, border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(255,255,255,0.78)', padding: '10px 11px' }}><div style={{ fontSize: 11, fontWeight: 600, color: '#0f172a', marginBottom: 4 }}>Daily Encouragement</div><div style={{ fontSize: 12, lineHeight: 1.45, color: '#334155' }}>{encouragementText}</div></section>
+                    <section style={{ borderRadius: 14, border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(255,255,255,0.78)', padding: '10px 11px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
+                            <button className="btn btn-outline" style={iosSecondaryBtn} onClick={() => setPublicPage?.('showcase')}>Open Showcase</button>
+                            <button className="btn btn-outline" style={iosSecondaryBtn} onClick={handleSignOut}>Logout</button>
+                        </div>
+                    </section>
+                    <section style={{ borderRadius: 14, border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(255,255,255,0.78)', padding: '10px 11px' }}>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: '#0f172a', marginBottom: 6 }}>Recent Logs</div>
+                        <div style={{ display: 'grid', gap: 7, maxHeight: 'calc(var(--app-vh, 100vh) - 500px)', overflowY: 'auto' }}>
+                            {builderSubs.length === 0 && <div style={{ fontSize: 11, color: '#64748b' }}>No logs yet. Start from Builder Vault.</div>}
+                            {builderSubs.slice(0, 6).map((item) => (
+                                <div key={item.id} style={{ borderRadius: 10, border: '1px solid #e2e8f0', background: '#f8fafc', padding: '7px 8px' }}>
+                                    <div style={{ fontSize: 12, fontWeight: 600, color: '#0f172a' }}>{item.project_name || 'Untitled Project'}</div>
+                                    <div style={{ marginTop: 2, fontSize: 10, color: '#64748b' }}>{new Date(item.created_at).toLocaleString()}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                </div>
+            </MobileFeatureShell>
+        );
+    }
 
     return (
         <div className="container" style={{ padding: '24px 20px' }}>

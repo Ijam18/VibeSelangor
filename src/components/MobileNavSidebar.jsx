@@ -273,11 +273,43 @@ export default function MobileNavSidebar({
 
                 {/* Footer */}
                 <div style={{ padding: '6px 12px 10px', borderTop: 'none', flexShrink: 0 }}>
-                    <div style={{ fontSize: '9px', fontWeight: '700', opacity: 0.3, textAlign: 'center' }}>
-                        VibeSelangor Â© 2025
+                    <div style={{ fontWeight: '900', fontSize: '10px', textAlign: 'center', marginBottom: '4px' }}>
+                        Built by <span style={{ color: 'var(--selangor-red)' }}>_zarulijam</span>
                     </div>
+                    <a
+                        href="https://www.threads.net/@_zarulijam"
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={onClose}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '5px',
+                            textDecoration: 'none',
+                            color: 'black',
+                            fontSize: '10px',
+                            fontWeight: '800',
+                            marginBottom: '4px'
+                        }}
+                    >
+                        <ExternalLink size={10} />
+                        DM me on Threads
+                    </a>
+                    
+                    <div style={{ fontSize: '9px', fontWeight: '700', opacity: 0.5, textAlign: 'center' }}>
+                        VibeSelangor © 2026
+                    </div>
+                    {!isMobileView && (
+                        <div style={{ fontSize: '9px', fontWeight: '800', opacity: 0.45, textAlign: 'center', marginTop: '3px' }}>
+                            NO CODE. JUST VIBES.
+                        </div>
+                    )}
                 </div>
             </div>
         </>
     );
 }
+
+
+

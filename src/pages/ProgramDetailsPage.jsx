@@ -1,312 +1,604 @@
-import React, { useState } from 'react';
+﻿import React, { useMemo, useState } from 'react';
 import ThreadsIcon from '../components/ThreadsIcon';
-import { Users, Calendar, Rocket, Award, CheckCircle, ExternalLink, ChevronDown, ChevronUp, Zap, Globe, Database, Code2, MessageSquare } from 'lucide-react';
+import {
+    Calendar,
+    CheckCircle2,
+    Database,
+    ExternalLink,
+    GitBranch,
+    Rocket,
+    Users,
+    WandSparkles,
+    Zap,
+    Bot
+} from 'lucide-react';
+import MobileFeatureShell from '../components/MobileFeatureShell';
+import LiveIslandBlip from '../components/LiveIslandBlip';
+import { getLiveProgramMeta } from '../utils/liveProgram';
 
 const STATS = [
-    { value: '7', label: 'Days Sprint' },
-    { value: '2', label: 'Live Sessions' },
-    { value: '100%', label: 'Free' },
-    { value: '0', label: 'Code Required' },
+    { value: '7', label: 'Days' },
+    { value: '2', label: 'Live' },
+    { value: 'Free', label: 'Cost' },
+    { value: '0', label: 'Code' }
 ];
 
 const TOOLS = [
-    { emoji: '⚡', name: 'Antigravity', desc: 'AI-powered IDE for vibe coding', url: 'https://antigravity.dev/' },
-    { emoji: '🗄️', name: 'Supabase', desc: 'Backend database & auth', url: 'https://supabase.com/' },
-    { emoji: '🚀', name: 'Vercel', desc: 'Deploy your app in seconds', url: 'https://vercel.com/' },
-    { emoji: '🤖', name: 'ChatGPT / Gemini', desc: 'AI writing & ideation', url: 'https://chatgpt.com/' },
-    { emoji: '🐙', name: 'GitHub', desc: 'Version control & hosting', url: 'https://github.com/' },
-    { emoji: '🎨', name: 'Stitch / Codex', desc: 'UI generation tools', url: 'https://stitch.withgoogle.com/' },
+    { icon: Zap, name: 'Antigravity', desc: 'AI IDE for rapid app building', url: 'https://antigravity.dev/' },
+    { icon: Database, name: 'Supabase', desc: 'Database, auth, storage', url: 'https://supabase.com/' },
+    { icon: Rocket, name: 'Vercel', desc: 'Deploy instantly', url: 'https://vercel.com/' },
+    { icon: Bot, name: 'ChatGPT / Gemini', desc: 'Planning and copy support', url: 'https://chatgpt.com/' },
+    { icon: GitBranch, name: 'GitHub', desc: 'Version control', url: 'https://github.com/' },
+    { icon: WandSparkles, name: 'Stitch / Codex', desc: 'UI generation and coding support', url: 'https://stitch.withgoogle.com/' }
 ];
 
 const REQUIREMENTS = [
-    { text: 'Start with a real problem — your app must solve a clear, tangible user problem', done: false },
-    { text: 'Prepare one app idea before Day 1 (problem, user, and simple feature list)', done: false },
-    { text: 'Have a laptop or computer with stable internet', done: false },
-    { text: 'Join KrackedDevs Discord and state you are applying for Selangor Vibe Builder', done: false, link: { label: 'Join Discord', url: 'https://discord.gg/3TZeZUjc' } },
-    { text: 'Have a GitHub account', done: false, link: { label: 'Sign up', url: 'https://github.com/signup' } },
-    { text: 'Have a Vercel account', done: false, link: { label: 'Sign up', url: 'https://vercel.com/signup' } },
-    { text: 'Have Antigravity installed', done: false, link: { label: 'Get started', url: 'https://antigravity.dev/' } },
-    { text: 'Currently live in Selangor (future sessions may include physical meetups)', done: false },
+    { text: 'Come with one clear app idea and target user.' },
+    { text: 'Have a laptop/computer and stable internet.' },
+    { text: 'Join KrackedDevs Discord and mention Selangor sprint.', link: { label: 'Join Discord', url: 'https://discord.gg/3TZeZUjc' } },
+    { text: 'Create GitHub account.', link: { label: 'Sign up', url: 'https://github.com/signup' } },
+    { text: 'Create Vercel account.', link: { label: 'Sign up', url: 'https://vercel.com/signup' } },
+    { text: 'Install Antigravity.', link: { label: 'Get started', url: 'https://antigravity.dev/' } },
+    { text: 'Currently based in Selangor.' }
 ];
 
 const SPRINT_DAYS = [
     {
-        icon: <Users size={18} />,
         day: 'Before Day 1',
-        color: '#6366f1',
-        title: 'Prepare & Join',
-        desc: 'Kickoff instructions shared on Threads. Prepare your app idea, join Discord, and set up your tools.',
+        title: 'Prepare and join',
+        desc: 'Confirm tools, idea, and communication channels.',
+        icon: Users,
+        color: '#0f172a'
     },
     {
-        icon: <Calendar size={18} />,
         day: 'Day 1',
-        color: '#CE1126',
-        title: 'Live Build Session (2h)',
-        desc: 'Build together on Discord. Deploy a working prototype by end of session.',
-        badge: 'LIVE',
+        title: 'Live build session',
+        desc: 'Build MVP together and deploy first version.',
+        icon: Calendar,
+        color: '#be123c'
     },
     {
-        icon: <Rocket size={18} />,
-        day: 'Day 2–6',
-        color: '#f59e0b',
-        title: 'Self-Paced Sprint',
-        desc: 'Improve your app daily. Async check-ins with the cohort. Ship features, fix bugs, get feedback.',
+        day: 'Day 2 to Day 6',
+        title: 'Self-paced sprint',
+        desc: 'Improve features daily with async feedback.',
+        icon: Zap,
+        color: '#92400e'
     },
     {
-        icon: <Award size={18} />,
         day: 'Day 7',
-        color: '#059669',
-        title: 'Final Review (2h)',
-        desc: 'Live session to review, troubleshoot, and finalize your project for the showcase.',
-        badge: 'LIVE',
-    },
+        title: 'Final review',
+        desc: 'Finalize app and prepare for showcase.',
+        icon: Rocket,
+        color: '#166534'
+    }
 ];
 
-export default function ProgramDetailsPage({ classes, handleJoinClick, setPublicPage, isMobileView }) {
-    const [reqChecked, setReqChecked] = useState({});
+function MobileHowWidget({
+    classes,
+    handleJoinClick,
+    setPublicPage,
+    reqChecked,
+    toggleReq,
+    checkedCount,
+    section,
+    setSection,
+    liveProgram
+}) {
+    const nextSessionDate = classes?.[0]?.date
+        ? new Date(classes[0].date).toLocaleDateString('en-MY', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        })
+        : 'TBA';
 
-    const toggleReq = (i) => setReqChecked(prev => ({ ...prev, [i]: !prev[i] }));
-    const checkedCount = Object.values(reqChecked).filter(Boolean).length;
+    const nextSessionTime = classes?.[0]?.time || 'Follow @_zarulijam on Threads for updates.';
 
     return (
-        <section id="how-it-works-page" style={{ paddingTop: '40px', paddingBottom: '80px', minHeight: '80vh' }}>
-            <div className="container">
-
-                {/* Hero */}
-                <div style={{ marginBottom: '40px' }}>
-                    <div className="pill pill-red" style={{ marginBottom: '16px', display: 'inline-flex' }}>
-                        <Zap size={12} /> PROGRAM DETAILS
+        <MobileFeatureShell
+            title="How?"
+            subtitle="Sprint blueprint"
+            onNavigate={setPublicPage}
+            statusCenterContent={(
+                <div
+                    style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 6,
+                        width: liveProgram ? 'min(88vw, 280px)' : 'fit-content',
+                        maxWidth: liveProgram ? 'min(88vw, 280px)' : 'min(82vw, 220px)',
+                        padding: '3px 6px',
+                        borderRadius: 12,
+                        background: 'rgba(10,10,10,0.95)',
+                        boxShadow: '0 8px 16px rgba(0,0,0,0.18)',
+                        overflow: 'hidden'
+                    }}
+                >
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, minWidth: 0, flex: 1 }}>
+                        <span
+                            style={{
+                                height: 18,
+                                borderRadius: 999,
+                                border: '1px solid rgba(255,255,255,0.2)',
+                                background: 'rgba(255,255,255,0.1)',
+                                color: '#fff',
+                                fontSize: 9,
+                                fontWeight: 500,
+                                lineHeight: '16px',
+                                padding: '0 8px',
+                                whiteSpace: 'nowrap',
+                                flexShrink: 0
+                            }}
+                        >
+                            How?
+                        </span>
+                        <span
+                            style={{
+                                height: 18,
+                                borderRadius: 999,
+                                border: '1px solid rgba(245,158,11,0.4)',
+                                background: 'linear-gradient(135deg, #fde047, #f59e0b)',
+                                color: '#0f172a',
+                                fontSize: 9,
+                                fontWeight: 500,
+                                lineHeight: '16px',
+                                padding: '0 8px',
+                                whiteSpace: 'nowrap',
+                                minWidth: 0,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis'
+                            }}
+                        >
+                            Sprint 2026
+                        </span>
                     </div>
-                    <h1 style={{ fontSize: 'clamp(28px, 5vw, 48px)', marginBottom: '12px', lineHeight: 1.1 }}>
-                        Selangor Builder Sprint 2026
-                    </h1>
-                    <p style={{ maxWidth: '640px', opacity: 0.75, fontSize: '16px', lineHeight: 1.6, marginBottom: '24px' }}>
-                        A beginner-friendly 7-day sprint where you go from idea to deployed app — guided, supported, and shipped.
-                        No coding experience required.
-                    </p>
+                    {liveProgram && (
+                        <LiveIslandBlip
+                            title={liveProgram.title}
+                            windowText={liveProgram.windowText}
+                            growLeft
+                        />
+                    )}
+                </div>
+            )}
+        >
+            <div style={{ height: 'calc(var(--app-vh, 100vh) - clamp(162px, 20vh, 206px))', overflow: 'hidden' }}>
+                <section
+                    style={{
+                        height: '100%',
+                        borderRadius: 20,
+                        border: '1px solid rgba(148,163,184,0.4)',
+                        background: 'rgba(255,255,255,0.78)',
+                        boxShadow: '0 12px 28px rgba(15,23,42,0.14)',
+                        backdropFilter: 'blur(14px)',
+                        padding: 12,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 10,
+                        overflow: 'hidden'
+                    }}
+                >
+                    <div>
+                        <div style={{ fontSize: 10, fontWeight: 500, color: '#475569', letterSpacing: 0.2 }}>SELANGOR BUILDER SPRINT 2026</div>
+                        <h2 style={{ margin: '4px 0 2px', fontSize: 18, lineHeight: 1.15, fontWeight: 500, color: '#0f172a' }}>
+                            Build real apps in 7 days.
+                        </h2>
+                        <p style={{ margin: 0, fontSize: 12, color: '#334155', lineHeight: 1.35, fontWeight: 400 }}>
+                            One mobile widget view with clear plan, tools, and checklist.
+                        </p>
+                    </div>
 
-                    {/* Stats bar — 1-1-1-1 row on mobile and desktop */}
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(4, 1fr)',
-                        gap: isMobileView ? '6px' : '12px'
-                    }}>
-                        {STATS.map((s, i) => (
-                            <div key={i} style={{
-                                border: '2px solid black',
-                                borderRadius: '10px',
-                                padding: isMobileView ? '8px 4px' : '12px 18px',
-                                background: i === 0 ? '#CE1126' : '#fff',
-                                color: i === 0 ? '#fff' : 'black',
-                                textAlign: 'center',
-                                boxShadow: isMobileView ? '2px 2px 0 black' : '4px 4px 0 black',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                justifyContent: 'center',
-                                minHeight: isMobileView ? '50px' : 'auto'
-                            }}>
-                                <div style={{ fontWeight: '900', fontSize: isMobileView ? '16px' : '22px', lineHeight: 1 }}>{s.value}</div>
-                                <div style={{
-                                    fontSize: isMobileView ? '7px' : '11px',
-                                    fontWeight: '700',
-                                    opacity: 0.75,
-                                    marginTop: '2px',
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis'
-                                }}>{s.label}</div>
+                    <div
+                        style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+                            gap: 7
+                        }}
+                    >
+                        {STATS.map((item) => (
+                            <div
+                                key={item.label}
+                                style={{
+                                    borderRadius: 12,
+                                    border: '1px solid rgba(148,163,184,0.42)',
+                                    background: 'rgba(248,250,252,0.92)',
+                                    padding: '7px 4px',
+                                    textAlign: 'center'
+                                }}
+                            >
+                                <div style={{ fontSize: 12, fontWeight: 500, color: '#0f172a', lineHeight: 1.1 }}>{item.value}</div>
+                                <div style={{ fontSize: 9, fontWeight: 500, color: '#64748b', marginTop: 2 }}>{item.label}</div>
                             </div>
                         ))}
                     </div>
-                </div>
 
-                {/* Session info banner */}
-                {classes[0] && (
-                    <div className="neo-card" style={{
-                        border: '2px solid black', boxShadow: '6px 6px 0 black',
-                        background: 'linear-gradient(135deg, #fff8dc, #fff)',
-                        marginBottom: '32px', display: 'flex', alignItems: 'center',
-                        gap: '16px', flexWrap: 'wrap',
-                    }}>
-                        <div style={{ fontSize: '32px' }}>📅</div>
-                        <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: '900', fontSize: '16px' }}>
-                                Session #1: {classes[0]?.date ? new Date(classes[0].date).toLocaleDateString('en-MY', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'TBA'}
-                            </div>
-                            <div style={{ fontSize: '13px', opacity: 0.7, marginTop: '2px' }}>
-                                {classes[0]?.time ? `🕐 ${classes[0].time}` : 'Follow @_zarulijam on Threads for the latest update.'}
-                            </div>
-                        </div>
-                        <a
-                            href="https://www.threads.net/@_zarulijam"
-                            target="_blank"
-                            rel="noreferrer"
-                            className="btn btn-outline"
-                            style={{ display: 'inline-flex', gap: '8px', textDecoration: 'none', padding: '10px 16px', fontSize: '13px' }}
-                        >
-                            <ThreadsIcon size={16} /> Follow for Updates
-                        </a>
+                    <div
+                        style={{
+                            borderRadius: 12,
+                            border: '1px solid rgba(148,163,184,0.35)',
+                            background: 'rgba(15,23,42,0.95)',
+                            padding: 4,
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+                            gap: 4
+                        }}
+                    >
+                        {[
+                            ['overview', 'Overview'],
+                            ['timeline', 'Timeline'],
+                            ['tools', 'Tools'],
+                            ['checklist', 'Checklist']
+                        ].map(([id, label]) => (
+                            <button
+                                key={id}
+                                onClick={() => setSection(id)}
+                                style={{
+                                    height: 24,
+                                    borderRadius: 999,
+                                    border: '1px solid rgba(255,255,255,0.2)',
+                                    background: section === id ? 'linear-gradient(135deg, #fde047, #f59e0b)' : 'rgba(255,255,255,0.08)',
+                                    color: section === id ? '#0f172a' : '#e2e8f0',
+                                    fontSize: 9,
+                                    fontWeight: 500,
+                                    lineHeight: 1,
+                                    whiteSpace: 'nowrap'
+                                }}
+                            >
+                                {label}
+                            </button>
+                        ))}
                     </div>
-                )}
 
-                {/* Sprint Timeline */}
-                <h2 style={{ fontSize: '22px', marginBottom: '20px' }}>📅 7-Day Sprint Timeline</h2>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '40px' }}>
-                    {SPRINT_DAYS.map((day, i) => (
-                        <div key={i} style={{
-                            border: `2px solid ${day.color}`,
-                            borderRadius: '12px',
-                            padding: '16px',
-                            background: '#fff',
-                            boxShadow: `4px 4px 0 ${day.color}`,
-                            position: 'relative',
-                        }}>
-                            {day.badge && (
-                                <span style={{
-                                    position: 'absolute', top: -10, right: 12,
-                                    background: '#CE1126', color: '#fff',
-                                    fontSize: '9px', fontWeight: '900', padding: '2px 8px',
-                                    borderRadius: '999px', border: '2px solid black',
-                                    letterSpacing: '0.1em',
-                                }}>● {day.badge}</span>
-                            )}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                                <div style={{
-                                    width: 32, height: 32, borderRadius: '8px',
-                                    background: day.color, color: '#fff',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    flexShrink: 0,
-                                }}>
-                                    {day.icon}
-                                </div>
-                                <div>
-                                    <div style={{ fontSize: '10px', fontWeight: '800', opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{day.day}</div>
-                                    <div style={{ fontWeight: '900', fontSize: '14px', lineHeight: 1.2 }}>{day.title}</div>
-                                </div>
-                            </div>
-                            <p style={{ fontSize: '12px', lineHeight: 1.5, opacity: 0.75, margin: 0 }}>{day.desc}</p>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Tools */}
-                <h2 style={{ fontSize: '22px', marginBottom: '20px' }}>🛠️ Tools You'll Use</h2>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px', marginBottom: '40px' }}>
-                    {TOOLS.map((tool, i) => (
-                        <a
-                            key={i}
-                            href={tool.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            style={{
-                                border: '2px solid black', borderRadius: '10px',
-                                padding: '14px', background: '#fff',
-                                boxShadow: '3px 3px 0 black', textDecoration: 'none',
-                                color: 'black', display: 'flex', alignItems: 'center', gap: '12px',
-                                transition: 'transform 0.15s, box-shadow 0.15s',
-                            }}
-                            onMouseEnter={e => { e.currentTarget.style.transform = 'translate(-2px,-2px)'; e.currentTarget.style.boxShadow = '5px 5px 0 black'; }}
-                            onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '3px 3px 0 black'; }}
-                        >
-                            <span style={{ fontSize: '24px', flexShrink: 0 }}>{tool.emoji}</span>
-                            <div>
-                                <div style={{ fontWeight: '800', fontSize: '13px', lineHeight: 1.2 }}>{tool.name}</div>
-                                <div style={{ fontSize: '11px', opacity: 0.6, marginTop: '2px' }}>{tool.desc}</div>
-                            </div>
-                        </a>
-                    ))}
-                </div>
-
-                {/* Requirements Checklist */}
-                <h2 style={{ fontSize: '22px', marginBottom: '8px' }}>✅ Requirements Checklist</h2>
-                <p style={{ fontSize: '13px', opacity: 0.6, marginBottom: '16px' }}>
-                    Check off each item to track your readiness. ({checkedCount}/{REQUIREMENTS.length} done)
-                </p>
-                {checkedCount > 0 && (
-                    <div style={{ marginBottom: '12px' }}>
-                        <div style={{ height: '8px', background: '#eee', borderRadius: '999px', border: '1.5px solid black', overflow: 'hidden' }}>
-                            <div style={{
-                                height: '100%', background: '#CE1126',
-                                width: `${(checkedCount / REQUIREMENTS.length) * 100}%`,
-                                borderRadius: '999px', transition: 'width 0.3s ease',
-                            }} />
-                        </div>
-                    </div>
-                )}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '40px' }}>
-                    {REQUIREMENTS.map((req, i) => (
-                        <div
-                            key={i}
-                            onClick={() => toggleReq(i)}
-                            style={{
-                                border: `2px solid ${reqChecked[i] ? '#059669' : 'black'}`,
-                                borderRadius: '10px', padding: '12px 16px',
-                                background: reqChecked[i] ? '#f0fdf4' : '#fff',
-                                boxShadow: reqChecked[i] ? '3px 3px 0 #059669' : '3px 3px 0 black',
-                                cursor: 'pointer', display: 'flex', alignItems: 'flex-start', gap: '12px',
-                                transition: 'all 0.2s',
-                            }}
-                        >
-                            <div style={{
-                                width: 22, height: 22, borderRadius: '6px', flexShrink: 0,
-                                border: `2px solid ${reqChecked[i] ? '#059669' : '#aaa'}`,
-                                background: reqChecked[i] ? '#059669' : '#fff',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                marginTop: '1px',
-                            }}>
-                                {reqChecked[i] && <CheckCircle size={14} color="#fff" />}
-                            </div>
-                            <div style={{ flex: 1 }}>
-                                <span style={{
-                                    fontSize: '13px', lineHeight: 1.5,
-                                    textDecoration: reqChecked[i] ? 'line-through' : 'none',
-                                    opacity: reqChecked[i] ? 0.5 : 1,
-                                }}>
-                                    {req.text}
-                                </span>
-                                {req.link && (
+                    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 2 }}>
+                        {section === 'overview' && (
+                            <div style={{ display: 'grid', gap: 8 }}>
+                                <div
+                                    style={{
+                                        borderRadius: 14,
+                                        border: '1px solid rgba(148,163,184,0.35)',
+                                        background: 'rgba(255,255,255,0.94)',
+                                        padding: 10
+                                    }}
+                                >
+                                    <div style={{ fontSize: 10, fontWeight: 500, color: '#64748b' }}>NEXT LIVE SESSION</div>
+                                    <div style={{ marginTop: 4, fontSize: 13, fontWeight: 500, color: '#0f172a', lineHeight: 1.3 }}>{nextSessionDate}</div>
+                                    <div style={{ marginTop: 2, fontSize: 11, fontWeight: 400, color: '#334155' }}>{nextSessionTime}</div>
                                     <a
-                                        href={req.link.url}
+                                        href="https://www.threads.net/@_zarulijam"
                                         target="_blank"
                                         rel="noreferrer"
-                                        onClick={e => e.stopPropagation()}
-                                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginLeft: '8px', color: '#CE1126', fontWeight: '700', fontSize: '12px', textDecoration: 'none' }}
+                                        style={{
+                                            marginTop: 8,
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: 5,
+                                            fontSize: 10,
+                                            fontWeight: 500,
+                                            color: '#be123c',
+                                            textDecoration: 'none'
+                                        }}
                                     >
-                                        {req.link.label} <ExternalLink size={11} />
+                                        <ThreadsIcon size={13} /> Follow Updates <ExternalLink size={11} />
                                     </a>
-                                )}
+                                </div>
+
+                                <div
+                                    style={{
+                                        borderRadius: 14,
+                                        border: '1px solid rgba(148,163,184,0.35)',
+                                        background: 'rgba(255,255,255,0.94)',
+                                        padding: 10
+                                    }}
+                                >
+                                    <div style={{ fontSize: 10, fontWeight: 500, color: '#64748b' }}>WHAT YOU GET</div>
+                                    <ul style={{ margin: '8px 0 0 16px', padding: 0, display: 'grid', gap: 5 }}>
+                                        <li style={{ fontSize: 11, fontWeight: 400, color: '#0f172a' }}>Guided sprint structure for beginners.</li>
+                                        <li style={{ fontSize: 11, fontWeight: 400, color: '#0f172a' }}>Live checkpoints to unblock fast.</li>
+                                        <li style={{ fontSize: 11, fontWeight: 400, color: '#0f172a' }}>Production deployment workflow.</li>
+                                        <li style={{ fontSize: 11, fontWeight: 400, color: '#0f172a' }}>Showcase-ready project by Day 7.</li>
+                                    </ul>
+                                </div>
                             </div>
+                        )}
+
+                        {section === 'timeline' && (
+                            <div style={{ display: 'grid', gap: 8 }}>
+                                {SPRINT_DAYS.map((item) => {
+                                    const Icon = item.icon;
+                                    return (
+                                        <div
+                                            key={item.day}
+                                            style={{
+                                                borderRadius: 14,
+                                                border: '1px solid rgba(148,163,184,0.35)',
+                                                background: 'rgba(255,255,255,0.94)',
+                                                padding: 10,
+                                                display: 'grid',
+                                                gridTemplateColumns: '30px 1fr',
+                                                gap: 8,
+                                                alignItems: 'start'
+                                            }}
+                                        >
+                                            <div
+                                                style={{
+                                                    width: 30,
+                                                    height: 30,
+                                                    borderRadius: 10,
+                                                    background: item.color,
+                                                    color: '#fff',
+                                                    display: 'grid',
+                                                    placeItems: 'center'
+                                                }}
+                                            >
+                                                <Icon size={15} />
+                                            </div>
+                                            <div>
+                                                <div style={{ fontSize: 10, fontWeight: 500, color: '#64748b' }}>{item.day}</div>
+                                                <div style={{ fontSize: 12, fontWeight: 500, color: '#0f172a', marginTop: 1 }}>{item.title}</div>
+                                                <div style={{ fontSize: 11, fontWeight: 400, color: '#334155', marginTop: 3, lineHeight: 1.35 }}>{item.desc}</div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {section === 'tools' && (
+                            <div style={{ display: 'grid', gap: 8 }}>
+                                {TOOLS.map((tool) => {
+                                    const Icon = tool.icon;
+                                    return (
+                                        <a
+                                            key={tool.name}
+                                            href={tool.url}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            style={{
+                                                borderRadius: 14,
+                                                border: '1px solid rgba(148,163,184,0.35)',
+                                                background: 'rgba(255,255,255,0.94)',
+                                                padding: 10,
+                                                display: 'grid',
+                                                gridTemplateColumns: '30px 1fr auto',
+                                                gap: 8,
+                                                alignItems: 'center',
+                                                textDecoration: 'none'
+                                            }}
+                                        >
+                                            <div
+                                                style={{
+                                                    width: 30,
+                                                    height: 30,
+                                                    borderRadius: 9,
+                                                    border: '1px solid rgba(148,163,184,0.35)',
+                                                    background: '#f8fafc',
+                                                    color: '#0f172a',
+                                                    display: 'grid',
+                                                    placeItems: 'center'
+                                                }}
+                                            >
+                                                <Icon size={15} />
+                                            </div>
+                                            <div>
+                                                <div style={{ fontSize: 12, fontWeight: 500, color: '#0f172a' }}>{tool.name}</div>
+                                                <div style={{ fontSize: 10, fontWeight: 400, color: '#475569', marginTop: 1 }}>{tool.desc}</div>
+                                            </div>
+                                            <ExternalLink size={12} color="#64748b" />
+                                        </a>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {section === 'checklist' && (
+                            <div style={{ display: 'grid', gap: 8 }}>
+                                <div
+                                    style={{
+                                        borderRadius: 14,
+                                        border: '1px solid rgba(148,163,184,0.35)',
+                                        background: 'rgba(255,255,255,0.94)',
+                                        padding: 10
+                                    }}
+                                >
+                                    <div style={{ fontSize: 10, fontWeight: 500, color: '#64748b' }}>READY SCORE: {checkedCount}/{REQUIREMENTS.length}</div>
+                                    <div style={{ marginTop: 7, height: 8, borderRadius: 999, background: '#e2e8f0', overflow: 'hidden' }}>
+                                        <div
+                                            style={{
+                                                width: `${(checkedCount / REQUIREMENTS.length) * 100}%`,
+                                                height: '100%',
+                                                background: 'linear-gradient(90deg, #f59e0b, #ef4444)'
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+
+                                {REQUIREMENTS.map((req, index) => {
+                                    const done = Boolean(reqChecked[index]);
+                                    return (
+                                        <button
+                                            key={req.text}
+                                            onClick={() => toggleReq(index)}
+                                            style={{
+                                                textAlign: 'left',
+                                                borderRadius: 14,
+                                                border: done ? '1px solid rgba(22,163,74,0.45)' : '1px solid rgba(148,163,184,0.35)',
+                                                background: done ? 'rgba(240,253,244,0.95)' : 'rgba(255,255,255,0.94)',
+                                                padding: 10,
+                                                display: 'grid',
+                                                gridTemplateColumns: '18px 1fr',
+                                                gap: 8,
+                                                alignItems: 'start'
+                                            }}
+                                        >
+                                            <CheckCircle2 size={16} color={done ? '#16a34a' : '#94a3b8'} style={{ marginTop: 1 }} />
+                                            <div>
+                                                <div style={{ fontSize: 11, fontWeight: 400, color: '#0f172a', lineHeight: 1.35 }}>{req.text}</div>
+                                                {req.link && (
+                                                    <a
+                                                        href={req.link.url}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        onClick={(event) => event.stopPropagation()}
+                                                        style={{
+                                                            marginTop: 4,
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: 4,
+                                                            fontSize: 10,
+                                                            fontWeight: 500,
+                                                            color: '#be123c',
+                                                            textDecoration: 'none'
+                                                        }}
+                                                    >
+                                                        {req.link.label} <ExternalLink size={11} />
+                                                    </a>
+                                                )}
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+
+                    <div
+                        style={{
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 1fr',
+                            gap: 8
+                        }}
+                    >
+                        <button
+                            onClick={handleJoinClick}
+                            style={{
+                                height: 34,
+                                borderRadius: 999,
+                                border: '1px solid rgba(190,18,60,0.4)',
+                                background: 'linear-gradient(135deg, #ef4444, #be123c)',
+                                color: '#fff',
+                                fontSize: 11,
+                                fontWeight: 500
+                            }}
+                        >
+                            Join Cohort
+                        </button>
+                        <button
+                            onClick={() => setPublicPage('home')}
+                            style={{
+                                height: 34,
+                                borderRadius: 999,
+                                border: '1px solid rgba(148,163,184,0.5)',
+                                background: 'rgba(255,255,255,0.92)',
+                                color: '#0f172a',
+                                fontSize: 11,
+                                fontWeight: 500
+                            }}
+                        >
+                            Back Home
+                        </button>
+                    </div>
+                </section>
+            </div>
+        </MobileFeatureShell>
+    );
+}
+
+export default function ProgramDetailsPage({ classes, handleJoinClick, setPublicPage, isMobileView }) {
+    const [reqChecked, setReqChecked] = useState({});
+    const [section, setSection] = useState('overview');
+
+    const toggleReq = (index) => {
+        setReqChecked((prev) => ({ ...prev, [index]: !prev[index] }));
+    };
+
+    const checkedCount = useMemo(
+        () => Object.values(reqChecked).filter(Boolean).length,
+        [reqChecked]
+    );
+    const liveProgram = useMemo(() => getLiveProgramMeta(classes), [classes]);
+
+    if (isMobileView) {
+        return (
+            <MobileHowWidget
+                classes={classes}
+                handleJoinClick={handleJoinClick}
+                setPublicPage={setPublicPage}
+                reqChecked={reqChecked}
+                toggleReq={toggleReq}
+                checkedCount={checkedCount}
+                section={section}
+                setSection={setSection}
+                liveProgram={liveProgram}
+            />
+        );
+    }
+
+    return (
+        <section id="how-it-works-page" style={{ padding: '40px 0 84px', minHeight: '80vh' }}>
+            <div className="container">
+                <div style={{ marginBottom: 24 }}>
+                    <div className="pill pill-red" style={{ marginBottom: 12, display: 'inline-flex' }}>
+                        <Zap size={12} /> PROGRAM DETAILS
+                    </div>
+                    <h1 style={{ fontSize: 'clamp(30px, 5vw, 46px)', lineHeight: 1.1, marginBottom: 10 }}>Selangor Builder Sprint 2026</h1>
+                    <p style={{ maxWidth: 760, fontSize: 16, opacity: 0.78, lineHeight: 1.6, marginBottom: 16 }}>
+                        A 7-day beginner-friendly sprint to move from idea to deployed app using modern AI tools.
+                    </p>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12, marginBottom: 24 }}>
+                    {STATS.map((item) => (
+                        <div key={item.label} style={{ border: '2px solid #111827', borderRadius: 12, padding: 14, background: '#fff', textAlign: 'center' }}>
+                            <div style={{ fontSize: 22, fontWeight: 700 }}>{item.value}</div>
+                            <div style={{ fontSize: 11, fontWeight: 500, opacity: 0.7 }}>{item.label}</div>
                         </div>
                     ))}
                 </div>
 
-                {/* Disclaimer */}
-                <div style={{
-                    border: '2px dashed #aaa', borderRadius: '10px', padding: '14px 18px',
-                    background: '#fafafa', marginBottom: '32px', fontSize: '13px', opacity: 0.75,
-                }}>
-                    ⚠️ <strong>Disclaimer:</strong> This sprint does not teach programming in depth. It teaches you how to build and launch a web/app using modern AI tools. No prior coding experience needed.
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 14, marginBottom: 24 }}>
+                    {SPRINT_DAYS.map((item) => {
+                        const Icon = item.icon;
+                        return (
+                            <article key={item.day} style={{ border: '2px solid #111827', borderRadius: 12, padding: 14, background: '#fff' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                                    <div style={{ width: 30, height: 30, borderRadius: 8, display: 'grid', placeItems: 'center', background: item.color, color: '#fff' }}>
+                                        <Icon size={15} />
+                                    </div>
+                                    <div style={{ fontSize: 11, fontWeight: 600, opacity: 0.7 }}>{item.day}</div>
+                                </div>
+                                <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 600 }}>{item.title}</h3>
+                                <p style={{ margin: 0, fontSize: 13, opacity: 0.75 }}>{item.desc}</p>
+                            </article>
+                        );
+                    })}
                 </div>
 
-                {/* CTA */}
-                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                    <button className="btn btn-red" onClick={handleJoinClick} style={{ display: 'inline-flex', gap: '8px' }}>
-                        <Rocket size={16} /> Join the Cohort
-                    </button>
-                    <a
-                        href="https://www.threads.net/@_zarulijam"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="btn btn-outline"
-                        style={{ display: 'inline-flex', gap: '8px', textDecoration: 'none' }}
-                    >
-                        <ThreadsIcon size={16} /> Contact on Threads
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12, marginBottom: 24 }}>
+                    {TOOLS.map((tool) => {
+                        const Icon = tool.icon;
+                        return (
+                            <a key={tool.name} href={tool.url} target="_blank" rel="noreferrer" style={{ border: '2px solid #111827', borderRadius: 12, padding: 12, textDecoration: 'none', color: '#111827', background: '#fff' }}>
+                                <div style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid #cbd5e1', display: 'grid', placeItems: 'center', marginBottom: 8 }}>
+                                    <Icon size={14} />
+                                </div>
+                                <div style={{ fontSize: 13, fontWeight: 600 }}>{tool.name}</div>
+                                <div style={{ fontSize: 11, opacity: 0.7 }}>{tool.desc}</div>
+                            </a>
+                        );
+                    })}
+                </div>
+
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    <button className="btn btn-red" onClick={handleJoinClick}>Join the Cohort</button>
+                    <a href="https://www.threads.net/@_zarulijam" target="_blank" rel="noreferrer" className="btn btn-outline" style={{ textDecoration: 'none' }}>
+                        Contact on Threads
                     </a>
                     <button className="btn btn-outline" onClick={() => setPublicPage('home')}>
-                        ← Back to Home
+                        Back to Home
                     </button>
                 </div>
-
             </div>
         </section>
     );

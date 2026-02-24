@@ -1,4 +1,5 @@
 :root {
+  --app-vh: 100vh;
   --bg-warm: #FDFCFB;
   /* Approved warm off-white */
   --text-charcoal: #121417;
@@ -46,6 +47,9 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
+  max-width: 100%;
+  min-height: 100%;
 }
 
 body {
@@ -54,7 +58,16 @@ body {
   font-family: var(--font-body);
   line-height: 1.6;
   overflow-x: hidden;
+  max-width: 100%;
   -webkit-font-smoothing: antialiased;
+  min-height: 100%;
+}
+
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  min-height: 100%;
 }
 
 h1,
@@ -77,6 +90,26 @@ h4 {
 
 section {
   padding: 56px 0;
+}
+
+.app-wallpaper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  background: linear-gradient(160deg, rgba(120, 0, 16, 0.42), rgba(198, 20, 42, 0.26) 42%, rgba(234, 179, 8, 0.24) 100%), url('/wallpapers/selangor-mobile.jpg') center / cover no-repeat;
+  pointer-events: none;
+}
+
+.mode-desktop .app-wallpaper {
+  display: none !important;
+}
+
+[data-theme-family="neo"] {
+  --font-body: 'Inter', sans-serif;
+  --font-heading: 'Plus Jakarta Sans', sans-serif;
 }
 
 /* Refined Neo-Brutal Cards */
@@ -873,6 +906,48 @@ section {
 }
 
 @media (max-width: 768px) {
+  :root {
+    --font-heading: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", sans-serif;
+    --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", sans-serif;
+  }
+
+  html,
+  body,
+  #root {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    overscroll-behavior-x: none;
+  }
+
+  body,
+  #root {
+    touch-action: pan-y;
+  }
+
+  body,
+  button,
+  input,
+  textarea,
+  select,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-body) !important;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: 600 !important;
+  }
+
   .container {
     padding: 0 16px;
   }
@@ -998,7 +1073,9 @@ section {
   .map-insight {
     left: 12px;
     bottom: 12px;
-    min-width: 170px;
+    min-width: 150px;
+    padding: 6px 8px;
+    border-radius: 10px;
   }
 
   .map-label-top {
@@ -1099,7 +1176,7 @@ section {
   }
 
   .map-svg {
-    max-width: 320px;
+    max-width: 386px;
     margin: 0 auto;
   }
 
@@ -1112,8 +1189,53 @@ section {
   .map-insight {
     position: static;
     margin-top: 10px;
-    width: 100%;
+    width: fit-content;
+    max-width: 250px;
     min-width: 0;
+    padding: 8px 10px;
+    border-radius: 10px;
+    align-self: flex-start;
+    background: rgba(255, 244, 244, 0.42);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+    backdrop-filter: blur(12px) saturate(1.06);
+  }
+
+  .map-insight-subtitle {
+    font-size: 11px;
+    margin-top: 2px;
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  .map-insight-row,
+  .map-insight-empty {
+    font-size: 10px;
+    line-height: 1.25;
+    margin-top: 1px;
+    color: #334155;
+  }
+
+  .map-legend {
+    margin-top: 4px;
+    padding-top: 4px;
+  }
+
+  .map-legend-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  .map-legend-row {
+    gap: 4px;
+    font-size: 10px;
+    margin-top: 1px;
+  }
+
+  .map-legend-row .legend-dot {
+    width: 8px;
+    height: 8px;
   }
 
   .showcase-list {
@@ -1438,7 +1560,7 @@ section {
 
 /* Resource Page Styles */
 .vibe-selangor {
-  min-height: 100vh;
+  min-height: var(--app-vh, 100vh);
 }
 
 /* Resource Page Header */
