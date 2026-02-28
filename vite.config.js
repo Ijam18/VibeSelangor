@@ -80,19 +80,6 @@ export default defineConfig({
     })
   ],
   build: {
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (!id.includes('node_modules')) return;
-          if (id.includes('react-dom') || id.includes('/react/')) return 'react-vendor';
-          if (id.includes('@supabase/supabase-js')) return 'supabase-vendor';
-          if (id.includes('@xyflow/react') || id.includes('framer-motion')) return 'ui-vendor';
-          if (id.includes('lucide-react')) return 'icons-vendor';
-          if (id.includes('jspdf')) return 'pdf-vendor';
-          return 'vendor';
-        }
-      }
-    },
     chunkSizeWarningLimit: 1000
   },
   server: {
