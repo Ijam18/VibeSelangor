@@ -8,7 +8,8 @@ import {
     X,
     SendHorizontal,
     Settings,
-    Folder
+    Folder,
+    Rocket
 } from 'lucide-react';
 import LiveIslandBlip from './LiveIslandBlip';
 import { supabase } from '../lib/supabase';
@@ -22,11 +23,12 @@ const ICON_LIBRARY = {
     ijamos: { id: 'ijamos', label: 'IjamOS', icon: Zap, bg: 'linear-gradient(160deg, #ef4444, #b91c1c)' },
     myapp: { id: 'myapp', label: 'BuilderVault', icon: Folder, bg: 'linear-gradient(160deg, #f59e0b, #d97706)' },
     settings: { id: 'settings', label: 'Settings', icon: Settings, bg: 'linear-gradient(160deg, #b91c1c, #7f1d1d)' },
+    'new-project': { id: 'new-project', label: 'Start Project', icon: Rocket, bg: 'linear-gradient(160deg, #ef4444, #b91c1c)' },
     kd: { id: 'kd', label: 'KD', icon: null, imageSrc: 'https://www.google.com/s2/favicons?sz=64&domain=krackeddevs.com', bg: '#000000' }
 };
 
 const STORAGE_KEY = 'mobile_home_icon_layout_v5';
-const DEFAULT_LAYOUT = ['ijamos', 'myapp', 'settings', 'kd'];
+const DEFAULT_LAYOUT = ['ijamos', 'myapp', 'new-project', 'settings', 'kd'];
 
 function loadLayout() {
     try {
@@ -35,7 +37,7 @@ function loadLayout() {
         const parsed = JSON.parse(raw);
         if (!Array.isArray(parsed)) return DEFAULT_LAYOUT;
         const valid = parsed.filter((id) => ICON_LIBRARY[id]);
-        for (const pinned of ['ijamos', 'myapp', 'settings', 'kd']) {
+        for (const pinned of ['ijamos', 'myapp', 'new-project', 'settings', 'kd']) {
             if (!valid.includes(pinned)) valid.push(pinned);
         }
         return Array.from(new Set(valid));
@@ -67,7 +69,7 @@ export default function MobileHomeScreen({
     session = null,
     activeClass = null,
     terminalMode = 'ijam',
-    onTerminalModeChange = () => {}
+    onTerminalModeChange = () => { }
 }) {
     const [now, setNow] = useState(new Date());
     const [viewportWidth, setViewportWidth] = useState(() => (typeof window !== 'undefined' ? window.innerWidth : 390));
@@ -82,13 +84,20 @@ export default function MobileHomeScreen({
     const iconRefs = useRef({});
     const terminalScrollRef = useRef(null);
     const lastNavigateRef = useRef({ id: null, ts: 0 });
+    const hasUserInteractedRef = useRef(false);
     const [terminalView, setTerminalView] = useState(terminalMode === 'live' ? 'live' : 'ijam');
     const [liveMessages, setLiveMessages] = useState([]);
     const [liveInput, setLiveInput] = useState('');
     const [liveLoading, setLiveLoading] = useState(false);
 
     const triggerHaptic = (ms = 10) => {
-        if (window.matchMedia('(max-width: 1024px)').matches && navigator.vibrate) {
+        if (
+            hasUserInteractedRef.current &&
+            typeof window !== 'undefined' &&
+            window.matchMedia('(max-width: 1024px)').matches &&
+            typeof navigator !== 'undefined' &&
+            navigator.vibrate
+        ) {
             navigator.vibrate(ms);
         }
     };
@@ -101,12 +110,19 @@ export default function MobileHomeScreen({
             setViewportWidth(window.innerWidth);
             setViewportHeight(window.innerHeight);
         };
+        const markInteraction = () => {
+            hasUserInteractedRef.current = true;
+        };
         window.addEventListener('resize', handleResize);
+        window.addEventListener('pointerdown', markInteraction, { passive: true });
+        window.addEventListener('keydown', markInteraction, { passive: true });
 
         return () => {
             clearInterval(clockTimer);
             clearInterval(islandTimer);
             window.removeEventListener('resize', handleResize);
+            window.removeEventListener('pointerdown', markInteraction);
+            window.removeEventListener('keydown', markInteraction);
         };
     }, []);
 

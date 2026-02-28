@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { ArrowRight, Sparkles, MapPin, MessageCircle } from 'lucide-react';
 import ThreadsIcon from './ThreadsIcon';
 import { SPRINT_MODULE_STEPS } from '../constants';
@@ -17,6 +17,8 @@ const GalleryShowcase = ({
 
 
     const scrollRef = useRef(null);
+    const [isAutoScrolling, setIsAutoScrolling] = useState(true);
+
     const certificateByBuilderId = useMemo(() => {
         const map = new Map();
         (certificates || []).forEach((cert) => {
@@ -24,6 +26,7 @@ const GalleryShowcase = ({
         });
         return map;
     }, [certificates]);
+
     const buildersToShow = useMemo(() => {
         const visible = (profiles || []).filter((p) => {
             const isSelf = session?.user && p.id === session.user.id;
@@ -45,6 +48,44 @@ const GalleryShowcase = ({
         return limit ? sorted.slice(0, limit) : sorted;
     }, [profiles, session?.user, submissions, limit]);
 
+    // Triplicate for seamless loop
+    const loopedBuilders = [...buildersToShow, ...buildersToShow, ...buildersToShow];
+
+    // Initialize scroll position to middle section
+    useEffect(() => {
+        if (scrollRef.current && buildersToShow.length > 0) {
+            const container = scrollRef.current;
+            const singleSectionWidth = container.scrollWidth / 3;
+            container.scrollLeft = singleSectionWidth;
+        }
+    }, [buildersToShow.length]);
+
+    // Handle scroll to create seamless loop
+    const handleScroll = () => {
+        if (!scrollRef.current || buildersToShow.length === 0) return;
+        const container = scrollRef.current;
+        const singleSectionWidth = container.scrollWidth / 3;
+
+        if (container.scrollLeft <= 10) {
+            container.scrollLeft = singleSectionWidth + container.scrollLeft;
+        } else if (container.scrollLeft >= singleSectionWidth * 2 - 10) {
+            container.scrollLeft = container.scrollLeft - singleSectionWidth;
+        }
+    };
+
+    // Auto-scroll effect
+    useEffect(() => {
+        let interval;
+        if (isAutoScrolling && scrollRef.current && buildersToShow.length > 0) {
+            interval = setInterval(() => {
+                if (scrollRef.current) {
+                    scrollRef.current.scrollLeft += 1;
+                }
+            }, 40);
+        }
+        return () => clearInterval(interval);
+    }, [isAutoScrolling, buildersToShow.length]);
+
 
 
     return (
@@ -61,14 +102,14 @@ const GalleryShowcase = ({
                 {/* Manual Scroll Controls */}
                 <button
                     onClick={() => scrollRef.current && (scrollRef.current.scrollLeft -= 300)}
-                    style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', zIndex: 10, background: 'white', border: '2px solid black', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '2px 2px 0px black' }}
+                    style={{ position: 'absolute', left: 'calc(50% - 220px)', top: '50%', transform: 'translateY(-50%)', zIndex: 10, background: 'white', border: '2px solid black', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '2px 2px 0px black' }}
                     className="scroll-btn"
                 >
                     <ArrowRight size={20} style={{ transform: 'rotate(180deg)' }} />
                 </button>
                 <button
                     onClick={() => scrollRef.current && (scrollRef.current.scrollLeft += 300)}
-                    style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', zIndex: 10, background: 'white', border: '2px solid black', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '2px 2px 0px black' }}
+                    style={{ position: 'absolute', right: 'calc(50% - 220px)', top: '50%', transform: 'translateY(-50%)', zIndex: 10, background: 'white', border: '2px solid black', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '2px 2px 0px black' }}
                     className="scroll-btn"
                 >
                     <ArrowRight size={20} />
@@ -77,6 +118,11 @@ const GalleryShowcase = ({
                 <div
                     className="builders-scroll-container"
                     ref={scrollRef}
+                    onScroll={handleScroll}
+                    onMouseEnter={() => setIsAutoScrolling(false)}
+                    onMouseLeave={() => setIsAutoScrolling(true)}
+                    onTouchStart={() => setIsAutoScrolling(false)}
+                    onTouchEnd={() => setIsAutoScrolling(true)}
                     style={{
                         width: '100%',
                         paddingLeft: 'max(16px, calc((100vw - 1200px) / 2))', // Dynamic padding to align first item with container
@@ -89,7 +135,7 @@ const GalleryShowcase = ({
                                 <h3 style={{ opacity: 0.5 }}>The gallery is preparing for takeoff...</h3>
                             </div>
                         ) : (
-                            buildersToShow.map((p, idx) => {
+                            loopedBuilders.map((p, idx) => {
                                 const builderSubmissions = submissions
                                     .filter(s => s.user_id === p.id)
                                     .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
@@ -239,6 +285,10 @@ const GalleryShowcase = ({
                 }
                 @media (max-width: 768px) {
                     .scroll-btn { display: none !important; }
+                }
+                @media (min-width: 769px) {
+                    .scroll-btn { opacity: 0.5; transition: opacity 0.2s; }
+                    .scroll-btn:hover { opacity: 1; }
                 }
             `}</style>
 

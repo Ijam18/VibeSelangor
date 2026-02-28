@@ -21,6 +21,7 @@ import BuilderLeaderboard from './pages/BuilderLeaderboard';
 import ForumPage from './pages/ForumPage';
 import PublicStudioPage from './pages/PublicStudioPage';
 import BuilderVaultPage from './pages/BuilderVaultPage';
+import StartProjectPage from './pages/StartProjectPage';
 import { awardGameRewards } from './lib/gameService';
 import MobileAssistiveTouch from './components/MobileAssistiveTouch';
 
@@ -96,6 +97,7 @@ const App = () => {
     // App UI State
     const [activeOnboardingStep, setActiveOnboardingStep] = useState(0);
     const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
+    const [newProjectTrigger, setNewProjectTrigger] = useState(false);
     const [editProfileForm, setEditProfileForm] = useState({
         username: '',
         district: '',
@@ -726,9 +728,9 @@ const App = () => {
                         if (publicPage !== 'home') setPublicPage('home');
                         setIsTerminalEnlarged(true);
                     }}
-            isMobileView={isMobileView}
-            isPhoneView={isPhoneView}
-            isTabletView={isTabletView}
+                    isMobileView={isMobileView}
+                    isPhoneView={isPhoneView}
+                    isTabletView={isTabletView}
                     installPrompt={deferredPrompt}
                     onInstallClick={handleInstallClick}
                 />
@@ -946,6 +948,7 @@ const App = () => {
                             terminalMode={terminalMode}
                             setTerminalMode={setTerminalMode}
                             holidayConfig={holidayConfig}
+                            setNewProjectTrigger={setNewProjectTrigger}
                         />
                     )
                 }
@@ -968,6 +971,7 @@ const App = () => {
                             setTerminalMode={setTerminalMode}
                             holidayConfig={holidayConfig}
                             viewMode="map"
+                            setNewProjectTrigger={setNewProjectTrigger}
                         />
                     )
                 }
@@ -1063,7 +1067,18 @@ const App = () => {
                     )
                 }
                 {
-                    currentUser && (publicPage === 'dashboard' || !['home', 'map', 'how-it-works', 'coming-soon', 'showcase', 'forum', 'studio', 'leaderboard', 'ijamos', 'builder-vault'].includes(publicPage)) && (
+                    publicPage === 'start-project' && (
+                        <StartProjectPage
+                            session={session}
+                            currentUser={currentUser}
+                            setPublicPage={setPublicPage}
+                            fetchData={fetchData}
+                            isMobileView={isMobileView}
+                        />
+                    )
+                }
+                {
+                    currentUser && (publicPage === 'dashboard' || !['home', 'map', 'how-it-works', 'coming-soon', 'showcase', 'forum', 'studio', 'leaderboard', 'ijamos', 'builder-vault', ...(isMobileView ? ['start-project'] : [])].includes(publicPage)) && (
                         <>
                             {(currentUser?.type === 'admin' || currentUser?.type === 'owner') && (
                                 <AdminDashboard

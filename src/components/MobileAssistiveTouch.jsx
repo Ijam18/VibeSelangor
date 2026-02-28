@@ -41,7 +41,13 @@ export default function MobileAssistiveTouch({ onNavigate }) {
     };
 
     const triggerHaptic = (ms = 10) => {
-        if (window.matchMedia('(max-width: 1024px)').matches && navigator.vibrate) {
+        if (
+            typeof window !== 'undefined' &&
+            typeof navigator !== 'undefined' &&
+            (navigator.userActivation?.hasBeenActive ?? true) &&
+            window.matchMedia('(max-width: 1024px)').matches &&
+            navigator.vibrate
+        ) {
             navigator.vibrate(ms);
         }
     };

@@ -2725,7 +2725,11 @@ const ResourcePage = ({ session, currentUser, isMobileView, deviceMode = 'deskto
     const dockHideTimerRef = useRef(null);
     const [batteryPct, setBatteryPct] = useState('--%');
     const triggerHaptic = useCallback(() => {
-        if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
+        if (
+            typeof navigator !== 'undefined' &&
+            (navigator.userActivation?.hasBeenActive ?? true) &&
+            navigator.vibrate
+        ) navigator.vibrate(10);
     }, []);
 
     const openApp = useCallback((type) => {

@@ -5,6 +5,7 @@ import { awardGameRewards } from '../lib/gameService';
 import BuilderStudioPage from './BuilderStudioPage'; // Sibling import
 import { SPRINT_MODULE_STEPS, DEPLOY_COMMAND, TERMINAL_CONTEXT } from '../constants';
 import MobileFeatureShell from '../components/MobileFeatureShell';
+import { uploadWithFallback, handleStorageError, BUCKETS } from '../utils/storage';
 
 export default function BuilderDashboard({
     currentUser,
@@ -18,7 +19,9 @@ export default function BuilderDashboard({
     session,
     fetchData,
     isMobileView,
-    setPublicPage
+    setPublicPage,
+    triggerNewProject,
+    onNewProjectTriggered
 }) {
     const [activeTab, setActiveTab] = useState('sprint');
     const [islandIndex, setIslandIndex] = useState(0);
@@ -28,15 +31,25 @@ export default function BuilderDashboard({
     const [selectedFile, setSelectedFile] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
 
-    const checkedInToday = useMemo(() => {
-        if (!session?.user || !submissions) return false;
+    const [showProjectModal, setShowProjectModal] = useState(false);
+    const [newProjectForm, setNewProjectForm] = useState({ project_name: '', submission_url: '', one_liner: '' });
+    const [isSubmittingProject, setIsSubmittingProject] = useState(false);
+
+    // First-Time Tour State
+    const [showFirstTimeTour, setShowFirstTimeTour] = useState(false);
+    const [tourStep, setTourStep] = useState(0);
+    const [showTourTooltip, setShowTourTooltip] = useState(false);
+
+    const submissionsToday = useMemo(() => {
+        if (!session?.user || !submissions) return 0;
         const today = new Date().toLocaleDateString();
-        return submissions.some(s =>
+        return submissions.filter(s =>
             s.user_id === session.user.id &&
             s.status !== 'Archived' &&
             new Date(s.created_at).toLocaleDateString() === today
-        );
+        ).length;
     }, [submissions, session]);
+    const checkedInToday = submissionsToday > 0;
 
     const builderSubs = useMemo(() => {
         return submissions.filter(s => (s.user_id === currentUser?.id || s.user_id === session?.user?.id) && s.status !== 'Archived');
@@ -57,6 +70,28 @@ export default function BuilderDashboard({
         return () => clearInterval(timer);
     }, [isMobileView]);
 
+    useEffect(() => {
+        if (triggerNewProject) {
+            setShowProjectModal(true);
+            onNewProjectTriggered?.();
+        }
+    }, [triggerNewProject, onNewProjectTriggered]);
+
+    // Keyboard shortcut for form submission (Ctrl+Enter)
+    useEffect(() => {
+        if (isMobileView) return;
+        const handleKeyPress = (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                const form = document.querySelector('.builder-upload-form');
+                if (form && !e.target.closest('textarea')) {
+                    form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                }
+            }
+        };
+        window.addEventListener('keydown', handleKeyPress);
+        return () => window.removeEventListener('keydown', handleKeyPress);
+    }, [isMobileView]);
+
 
 
     const handleBuilderUpload = async (e) => {
@@ -68,18 +103,24 @@ export default function BuilderDashboard({
         if (selectedFile) {
             const fileExt = selectedFile.name.split('.').pop();
             const fileName = `${session.user.id}-${Date.now()}.${fileExt}`;
-            const { data, error: uploadError } = await supabase.storage
-                .from('submissions')
-                .upload(fileName, selectedFile);
 
-            if (uploadError) {
-                alert('Error uploading file: ' + uploadError.message);
+            const result = await uploadWithFallback({
+                bucket: BUCKETS.SUBMISSIONS,
+                path: fileName,
+                file: selectedFile,
+                onError: (error) => {
+                    const userMsg = handleStorageError(error, BUCKETS.SUBMISSIONS);
+                    alert(`${userMsg}\n\nFalling back to URL-only submission.`);
+                }
+            });
+
+            if (!result.success) {
                 setIsUploading(false);
                 return;
             }
 
             const { data: { publicUrl } } = supabase.storage
-                .from('submissions')
+                .from(BUCKETS.SUBMISSIONS)
                 .getPublicUrl(fileName);
 
             finalUrl = publicUrl;
@@ -104,6 +145,38 @@ export default function BuilderDashboard({
         setIsUploading(false);
     };
 
+    // Handle new project submission
+    const handleNewProjectSubmit = async (e) => {
+        e.preventDefault();
+        if (!session?.user) return;
+        setIsSubmittingProject(true);
+
+        const payload = {
+            project_name: newProjectForm.project_name.trim(),
+            submission_url: newProjectForm.submission_url.trim(),
+            one_liner: newProjectForm.one_liner.trim() || 'Builder update from VibeSelangor.',
+            district: currentUser?.district || 'Unknown',
+            builder_name: currentUser?.name || currentUser?.full_name || 'Builder'
+        };
+
+        const { error } = await supabase.from('builder_progress').insert([{
+            ...payload,
+            user_id: session.user.id,
+            status: 'Draft'
+        }]);
+
+        if (error) {
+            alert('Failed to create project: ' + (error.message || 'Unknown error'));
+            setIsSubmittingProject(false);
+            return;
+        }
+
+        setNewProjectForm({ project_name: '', submission_url: '', one_liner: '' });
+        setShowProjectModal(false);
+        setIsSubmittingProject(false);
+        fetchData();
+    };
+
 
     const progressPct = Math.min(100, Math.round((totalSubs / Math.max(1, SPRINT_MODULE_STEPS.length)) * 100));
 
@@ -120,6 +193,116 @@ export default function BuilderDashboard({
         const seed = `${userKey}-${dayKey}`.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
         return messages[seed % messages.length];
     }, [session?.user?.id, currentUser?.id]);
+
+    const projectBlueprintSteps = [
+        '1. Ideate: pick one local Selangor problem.',
+        '2. Low-fi Sketch: define 3 core screens.',
+        '3. Build Fast: ship core logic before polish.',
+        '4. Ship It: publish a working demo link.'
+    ];
+
+    const newProjectModal = showProjectModal && (
+        <div
+            style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'rgba(15,23,42,0.55)',
+                backdropFilter: 'blur(4px)',
+                WebkitBackdropFilter: 'blur(4px)',
+                display: 'grid',
+                placeItems: 'center',
+                zIndex: 9999,
+                padding: isMobileView ? '14px' : '20px'
+            }}
+            onClick={() => {
+                if (!isSubmittingProject) setShowProjectModal(false);
+            }}
+        >
+            <div
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                    width: 'min(680px, 100%)',
+                    maxHeight: 'calc(var(--app-vh, 100vh) - 28px)',
+                    overflowY: 'auto',
+                    background: '#fff',
+                    border: '2px solid black',
+                    borderRadius: 14,
+                    boxShadow: '8px 8px 0 black',
+                    padding: isMobileView ? '14px' : '20px'
+                }}
+            >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                    <div>
+                        <h3 style={{ margin: 0, fontSize: isMobileView ? 18 : 22, fontWeight: 950 }}>New Project</h3>
+                        <p style={{ margin: '2px 0 0', fontSize: 12, opacity: 0.7, fontWeight: 700 }}>Popout builder blueprint + registration</p>
+                    </div>
+                    <button
+                        type="button"
+                        className="btn btn-outline"
+                        onClick={() => setShowProjectModal(false)}
+                        disabled={isSubmittingProject}
+                        style={{ padding: '8px 12px', fontSize: 11 }}
+                    >
+                        Close
+                    </button>
+                </div>
+
+                <div style={{ display: 'grid', gap: 8, marginBottom: 12 }}>
+                    {projectBlueprintSteps.map((step) => (
+                        <div key={step} style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: '8px 10px', background: '#f8fafc', fontSize: 12, fontWeight: 700, color: '#0f172a' }}>
+                            {step}
+                        </div>
+                    ))}
+                </div>
+
+                <form onSubmit={handleNewProjectSubmit} style={{ display: 'grid', gap: 10 }}>
+                    <div style={{ display: 'grid', gap: 6 }}>
+                        <label style={{ fontSize: 10, fontWeight: 900, color: '#64748b' }}>PROJECT NAME *</label>
+                        <input
+                            type="text"
+                            required
+                            value={newProjectForm.project_name}
+                            onChange={(e) => setNewProjectForm((prev) => ({ ...prev, project_name: e.target.value }))}
+                            placeholder="e.g. Selangor Vibe App"
+                            style={{ padding: '11px 12px', border: '2px solid black', borderRadius: 8, fontSize: 14, fontWeight: 700 }}
+                        />
+                    </div>
+
+                    <div style={{ display: 'grid', gap: 6 }}>
+                        <label style={{ fontSize: 10, fontWeight: 900, color: '#64748b' }}>PROJECT URL (OPTIONAL)</label>
+                        <input
+                            type="url"
+                            value={newProjectForm.submission_url}
+                            onChange={(e) => setNewProjectForm((prev) => ({ ...prev, submission_url: e.target.value }))}
+                            placeholder="https://..."
+                            style={{ padding: '11px 12px', border: '2px solid black', borderRadius: 8, fontSize: 14, fontWeight: 700 }}
+                        />
+                    </div>
+
+                    <div style={{ display: 'grid', gap: 6 }}>
+                        <label style={{ fontSize: 10, fontWeight: 900, color: '#64748b' }}>ONE-LINER *</label>
+                        <textarea
+                            required
+                            rows={3}
+                            value={newProjectForm.one_liner}
+                            onChange={(e) => setNewProjectForm((prev) => ({ ...prev, one_liner: e.target.value }))}
+                            placeholder="What are you building and for who?"
+                            style={{ padding: '11px 12px', border: '2px solid black', borderRadius: 8, fontSize: 14, fontWeight: 700, resize: 'vertical' }}
+                        />
+                    </div>
+
+                    <button
+                        className="btn btn-red"
+                        type="submit"
+                        disabled={isSubmittingProject}
+                        style={{ marginTop: 4, padding: '13px 16px', fontSize: 14, fontWeight: 950 }}
+                    >
+                        {isSubmittingProject ? 'CREATING...' : 'Create Project'}
+                    </button>
+                </form>
+            </div>
+        </div>
+    );
 
     if (isMobileView) {
         const iosPrimaryBtn = {
@@ -153,14 +336,6 @@ export default function BuilderDashboard({
                     <section style={{ borderRadius: 14, border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(255,255,255,0.78)', padding: '10px 11px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                             <div style={{ fontSize: 12, color: '#0f172a', fontWeight: 600 }}>{currentUser?.name || 'Builder'}</div>
-                            <button
-                                aria-label="Edit profile"
-                                onClick={openEditProfileModal}
-                                disabled={isUpdatingProfile}
-                                style={{ width: 30, height: 30, borderRadius: 999, border: '1px solid rgba(15,23,42,0.24)', background: 'rgba(255,255,255,0.86)', color: '#0f172a', display: 'grid', placeItems: 'center', boxShadow: '0 4px 10px rgba(15,23,42,0.14)' }}
-                            >
-                                <Settings size={14} />
-                            </button>
                         </div>
                         <div style={{ marginTop: 2, fontSize: 11, color: '#64748b' }}>{currentUser?.district || 'Selangor'}</div>
                         <div style={{ marginTop: 8, display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 7 }}>
@@ -173,7 +348,10 @@ export default function BuilderDashboard({
                     <section style={{ borderRadius: 14, border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(255,255,255,0.78)', padding: '10px 11px' }}>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
                             <button className="btn btn-outline" style={iosSecondaryBtn} onClick={() => setPublicPage?.('showcase')}>Open Showcase</button>
-                            <button className="btn btn-outline" style={iosSecondaryBtn} onClick={handleSignOut}>Logout</button>
+                            <button className="btn btn-outline" style={iosSecondaryBtn} onClick={() => setShowProjectModal(true)}>New Project</button>
+                        </div>
+                        <div style={{ marginTop: 8 }}>
+                            <button className="btn btn-outline" style={{ ...iosSecondaryBtn, width: '100%' }} onClick={handleSignOut}>Logout</button>
                         </div>
                     </section>
                     <section style={{ borderRadius: 14, border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(255,255,255,0.78)', padding: '10px 11px' }}>
@@ -189,6 +367,7 @@ export default function BuilderDashboard({
                         </div>
                     </section>
                 </div>
+                {newProjectModal}
             </MobileFeatureShell>
         );
     }
@@ -209,15 +388,17 @@ export default function BuilderDashboard({
                                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
                                     <span className="pill" style={{ border: '2px solid black', fontWeight: '900', fontSize: '11px', padding: '2px 8px' }}>{currentUser?.district}</span>
                                     <div style={{ fontWeight: '800', fontSize: '12px', opacity: 0.6 }}>LOGS SUBMITTED: {totalSubs}</div>
-                                    {checkedInToday && <div className="pill pill-teal" style={{ fontSize: '10px', fontWeight: '900', display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Check size={10} strokeWidth={3} /> CHECKED IN TODAY</div>}
+                                    {submissionsToday > 0 && <div className="pill pill-teal" style={{ fontSize: '10px', fontWeight: '900', display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Check size={10} strokeWidth={3} /> {submissionsToday} LOG{submissionsToday > 1 ? 'S' : ''} TODAY</div>}
                                 </div>
                             </div>
-                            <button className="btn btn-outline" onClick={openEditProfileModal} style={{ borderRadius: '8px', padding: '6px 12px', fontSize: '11px', height: 'fit-content', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }} disabled={isUpdatingProfile}>
-                                {isUpdatingProfile ? '...' : <Settings size={12} />} Edit Profile
-                            </button>
-                            <button className="btn btn-outline" onClick={handleSignOut} style={{ borderRadius: '8px', padding: '6px 12px', fontSize: '11px', height: 'fit-content', textTransform: 'uppercase' }}>
-                                <LogOut size={12} /> Logout
-                            </button>
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                <button className="btn btn-outline" onClick={openEditProfileModal} style={{ borderRadius: '8px', padding: '6px 12px', fontSize: '11px', height: 'fit-content', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }} disabled={isUpdatingProfile}>
+                                    {isUpdatingProfile ? '...' : <Settings size={12} />} Edit Profile
+                                </button>
+                                <button className="btn btn-outline" onClick={handleSignOut} style={{ borderRadius: '8px', padding: '6px 12px', fontSize: '11px', height: 'fit-content', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <LogOut size={12} /> Logout
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -237,6 +418,12 @@ export default function BuilderDashboard({
                 >
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><Gamepad2 size={14} /> MY STUDIO</span>
                 </button>
+                <button
+                    onClick={() => { setActiveTab('sprint'); setShowProjectModal(true); }}
+                    style={{ padding: '12px 16px', border: 'none', background: 'none', borderBottom: '4px solid transparent', fontWeight: '900', fontSize: '13px', cursor: 'pointer', color: '#0f172a', transition: 'all 0.2s', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                >
+                    <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}><Rocket size={14} /> NEW PROJECT</span>
+                </button>
             </div>
 
             {activeTab === 'studio' ? (
@@ -244,11 +431,11 @@ export default function BuilderDashboard({
             ) : (
                 <>
                     {activeClass && (
-                        <div className="neo-card" style={{ border: '3px solid black', boxShadow: '8px 8px 0px black', padding: '20px 24px', background: 'linear-gradient(135deg, #fff 0%, #fff5f5 100%)', marginBottom: '24px', position: 'relative', overflow: 'hidden' }}>
-                            <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
+                        <div className="neo-card" style={{ border: '3px solid black', boxShadow: '8px 8px 0px black', padding: '20px 24px', background: 'linear-gradient(135deg, #fff 0%, #fff5f5 100%)', marginBottom: '24px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                                 <div className="pill pill-red" style={{ fontSize: '10px', fontWeight: '900', animation: 'pulse 2s infinite' }}>LIVE SESSION</div>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                                 <div>
                                     <h3 style={{ fontSize: '20px', marginBottom: '4px' }}>{activeClass.title}</h3>
                                     <p style={{ fontSize: '13px', opacity: 0.7 }}>Join the live session now! Don't forget to mark your attendance.</p>
@@ -433,8 +620,13 @@ export default function BuilderDashboard({
                                         disabled={isUploading}
                                         style={{ padding: '16px', fontSize: '15px', fontWeight: '950', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', boxShadow: '4px 4px 0px black', opacity: isUploading ? 0.7 : 1 }}
                                     >
-                                        {isUploading ? 'SHIPPING...' : (checkedInToday ? 'SHIP ANOTHER LOG' : 'CHECK-IN & SHIP LOG')} <ChevronRight size={18} />
+                                        {isUploading ? 'SHIPPING...' : `SUBMIT PROGRESS LOG${submissionsToday > 0 ? ` (#${submissionsToday + 1} today)` : ''}`} <ChevronRight size={18} />
                                     </button>
+                                    {!isMobileView && (
+                                        <div style={{ fontSize: '11px', color: '#666', marginTop: '6px', textAlign: 'center', fontWeight: '600' }}>
+                                            Tip: Press Ctrl+Enter to submit quickly
+                                        </div>
+                                    )}
                                 </form>
                             </div>
                         </div>
@@ -442,8 +634,9 @@ export default function BuilderDashboard({
 
 
                 </>
-            )
-            }
+            )}
+
+            {newProjectModal}
         </div >
     );
 };

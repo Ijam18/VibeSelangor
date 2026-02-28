@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Users, Folder, Sunrise, Sun, Moon, Coffee, Flag, PartyPopper, Gift, Hammer, Zap, Cpu, MessageSquare, Bot, Cloud, CloudRain, CloudLightning, Wind, Maximize2, Minimize2, X, Signal, Wifi } from 'lucide-react';
 import { localIntelligence, callNvidiaLLM, ZARULIJAM_SYSTEM_PROMPT } from '../lib/nvidia';
 import { callAssistantChat } from '../lib/assistantApi';
@@ -25,9 +25,8 @@ import { useLiveEvents } from '../utils/useLiveEvents';
 import MobileHomeScreen from '../components/MobileHomeScreen';
 import LiveIslandBlip from '../components/LiveIslandBlip';
 import MobileStatusBar from '../components/MobileStatusBar';
+import GalleryShowcase from '../components/GalleryShowcase';
 import { getLiveProgramMeta } from '../utils/liveProgram';
-
-const GalleryShowcase = lazy(() => import('../components/GalleryShowcase'));
 
 const LandingPage = ({
     profiles,
@@ -44,9 +43,10 @@ const LandingPage = ({
     isTerminalEnlarged,
     setIsTerminalEnlarged,
     terminalMode = 'ijam',
-    setTerminalMode = () => {},
+    setTerminalMode = () => { },
     holidayConfig,
-    viewMode = 'home'
+    viewMode = 'home',
+    setNewProjectTrigger
 }) => {
     const isMapOnlyView = viewMode === 'map';
     // Map State
@@ -713,12 +713,12 @@ const LandingPage = ({
             })
             .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
             .map((item) => ({
-            id: `project-${item.id}`,
-            submission_url: item.submission_url,
-            project_name: item.project_name || 'Untitled Project',
-            one_liner: item.one_liner || 'Builder update from VibeSelangor community.',
-            builder_profile: profiles.find(p => p.id === item.user_id)
-        }));
+                id: `project-${item.id}`,
+                submission_url: item.submission_url,
+                project_name: item.project_name || 'Untitled Project',
+                one_liner: item.one_liner || 'Builder update from VibeSelangor community.',
+                builder_profile: profiles.find(p => p.id === item.user_id)
+            }));
 
         if (selectedDistrictKey === 'kuala_lumpur') {
             const enrichedKL = kualaLumpurShowcase.map(record => ({
@@ -957,11 +957,15 @@ const LandingPage = ({
                             window.open('https://krackeddevs.com', '_blank', 'noopener,noreferrer');
                             return;
                         }
-                        if (!session && (id === 'settings' || id === 'myapp')) {
-                            handleJoinClick();
-                            return;
-                        }
-                        if (id === 'settings') {
+                        if (id === 'settings' || id === 'new-project') {
+                            if (!session) {
+                                handleJoinClick();
+                                return;
+                            }
+                            if (id === 'new-project') {
+                                setPublicPage('start-project');
+                                return;
+                            }
                             setPublicPage('dashboard');
                         } else if (id === 'myapp') {
                             setPublicPage('builder-vault');
@@ -1377,109 +1381,109 @@ const LandingPage = ({
                 <div className="container grid-12" style={isMobileView ? { gap: 10, maxWidth: isTabletView ? '980px' : '100%', margin: '22px auto 0', position: 'relative', zIndex: 1, height: 'calc(100% - 56px)', alignContent: 'stretch', justifyItems: 'center' } : undefined}>
                     {!isMobileView && (
                         <div style={{ gridColumn: 'span 5' }}>
-                        <h2 style={{ fontSize: 'clamp(32px, 7vw, 48px)' }}>Community Map</h2>
-                        <p>
-                            {selectedDistrictKey
-                                ? `Selected district: ${DISTRICT_INFO[selectedDistrictKey]?.name || selectedDistrictKey}`
-                                : hoveredRegionData?.districtKey
-                                    ? `Hover district: ${DISTRICT_INFO[hoveredRegionData.districtKey]?.name || hoveredRegionData.districtKey}`
-                                    : 'Hover over regions to inspect the map.'}
-                            {(selectedDistrictKey || hoveredRegionData?.districtKey) && (
-                                <span style={{ fontWeight: '900', color: 'var(--selangor-red)', marginLeft: '12px' }}>
-                                    | {(() => {
-                                        const districtKey = selectedDistrictKey || hoveredRegionData.districtKey;
-                                        if (mapViewMode === 'builders') {
-                                            const count = districtKey ? (builderCountsByDistrict[districtKey] || 0) : 0;
-                                            return `${count} Builder${count === 1 ? '' : 's'}`;
-                                        } else {
-                                            const count = districtKey ? (submissionCountsByDistrict[districtKey] || 0) : 0;
-                                            return `${count} Project${count === 1 ? '' : 's'}`;
-                                        }
-                                    })()}
-                                </span>
-                            )}
-                        </p>
-                        <p style={{ fontSize: '12px', marginTop: '8px', opacity: 0.72 }}>
-                            Discover what Selangor builders are shipping this week and get inspired to launch your own project.
-                        </p>
-                        <div className={`neo-card no-jitter showcase-card${selectedDistrictName ? ' is-open' : ''}`} style={isMobileView ? { marginTop: 12, border: '1px solid rgba(255,255,255,0.82)', boxShadow: 'none', borderRadius: 18, backdropFilter: 'blur(12px)', background: 'rgba(255,255,255,0.64)', padding: 14 } : { marginTop: '20px', border: '2px solid black', boxShadow: '6px 6px 0px black', padding: '20px' }}>
-                            <h3 style={{ fontSize: '22px', marginBottom: '10px' }}>
-                                {mapViewMode === 'builders'
-                                    ? (selectedDistrictName ? `${selectedDistrictName}${selectedDistrictKey === 'kuala_lumpur' ? ' [HQ]' : ''} Builders` : 'District Builders')
-                                    : (selectedDistrictName ? `${selectedDistrictName}${selectedDistrictKey === 'kuala_lumpur' ? ' [HQ]' : ''} Showcase` : 'District Showcase')}
-                            </h3>
-                            {!selectedDistrictName && (
-                                <p style={{ fontSize: '13px' }}>
+                            <h2 style={{ fontSize: 'clamp(32px, 7vw, 48px)' }}>Community Map</h2>
+                            <p>
+                                {selectedDistrictKey
+                                    ? `Selected district: ${DISTRICT_INFO[selectedDistrictKey]?.name || selectedDistrictKey}`
+                                    : hoveredRegionData?.districtKey
+                                        ? `Hover district: ${DISTRICT_INFO[hoveredRegionData.districtKey]?.name || hoveredRegionData.districtKey}`
+                                        : 'Hover over regions to inspect the map.'}
+                                {(selectedDistrictKey || hoveredRegionData?.districtKey) && (
+                                    <span style={{ fontWeight: '900', color: 'var(--selangor-red)', marginLeft: '12px' }}>
+                                        | {(() => {
+                                            const districtKey = selectedDistrictKey || hoveredRegionData.districtKey;
+                                            if (mapViewMode === 'builders') {
+                                                const count = districtKey ? (builderCountsByDistrict[districtKey] || 0) : 0;
+                                                return `${count} Builder${count === 1 ? '' : 's'}`;
+                                            } else {
+                                                const count = districtKey ? (submissionCountsByDistrict[districtKey] || 0) : 0;
+                                                return `${count} Project${count === 1 ? '' : 's'}`;
+                                            }
+                                        })()}
+                                    </span>
+                                )}
+                            </p>
+                            <p style={{ fontSize: '12px', marginTop: '8px', opacity: 0.72 }}>
+                                Discover what Selangor builders are shipping this week and get inspired to launch your own project.
+                            </p>
+                            <div className={`neo-card no-jitter showcase-card${selectedDistrictName ? ' is-open' : ''}`} style={isMobileView ? { marginTop: 12, border: '1px solid rgba(255,255,255,0.82)', boxShadow: 'none', borderRadius: 18, backdropFilter: 'blur(12px)', background: 'rgba(255,255,255,0.64)', padding: 14 } : { marginTop: '20px', border: '2px solid black', boxShadow: '6px 6px 0px black', padding: '20px' }}>
+                                <h3 style={{ fontSize: '22px', marginBottom: '10px' }}>
                                     {mapViewMode === 'builders'
-                                        ? "Click a region to view that district's builders."
-                                        : "Click a region to view project submissions."}
-                                </p>
-                            )}
-                            {selectedDistrictKey === 'kuala_lumpur' && isKualaLumpurLoading && kualaLumpurShowcase.length === 0 && (
-                                <div className="showcase-loading">
-                                    <div className="showcase-spinner" />
-                                    <div style={{ fontSize: '13px', fontWeight: 700 }}>Loading Kuala Lumpur showcase...</div>
-                                </div>
-                            )}
-                            {selectedDistrictName && districtShowcase.length === 0 && (
-                                <p style={{ fontSize: '13px' }}>
-                                    {mapViewMode === 'builders'
-                                        ? 'No builders found for this district yet.'
-                                        : 'No submissions yet for this district.'}
-                                </p>
-                            )}
-                            {selectedDistrictName && districtShowcase.length > 0 && (
-                                <div
-                                    className="showcase-list"
-                                    style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', paddingRight: '4px' }}
-                                >
-                                    {districtShowcase.map((item) => (
-                                        mapViewMode === 'builders' ? (
-                                            <div
-                                                key={item.id}
-                                                onClick={() => {
-                                                    const detailProfile = item.builder_profile || profiles.find((p) => p.id === item.id?.replace('builder-', ''));
-                                                    if (detailProfile) setSelectedDetailProfile(detailProfile);
-                                                }}
-                                                style={{ display: 'flex', flexDirection: 'column', borderBottom: '1px dashed #999', paddingBottom: '6px', cursor: 'pointer' }}
-                                                onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
-                                                onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-                                            >
-                                                <div style={{ fontSize: '14px', fontWeight: 800 }}>{item.name}</div>
-                                                <div style={{ fontSize: '12px', opacity: 0.78, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                    {item.handle && (
-                                                        <span style={{ textDecoration: 'none', color: 'var(--selangor-red)', fontWeight: 600 }}>
-                                                            {item.handle.startsWith('@') ? item.handle : `@${item.handle}`}
-                                                        </span>
-                                                    )}
-                                                    {!item.handle && <span style={{ fontStyle: 'italic' }}>No Threads handle</span>}
+                                        ? (selectedDistrictName ? `${selectedDistrictName}${selectedDistrictKey === 'kuala_lumpur' ? ' [HQ]' : ''} Builders` : 'District Builders')
+                                        : (selectedDistrictName ? `${selectedDistrictName}${selectedDistrictKey === 'kuala_lumpur' ? ' [HQ]' : ''} Showcase` : 'District Showcase')}
+                                </h3>
+                                {!selectedDistrictName && (
+                                    <p style={{ fontSize: '13px' }}>
+                                        {mapViewMode === 'builders'
+                                            ? "Click a region to view that district's builders."
+                                            : "Click a region to view project submissions."}
+                                    </p>
+                                )}
+                                {selectedDistrictKey === 'kuala_lumpur' && isKualaLumpurLoading && kualaLumpurShowcase.length === 0 && (
+                                    <div className="showcase-loading">
+                                        <div className="showcase-spinner" />
+                                        <div style={{ fontSize: '13px', fontWeight: 700 }}>Loading Kuala Lumpur showcase...</div>
+                                    </div>
+                                )}
+                                {selectedDistrictName && districtShowcase.length === 0 && (
+                                    <p style={{ fontSize: '13px' }}>
+                                        {mapViewMode === 'builders'
+                                            ? 'No builders found for this district yet.'
+                                            : 'No submissions yet for this district.'}
+                                    </p>
+                                )}
+                                {selectedDistrictName && districtShowcase.length > 0 && (
+                                    <div
+                                        className="showcase-list"
+                                        style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', paddingRight: '4px' }}
+                                    >
+                                        {districtShowcase.map((item) => (
+                                            mapViewMode === 'builders' ? (
+                                                <div
+                                                    key={item.id}
+                                                    onClick={() => {
+                                                        const detailProfile = item.builder_profile || profiles.find((p) => p.id === item.id?.replace('builder-', ''));
+                                                        if (detailProfile) setSelectedDetailProfile(detailProfile);
+                                                    }}
+                                                    style={{ display: 'flex', flexDirection: 'column', borderBottom: '1px dashed #999', paddingBottom: '6px', cursor: 'pointer' }}
+                                                    onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
+                                                    onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                                                >
+                                                    <div style={{ fontSize: '14px', fontWeight: 800 }}>{item.name}</div>
+                                                    <div style={{ fontSize: '12px', opacity: 0.78, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                        {item.handle && (
+                                                            <span style={{ textDecoration: 'none', color: 'var(--selangor-red)', fontWeight: 600 }}>
+                                                                {item.handle.startsWith('@') ? item.handle : `@${item.handle}`}
+                                                            </span>
+                                                        )}
+                                                        {!item.handle && <span style={{ fontStyle: 'italic' }}>No Threads handle</span>}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ) : (
-                                            <div
-                                                key={item.id}
-                                                onClick={() => {
-                                                    if (item.isKD && item.submission_url) {
-                                                        window.open(item.submission_url, '_blank');
-                                                    } else if (item.builder_profile) {
-                                                        setSelectedDetailProfile(item.builder_profile);
-                                                    }
-                                                }}
-                                                style={{ textDecoration: 'none', color: 'black', borderBottom: '1px dashed #999', paddingBottom: '6px', cursor: 'pointer' }}
-                                                onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
-                                                onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-                                            >
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                    {item.isKD && <img src={item.favicon} alt="" style={{ width: '18px', height: '18px', borderRadius: '4px' }} />}
-                                                    <div style={{ fontSize: '14px', fontWeight: 800 }}>{item.project_name || 'Untitled Project'}</div>
+                                            ) : (
+                                                <div
+                                                    key={item.id}
+                                                    onClick={() => {
+                                                        if (item.isKD && item.submission_url) {
+                                                            window.open(item.submission_url, '_blank');
+                                                        } else if (item.builder_profile) {
+                                                            setSelectedDetailProfile(item.builder_profile);
+                                                        }
+                                                    }}
+                                                    style={{ textDecoration: 'none', color: 'black', borderBottom: '1px dashed #999', paddingBottom: '6px', cursor: 'pointer' }}
+                                                    onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
+                                                    onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                                                >
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                        {item.isKD && <img src={item.favicon} alt="" style={{ width: '18px', height: '18px', borderRadius: '4px' }} />}
+                                                        <div style={{ fontSize: '14px', fontWeight: 800 }}>{item.project_name || 'Untitled Project'}</div>
+                                                    </div>
+                                                    <div style={{ fontSize: '12px', opacity: 0.78 }}>{item.one_liner || 'No transmission log.'}</div>
                                                 </div>
-                                                <div style={{ fontSize: '12px', opacity: 0.78 }}>{item.one_liner || 'No transmission log.'}</div>
-                                            </div>
-                                        )
-                                    ))}
-                                </div>
-                            )}
-                        </div>
+                                            )
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
                     <div style={{ gridColumn: isMobileView ? 'span 12' : 'span 7', minHeight: 0, display: 'flex', justifyContent: 'center', width: '100%' }}>
@@ -1836,17 +1840,17 @@ const LandingPage = ({
                 )}
             </section>}
 
-            {!isMobileView && !isMapOnlyView && <Suspense fallback={<div className="container" style={{ padding: '24px 16px' }}>Loading showcase...</div>}>
+            {!isMobileView && !isMapOnlyView && (
                 <GalleryShowcase
-                profiles={profiles}
-                session={session}
-                submissions={submissions}
-                isMobileView={isMobileView}
-                limit={null}
-                setPublicPage={setPublicPage}
-                setSelectedDetailProfile={setSelectedDetailProfile}
-            />
-            </Suspense>}
+                    profiles={profiles}
+                    session={session}
+                    submissions={submissions}
+                    isMobileView={isMobileView}
+                    limit={null}
+                    setPublicPage={setPublicPage}
+                    setSelectedDetailProfile={setSelectedDetailProfile}
+                />
+            )}
         </div>
     );
 };

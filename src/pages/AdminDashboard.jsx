@@ -436,7 +436,7 @@ export default function AdminDashboard({
         } catch (error) {
             const msg = String(error?.message || error || 'Unknown error');
             if (msg.toLowerCase().includes('bucket')) {
-                alert("Certificate storage bucket missing. Create Supabase Storage bucket 'builder_certificates' (public) then retry.");
+                alert("Certificate storage bucket missing. To fix:\n\n1. Go to Supabase Dashboard > Storage\n2. Create bucket 'builder_certificates' (public)\n3. Enable public access\n4. Click Retry\n\nNote: If bucket exists, you may have reached Supabase storage limits (1GB on free tier).");
             } else if (msg.toLowerCase().includes('builder_certificates')) {
                 alert("Certificates table missing. Run the SQL to create 'builder_certificates' first.");
             } else {

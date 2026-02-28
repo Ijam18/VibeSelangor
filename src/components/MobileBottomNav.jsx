@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Map, MessageSquare, Star, CircleHelp } from 'lucide-react';
+import { Home, Map, MessageSquare, Star, CircleHelp, LogIn } from 'lucide-react';
 import './MobileBottomNav.css';
 
 /**
@@ -17,7 +17,10 @@ const NAV_ITEMS = [
 ];
 
 export default function MobileBottomNav({ currentPage, onNavigate, isLoggedIn }) {
-    const visibleItems = NAV_ITEMS;
+    const visibleItems = [
+        ...NAV_ITEMS,
+        !isLoggedIn ? { id: 'login', icon: LogIn, label: 'Login' } : null
+    ].filter(Boolean);
 
     return (
         <>
