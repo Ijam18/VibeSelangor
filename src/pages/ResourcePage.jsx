@@ -2400,11 +2400,31 @@ const APP_REGISTRY = [
     { type: 'files', label: 'FILES', icon: Folder, color: '#f5d000', defaultW: 820, defaultH: 540, title: 'FILE_EXPLORER // IjamOS v3' },
     { type: 'progress', label: 'STATS', icon: User, color: '#86efac', defaultW: 700, defaultH: 580, title: 'BUILDER_STATS // PROGRESS' },
     { type: 'settings', label: 'SETTINGS', icon: Settings, color: '#94a3b8', defaultW: 660, defaultH: 520, title: 'SYSTEM_SETTINGS // CONFIG' },
+    { type: 'wallpaper', label: 'WALLPAPER', icon: Sparkles, color: '#fbbf24', defaultW: 600, defaultH: 480, title: 'WALLPAPER_GALLERY // PERSONALIZE' },
+    { type: 'kdacademy', label: 'KDACADEMY', icon: Globe, color: '#22c55e', defaultW: 900, defaultH: 650, title: 'KDAcademy // LEARNING' },
     { type: 'arcade', label: 'ARCADE', icon: Gamepad2, color: '#f5d000', defaultW: 600, defaultH: 460, title: 'BUILDER_ARCADE // STUDIO' },
     { type: 'mind_mapper', label: 'MIND_MAP', icon: Waypoints, color: '#fef08a', defaultW: 920, defaultH: 620, title: 'MIND_MAPPER // IDEATION' },
     { type: 'prompt_forge', label: 'PROMPT_FORGE', icon: Wand2, color: '#fb923c', defaultW: 860, defaultH: 580, title: 'PROMPT_FORGE // MASTER PROMPT' },
     { type: 'simulator', label: 'SIMULATOR', icon: Activity, color: '#86efac', defaultW: 820, defaultH: 580, title: 'VIBE_SIMULATOR // ARCHITECTURE' },
     { type: 'trash', label: 'RECYCLE', icon: Trash2, color: '#ef4444', defaultW: 500, defaultH: 320, title: 'RECYCLE_BIN // DELETED CONTENT' },
+];
+
+// ─── Wallpaper Gallery Data ───────────────────────────────────────────────────
+const WALLPAPER_GALLERY = [
+    // Malaysia-Themed Wallpapers
+    { id: 'merdeka', name: 'Merdeka Red', type: 'gradient', colors: ['#DC2626', '#FFFFFF', '#FF0000'] },
+    { id: 'jalur', name: 'Jalur Gemilang', type: 'animated-gradient', colors: ['#010066', '#FFFFFF', '#CC0000'] },
+    { id: 'wau', name: 'Wau Kuning', type: 'gradient', colors: ['#FFCC00', '#FFD700', '#FFFAC0'] },
+    { id: 'kebaya', name: 'Kebaya', type: 'gradient', colors: ['#004488', '#0066CC', '#0099FF'] },
+    { id: 'tropic-rain', name: 'Tropic Rain', type: 'animated-gradient', colors: ['#0891B2', '#10B981', '#34D399'] },
+    { id: 'hibiscus', name: 'Hibiscus Morning', type: 'gradient', colors: ['#FF6B6B', '#FFE4E1', '#FFF0F5'] },
+    { id: 'sunset', name: 'Tropical Sunset', type: 'gradient', colors: ['#F97316', '#FDBA74', '#FCD34D'] },
+    { id: 'night', name: 'Tropical Night', type: 'gradient', colors: ['#0C1220', '#1E3A8A', '#3B82F6'] },
+    // Time-based Malaysia Wallpapers
+    { id: 'pagi-morning', name: 'Pagi (Morning)', type: 'time-based', times: '6-12', colors: ['#87CEEB', '#FFD166', '#FFF7ED'] },
+    { id: 'tengahari', name: 'Tengahari (Afternoon)', type: 'time-based', times: '12-15', colors: ['#FDBA74', '#FCD34D', '#FBBF24'] },
+    { id: 'petang', name: 'Petang (Evening)', type: 'time-based', times: '18-21', colors: ['#F97316', '#F59E0B', '#FBBF24'] },
+    { id: 'malam', name: 'Malam (Night)', type: 'time-based', times: '21-6', colors: ['#0C1220', '#1E3A8A', '#3B82F6'] },
 ];
 
 // ─── IjamOS v3 Draggable Window Frame ───────────────────────────────────────
@@ -2578,70 +2598,6 @@ const WindowFrame = ({
     );
 };
 
-// ─── IjamOS v3 iOS-style Dock ────────────────────────────────────────────────
-const IjamDock = ({ dockOrder, windowStates, onOpen, onReorder, visible, onMouseEnterDock, onMouseLeaveDock }) => {
-    const [mouseX, setMouseX] = useState(null);
-    const [hoverIdx, setHoverIdx] = useState(null);
-    const [dragIdx, setDragIdx] = useState(null);
-    const dockRef = useRef(null);
-
-    const ICON_W = 52, GAP = 10, MAG_R = 100;
-
-    const getScale = (i) => {
-        if (mouseX === null || !dockRef.current) return 1;
-        const rect = dockRef.current.getBoundingClientRect();
-        const center = rect.left + i * (ICON_W + GAP) + (ICON_W + GAP) / 2;
-        const dist = Math.abs(mouseX - center);
-        if (dist > MAG_R) return 1;
-        return 1 + (1 - dist / MAG_R) * 0.7; // max 1.7×
-    };
-
-    return (
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 500, pointerEvents: 'none', transform: visible ? 'translateY(0)' : 'translateY(110%)', transition: 'transform 0.28s cubic-bezier(0.34,1.56,0.64,1)' }}>
-            <div ref={dockRef}
-                onMouseMove={(e) => setMouseX(e.clientX)}
-                onMouseEnter={onMouseEnterDock}
-                onMouseLeave={() => { setMouseX(null); setHoverIdx(null); if (onMouseLeaveDock) onMouseLeaveDock(); }}
-                style={{ display: 'flex', alignItems: 'flex-end', gap: `${GAP}px`, background: 'rgba(11,18,32,0.70)', backdropFilter: 'blur(28px) saturate(1.6)', WebkitBackdropFilter: 'blur(28px) saturate(1.6)', border: '1px solid rgba(245,208,0,0.18)', borderRadius: '22px', padding: '8px 18px 10px', pointerEvents: 'all', maxWidth: 'calc(100vw - 32px)', overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none', marginBottom: '12px' }}
-            >
-                {dockOrder.map((type, i) => {
-                    const app = APP_REGISTRY.find(a => a.type === type);
-                    if (!app) return null;
-                    const ws = windowStates[type];
-                    const isOpen = !!ws?.isOpen;
-                    const isVisible = isOpen && !ws?.isMinimized;
-                    const scale = getScale(i);
-                    const isHov = hoverIdx === i;
-
-                    return (
-                        <div key={type}
-                            draggable
-                            onDragStart={(e) => { setDragIdx(i); e.dataTransfer.effectAllowed = 'move'; }}
-                            onDragOver={(e) => e.preventDefault()}
-                            onDrop={(e) => { e.preventDefault(); if (dragIdx !== null && dragIdx !== i) onReorder(dragIdx, i); setDragIdx(null); }}
-                            onDragEnd={() => setDragIdx(null)}
-                            onMouseEnter={() => setHoverIdx(i)}
-                            onMouseLeave={() => setHoverIdx(null)}
-                            onClick={() => onOpen(type)}
-                            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', cursor: 'pointer', opacity: dragIdx === i ? 0.35 : 1, transition: 'opacity 0.15s' }}
-                        >
-                            {/* Tooltip */}
-                            <div style={{ fontFamily: 'monospace', fontSize: '11px', fontWeight: 900, color: '#f5d000', background: 'rgba(0,0,0,0.85)', padding: '3px 9px', borderRadius: '6px', whiteSpace: 'nowrap', opacity: isHov ? 1 : 0, transition: 'opacity 0.12s', pointerEvents: 'none', marginBottom: '2px' }}>
-                                {app.label}
-                            </div>
-                            {/* Icon */}
-                            <div style={{ width: ICON_W, height: ICON_W, background: '#0b1220', border: `2px solid ${isVisible ? app.color : 'rgba(255,255,255,0.12)'}`, borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', transform: `scale(${scale})`, transformOrigin: 'bottom center', transition: 'transform 0.1s ease, border-color 0.2s', boxShadow: isVisible ? `0 0 18px ${app.color}40` : '0 4px 14px rgba(0,0,0,0.4)' }}>
-                                <app.icon size={26} color={app.color} />
-                            </div>
-                            {/* Running dot */}
-                            <div style={{ width: 4, height: 4, borderRadius: '50%', background: isOpen ? app.color : 'transparent', transition: 'background 0.2s', flexShrink: 0 }} />
-                        </div>
-                    );
-                })}
-            </div>
-        </div>
-    );
-};
 
 const DesktopIcon = ({ label, icon: Icon, onClick, color = '#f5d000', isPhoneMode = false, isTabletMode = false }) => (
     <button onClick={onClick}
@@ -2718,11 +2674,8 @@ const ResourcePage = ({ session, currentUser, isMobileView, deviceMode = 'deskto
     const [windowStates, setWindowStates] = useState({});      // { [type]: { isOpen, isMinimized, isMaximized, x, y, w, h, zIndex } }
     const [focusedWindow, setFocusedWindow] = useState(null);
     const [zCounter, setZCounter] = useState(100);
-    const [dockOrder, setDockOrder] = useState(APP_REGISTRY.map(a => a.type));
     const [isStartMenuOpen, setIsStartMenuOpen] = useState(false);
     const [startMenuSearch, setStartMenuSearch] = useState('');
-    const [dockVisible, setDockVisible] = useState(false);
-    const dockHideTimerRef = useRef(null);
     const [batteryPct, setBatteryPct] = useState('--%');
     const triggerHaptic = useCallback(() => {
         if (
@@ -2826,10 +2779,6 @@ const ResourcePage = ({ session, currentUser, isMobileView, deviceMode = 'deskto
         }));
     }, []);
 
-    const reorderDock = useCallback((from, to) => {
-        setDockOrder(prev => { const next = [...prev]; const [m] = next.splice(from, 1); next.splice(to, 0, m); return next; });
-    }, []);
-
     // Convenience: which type is currently open/focused (for backward compat in content)
     const activeWindow = focusedWindow;
     const mobileActiveWindow = useMemo(() => {
@@ -2877,6 +2826,101 @@ const ResourcePage = ({ session, currentUser, isMobileView, deviceMode = 'deskto
     const walkTimerRef = useRef(null);
     const [systemTime, setSystemTime] = useState('');
     const [systemDate, setSystemDate] = useState('');
+
+    // Wallpaper state
+    const [currentWallpaper, setCurrentWallpaper] = useState(() => {
+        const saved = localStorage.getItem('vibe_wallpaper');
+        if (saved) return saved;
+        // Check for time-based wallpaper
+        const hour = new Date().getHours();
+        if (hour >= 6 && hour < 12) return 'morning';
+        if (hour >= 12 && hour < 18) return 'day';
+        if (hour >= 18 && hour < 21) return 'evening';
+        return 'night';
+    });
+
+    // Update time-based wallpaper hourly
+    useEffect(() => {
+        const wallpaperData = WALLPAPER_GALLERY.find(w => w.id === currentWallpaper);
+        if (wallpaperData?.type === 'time-based') {
+            const interval = setInterval(() => {
+                const hour = new Date().getHours();
+                let newWallpaper = 'night';
+                if (hour >= 6 && hour < 12) newWallpaper = 'morning';
+                else if (hour >= 12 && hour < 18) newWallpaper = 'day';
+                else if (hour >= 18 && hour < 21) newWallpaper = 'evening';
+
+                if (newWallpaper !== currentWallpaper) {
+                    setCurrentWallpaper(newWallpaper);
+                }
+            }, 60000); // Check every minute
+            return () => clearInterval(interval);
+        }
+    }, [currentWallpaper]);
+
+    // KDAcademy state
+    const [kdacademyUrl] = useState('https://kdacademy.up.railway.app/');
+    const [kdacademyFavicon, setKdacademyFavicon] = useState('');
+    const [kdacademyTitle, setKdacademyTitle] = useState('KDAcademy');
+    const [kdacademyDescription, setKdacademyDescription] = useState('');
+    const [kdacademyLoading, setKdacademyLoading] = useState(false);
+    const [kdacademyError, setKdacademyError] = useState('');
+
+    // Fetch KDAcademy metadata on mount
+    useEffect(() => {
+        const fetchKdacademyMetadata = async () => {
+            setKdacademyLoading(true);
+            try {
+                // Try favicon from standard locations
+                const faviconUrls = [
+                    'https://kdacademy.up.railway.app/favicon.ico',
+                    'https://kdacademy.up.railway.app/favicon.png',
+                    'https://www.google.com/s2/favicons?domain=kdacademy.up.railway.app'
+                ];
+
+                for (const url of faviconUrls) {
+                    try {
+                        const response = await fetch(url, { mode: 'cors', cache: 'force-cache' });
+                        if (response.ok) {
+                            setKdacademyFavicon(url);
+                            break;
+                        }
+                    } catch (e) {
+                        // Try next URL
+                    }
+                }
+
+                // Try to fetch page info (may be blocked by CORS)
+                try {
+                    const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(kdacademyUrl)}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(data.contents, 'text/html');
+
+                        const title = doc.querySelector('title')?.textContent || 'KDAcademy';
+                        const metaDesc = doc.querySelector('meta[name="description"]')?.textContent ||
+                                       doc.querySelector('meta[property="og:description"]')?.textContent ||
+                                       'Online learning platform';
+
+                        setKdacademyTitle(title);
+                        setKdacademyDescription(metaDesc);
+                    }
+                } catch (e) {
+                    // CORS blocked, use defaults
+                    setKdacademyTitle('KDAcademy');
+                    setKdacademyDescription('Online learning platform');
+                }
+            } catch (e) {
+                setKdacademyError('Failed to load website info');
+                console.error('KDAcademy fetch error:', e);
+            } finally {
+                setKdacademyLoading(false);
+            }
+        };
+
+        fetchKdacademyMetadata();
+    }, [kdacademyUrl]);
 
     useEffect(() => {
         let battery = null;
@@ -2971,6 +3015,42 @@ const ResourcePage = ({ session, currentUser, isMobileView, deviceMode = 'deskto
             alert('Save failed: ' + err.message);
         } finally {
             setIsSavingSettings(false);
+        }
+    };
+
+    const handleSetWallpaper = (wallpaperId) => {
+        setCurrentWallpaper(wallpaperId);
+        localStorage.setItem('vibe_wallpaper', wallpaperId);
+        playSuccess();
+        appendTerminal('system', `[✓] Wallpaper changed to: ${wallpaperId}`);
+    };
+
+    const getWallpaperStyle = (wallpaper) => {
+        if (!wallpaper) return {};
+
+        switch (wallpaper.type) {
+            case 'image':
+                return {
+                    backgroundImage: `url(${wallpaper.src})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center'
+                };
+            case 'gradient':
+            case 'animated-gradient':
+                const colors = wallpaper.colors || [];
+                return {
+                    background: `linear-gradient(135deg, ${colors.join(', ')})`,
+                    ...(wallpaper.type === 'animated-gradient' && {
+                        animation: 'gradientShift 10s ease infinite'
+                    })
+                };
+            case 'time-based':
+                return {
+                    background: `linear-gradient(135deg, ${(wallpaper.colors || []).join(', ')})`,
+                    transition: 'background 1s ease'
+                };
+            default:
+                return {};
         }
     };
 
@@ -3460,6 +3540,38 @@ YOU DID IT. APP DEPLOYED!`);
         setHoldProgress(0);
     };
 
+    // Get wallpaper background style for desktop (must be called before any conditional returns)
+    const wallpaperStyle = useMemo(() => {
+        if (!isMacMode) return {};
+        const wallpaper = WALLPAPER_GALLERY.find(w => w.id === currentWallpaper);
+        if (!wallpaper) return { background: '#0b131e' };
+
+        switch (wallpaper.type) {
+            case 'image':
+                return {
+                    backgroundImage: `url(${wallpaper.src})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center'
+                };
+            case 'gradient':
+                return {
+                    background: `linear-gradient(135deg, ${wallpaper.colors.join(', ')})`
+                };
+            case 'animated-gradient':
+                return {
+                    background: `linear-gradient(135deg, ${wallpaper.colors.join(', ')})`,
+                    backgroundSize: '200% 200%',
+                    animation: 'gradientShift 10s ease infinite'
+                };
+            case 'time-based':
+                return {
+                    background: `linear-gradient(135deg, ${wallpaper.colors.join(', ')})`
+                };
+            default:
+                return { background: '#0b131e' };
+        }
+    }, [isMacMode, currentWallpaper]);
+
     if (!isBooted) {
         return (
             <motion.section
@@ -3557,17 +3669,7 @@ YOU DID IT. APP DEPLOYED!`);
     }
 
     return (
-        <section id="resources-page" style={{ ...sectionStyle, background: isMacMode ? '#0b131e' : 'transparent', height: '100vh', overflow: 'hidden', position: 'relative' }}
-            onMouseMove={(e) => {
-                if (e.clientY > window.innerHeight - 60) {
-                    clearTimeout(dockHideTimerRef.current);
-                    setDockVisible(true);
-                } else if (dockVisible) {
-                    clearTimeout(dockHideTimerRef.current);
-                    dockHideTimerRef.current = setTimeout(() => setDockVisible(false), 800);
-                }
-            }}
-        >
+        <section id="resources-page" style={{ ...sectionStyle, ...wallpaperStyle, height: '100vh', overflow: 'hidden', position: 'relative' }}>
             {isTouchIjamMode && (
                 <div style={{ position: 'absolute', top: 'max(2px, env(safe-area-inset-top, 0px))', left: 10, right: 10, zIndex: 1200 }}>
                     <MobileStatusBar
@@ -4320,6 +4422,230 @@ YOU DID IT. APP DEPLOYED!`);
                 </WindowFrame>
             )}
 
+            {/* Wallpaper Gallery Window */}
+            {windowStates.wallpaper?.isOpen && (
+                <WindowFrame {...mobileWindowProps} winState={windowStates.wallpaper} title="WALLPAPER_GALLERY // PERSONALIZE" AppIcon={Sparkles} onClose={() => closeApp('wallpaper')} onMinimize={() => minimizeApp('wallpaper')} onMaximize={() => maximizeApp('wallpaper')} onFocus={() => focusApp('wallpaper')} onMove={(x, y) => moveApp('wallpaper', x, y)} onResize={(w, h) => resizeApp('wallpaper', w, h)}>
+                    <div style={{ padding: '24px', color: '#fff', overflowY: 'auto', height: '100%' }}>
+                        <div style={{ marginBottom: '20px' }}>
+                            <div style={{ fontSize: '12px', color: '#f5d000', fontWeight: 900, letterSpacing: '0.1em', marginBottom: '8px' }}>CURRENT_WALLPAPER</div>
+                            <div style={{ fontSize: '18px', fontWeight: 900, color: '#fff' }}>
+                                {WALLPAPER_GALLERY.find(w => w.id === currentWallpaper)?.name || 'Unknown'}
+                            </div>
+                        </div>
+
+                        <div className="wallpaper-grid">
+                            {WALLPAPER_GALLERY.map((wallpaper, index) => {
+                                const isSelected = currentWallpaper === wallpaper.id;
+                                const wallpaperStyle = getWallpaperStyle(wallpaper);
+
+                                return (
+                                    <div
+                                        key={wallpaper.id}
+                                        className={`wallpaper-thumb ${isSelected ? 'selected' : ''}`}
+                                        onClick={() => handleSetWallpaper(wallpaper.id)}
+                                        style={{
+                                            ...wallpaperStyle,
+                                            position: 'relative'
+                                        }}
+                                    >
+                                        {wallpaper.type === 'time-based' && (
+                                            <div style={{
+                                                position: 'absolute',
+                                                top: '6px',
+                                                right: '6px',
+                                                background: 'rgba(0,0,0,0.6)',
+                                                padding: '3px 8px',
+                                                borderRadius: '4px',
+                                                fontSize: '9px',
+                                                fontWeight: 700,
+                                                color: '#fff',
+                                                fontFamily: 'monospace'
+                                            }}>
+                                                {wallpaper.times}
+                                            </div>
+                                        )}
+                                        <div style={{
+                                            position: 'absolute',
+                                            bottom: 0,
+                                            left: 0,
+                                            right: 0,
+                                            padding: '8px',
+                                            background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
+                                            textAlign: 'center'
+                                        }}>
+                                            <div style={{ fontSize: '11px', fontWeight: 700, color: '#fff', fontFamily: 'monospace' }}>
+                                                {wallpaper.name}
+                                            </div>
+                                            {wallpaper.type === 'animated-gradient' && (
+                                                <div style={{ fontSize: '8px', color: '#fbbf24', marginTop: '2px' }}>ANIMATED</div>
+                                            )}
+                                            {wallpaper.type === 'time-based' && (
+                                                <div style={{ fontSize: '8px', color: '#86efac', marginTop: '2px' }}>AUTO</div>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </WindowFrame>
+            )}
+
+            {/* KDAcademy Window */}
+            {windowStates.kdacademy?.isOpen && (
+                <WindowFrame {...mobileWindowProps} winState={windowStates.kdacademy} title="KDACADEMY // LEARNING" AppIcon={Globe} onClose={() => closeApp('kdacademy')} onMinimize={() => minimizeApp('kdacademy')} onMaximize={() => maximizeApp('kdacademy')} onFocus={() => focusApp('kdacademy')} onMove={(x, y) => moveApp('kdacademy', x, y)} onResize={(w, h) => resizeApp('kdacademy', w, h)}>
+                    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                        {/* Header with favicon */}
+                        <div style={{
+                            padding: '20px',
+                            borderBottom: '2px solid #1e293b',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '16px',
+                            background: '#0b1220'
+                        }}>
+                            {kdacademyFavicon ? (
+                                <img
+                                    src={kdacademyFavicon}
+                                    alt="KDAcademy"
+                                    style={{
+                                        width: '32px',
+                                        height: '32px',
+                                        borderRadius: '4px',
+                                        background: '#1e293b',
+                                        padding: '2px'
+                                    }}
+                                />
+                            ) : (
+                                <div style={{
+                                    width: '32px',
+                                    height: '32px',
+                                    borderRadius: '4px',
+                                    background: '#22c55e',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: '#fff',
+                                    fontWeight: 900,
+                                    fontSize: '14px'
+                                }}>
+                                    K
+                                </div>
+                            )}
+                            <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: '16px', fontWeight: 900, color: '#fff', marginBottom: '2px' }}>
+                                    {kdacademyLoading ? 'Loading...' : kdacademyTitle}
+                                </div>
+                                {kdacademyDescription && (
+                                    <div style={{ fontSize: '11px', color: '#94a3b8', maxWidth: '400px' }}>
+                                        {kdacademyDescription.slice(0, 80)}
+                                        {kdacademyDescription.length > 80 ? '...' : ''}
+                                    </div>
+                                )}
+                            </div>
+                            {kdacademyError && (
+                                <div style={{ fontSize: '10px', color: '#ef4444', fontFamily: 'monospace', padding: '4px 8px', background: 'rgba(239,68,68,0.1)', borderRadius: '4px' }}>
+                                    {kdacademyError}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Website Preview */}
+                        <div style={{
+                            flex: 1,
+                            background: '#f8fafc',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '40px 20px',
+                            position: 'relative'
+                        }}>
+                            <div style={{
+                                maxWidth: '600px',
+                                width: '100%',
+                                background: '#fff',
+                                borderRadius: '12px',
+                                padding: '40px',
+                                textAlign: 'center',
+                                boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                                border: '2px solid #e2e8f0'
+                            }}>
+                                {kdacademyFavicon && (
+                                    <img
+                                        src={kdacademyFavicon}
+                                        alt="KDAcademy"
+                                        style={{
+                                            width: '64px',
+                                            height: '64px',
+                                            borderRadius: '8px',
+                                            marginBottom: '20px',
+                                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                        }}
+                                    />
+                                )}
+                                <h2 style={{
+                                    fontSize: '24px',
+                                    fontWeight: 900,
+                                    color: '#0f172a',
+                                    margin: '0 0 12px 0'
+                                }}>
+                                    {kdacademyLoading ? 'Loading Website...' : kdacademyTitle}
+                                </h2>
+                                <p style={{
+                                    fontSize: '14px',
+                                    color: '#64748b',
+                                    margin: '0 0 24px 0',
+                                    lineHeight: 1.6
+                                }}>
+                                    {kdacademyLoading
+                                        ? 'Fetching website information...'
+                                        : kdacademyDescription || 'Online learning platform for coding and development courses.'}
+                                </p>
+                                <a
+                                    href={kdacademyUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        background: '#22c55e',
+                                        color: '#fff',
+                                        padding: '14px 28px',
+                                        borderRadius: '8px',
+                                        fontWeight: 700,
+                                        fontSize: '14px',
+                                        textDecoration: 'none',
+                                        transition: 'all 0.2s ease',
+                                        boxShadow: '0 4px 14px rgba(34, 197, 94, 0.3)'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(-2px)';
+                                        e.currentTarget.style.boxShadow = '0 6px 18px rgba(34, 197, 94, 0.4)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                        e.currentTarget.style.boxShadow = '0 4px 14px rgba(34, 197, 94, 0.3)';
+                                    }}
+                                >
+                                    Visit KDAcademy
+                                    <ExternalLink size={16} />
+                                </a>
+                                <p style={{
+                                    fontSize: '12px',
+                                    color: '#94a3b8',
+                                    marginTop: '20px',
+                                    marginBottom: '0'
+                                }}>
+                                    Opens in a new tab
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </WindowFrame>
+            )}
+
             {windowStates.settings?.isOpen && (
                 <WindowFrame {...mobileWindowProps} winState={windowStates.settings} title="SYSTEM_SETTINGS // CONFIG" AppIcon={Settings} onClose={() => closeApp('settings')} onMinimize={() => minimizeApp('settings')} onMaximize={() => maximizeApp('settings')} onFocus={() => focusApp('settings')} onMove={(x, y) => moveApp('settings', x, y)} onResize={(w, h) => resizeApp('settings', w, h)}>
                     <div style={{ padding: '24px', color: '#fff', overflowY: 'auto', height: '100%' }}>
@@ -4608,18 +4934,6 @@ YOU DID IT. APP DEPLOYED!`);
                 </>
             )}
 
-            {/* iOS-style Dock */}
-            {isMacMode && (
-                <IjamDock
-                    dockOrder={dockOrder}
-                    windowStates={windowStates}
-                    onOpen={openApp}
-                    onReorder={reorderDock}
-                    visible={dockVisible}
-                    onMouseEnterDock={() => { clearTimeout(dockHideTimerRef.current); setDockVisible(true); }}
-                    onMouseLeaveDock={() => { dockHideTimerRef.current = setTimeout(() => setDockVisible(false), 800); }}
-                />
-            )}
 
             {isTouchIjamMode && (
                 <div
