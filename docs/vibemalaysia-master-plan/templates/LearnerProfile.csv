@@ -1,0 +1,2 @@
+learner_id,full_name,age,track,state,language_mode,consent_status,guardian_name,guardian_contact,device_access,enrollment_date
+L-0001,Sample Learner,16,Youth,Selangor,BM+EN,required_if_minor,,,own_laptop,2026-01-15

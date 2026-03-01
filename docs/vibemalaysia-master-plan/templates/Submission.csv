@@ -1,0 +1,2 @@
+submission_id,learner_id,cohort_id,live_url,repo_url,demo_video,submission_time,core_flow_passed
+S-0001,L-0001,C-2026-Q1,https://example.vercel.app,https://github.com/example/repo,https://youtube.com/example,2026-01-26T16:30:00Z,yes

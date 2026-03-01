@@ -41,7 +41,7 @@ export const uploadWithFallback = async ({ bucket, path, file, onError }) => {
 export const handleStorageError = (error, bucket) => {
     const msg = String(error?.message || error);
     if (msg.toLowerCase().includes('bucket') || msg.toLowerCase().includes('not found')) {
-        return `Storage bucket "${bucket}" not found. Please contact admin or use the URL field instead.`;
+        return `Storage bucket "${bucket}" not found. Please run the setup script (supabase/sql/storage_setup.sql) in your Supabase SQL Editor.`;
     }
     if (msg.toLowerCase().includes('quota') || msg.toLowerCase().includes('limit')) {
         return `Storage limit reached. Please use the URL field instead of uploading images.`;

@@ -1,0 +1,2 @@
+learner_id,cohort_id,date,update_summary,main_blocker,current_live_url,next_action
+L-0001,C-2026-Q1,2026-01-23,Completed signup flow,Deployment env mismatch,https://example.vercel.app,Fix env vars and redeploy

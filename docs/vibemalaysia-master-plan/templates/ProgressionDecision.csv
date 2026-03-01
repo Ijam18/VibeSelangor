@@ -1,0 +1,2 @@
+decision_id,learner_id,current_stage,next_stage,decision_status,reason_code,support_plan,decision_date
+D-0001,L-0001,StageA,StageB,advance,meets_gate,continue_cohort_track,2026-01-27
