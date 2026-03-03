@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense, lazy } from 'react';
 import {
     Zap, MessageSquare,
     User, MessageCircle, Menu, ShieldCheck
@@ -7,36 +7,33 @@ import { supabase } from './lib/supabase';
 import { ToastProvider, useToast } from './components/ToastNotification';
 import MobileNavSidebar from './components/MobileNavSidebar';
 import MobileBottomNav from './components/MobileBottomNav';
-import BuilderStudioPage from './pages/BuilderStudioPage';
-import ComingSoonPage from './pages/ComingSoonPage';
-import ProgramDetailsPage from './pages/ProgramDetailsPage';
-import AuthModal from './components/modals/AuthModal';
-import EditProfileModal from './components/modals/EditProfileModal';
-import AddClassModal from './components/modals/AddClassModal';
-import BuilderDetailModal from './components/modals/BuilderDetailModal';
-import AdminDashboard from './pages/AdminDashboard';
-import BuilderDashboard from './pages/BuilderDashboard';
 import ThreadsIcon from './components/ThreadsIcon';
-import BuilderLeaderboard from './pages/BuilderLeaderboard';
-import ForumPage from './pages/ForumPage';
-import PublicStudioPage from './pages/PublicStudioPage';
-import BuilderVaultPage from './pages/BuilderVaultPage';
-import StartProjectPage from './pages/StartProjectPage';
 import { awardGameRewards } from './lib/gameService';
 import MobileAssistiveTouch from './components/MobileAssistiveTouch';
-
-
-
-
-import LandingPage from './pages/LandingPage';
-import ShowcasePage from './pages/ShowcasePage';
-import ResourcePage from './pages/ResourcePage';
-import HallOfFamePage from './pages/HallOfFamePage';
 import { HEADER_LINKS, OWNER_EMAIL, ADMIN_EMAILS } from './constants';
 import { resolveRoleByEmail } from './utils';
 import { getCurrentHolidayTheme, getHolidayThemeConfig } from './utils/holidayUtils';
 import { getDeviceMode, getIjamOsMode } from './utils/deviceMode';
 import { issueProgramCertificates as svcIssueProgramCertificates } from './lib/certificateService';
+
+const BuilderStudioPage = lazy(() => import('./pages/BuilderStudioPage'));
+const ComingSoonPage = lazy(() => import('./pages/ComingSoonPage'));
+const ProgramDetailsPage = lazy(() => import('./pages/ProgramDetailsPage'));
+const AuthModal = lazy(() => import('./components/modals/AuthModal'));
+const EditProfileModal = lazy(() => import('./components/modals/EditProfileModal'));
+const AddClassModal = lazy(() => import('./components/modals/AddClassModal'));
+const BuilderDetailModal = lazy(() => import('./components/modals/BuilderDetailModal'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const BuilderDashboard = lazy(() => import('./pages/BuilderDashboard'));
+const BuilderLeaderboard = lazy(() => import('./pages/BuilderLeaderboard'));
+const ForumPage = lazy(() => import('./pages/ForumPage'));
+const PublicStudioPage = lazy(() => import('./pages/PublicStudioPage'));
+const BuilderVaultPage = lazy(() => import('./pages/BuilderVaultPage'));
+const StartProjectPage = lazy(() => import('./pages/StartProjectPage'));
+const LandingPage = lazy(() => import('./pages/LandingPage'));
+const ShowcasePage = lazy(() => import('./pages/ShowcasePage'));
+const ResourcePage = lazy(() => import('./pages/ResourcePage'));
+const HallOfFamePage = lazy(() => import('./pages/HallOfFamePage'));
 
 const getCurrentMonthISO = () => {
     const now = new Date();
@@ -880,6 +877,12 @@ const App = () => {
 
     // ProgramDetailsPage and ComingSoonPage have been extracted to src/pages/
 
+    const lazyFallback = (
+        <div style={{ minHeight: '40vh', display: 'grid', placeItems: 'center', color: '#475569', fontWeight: 700 }}>
+            Loading...
+        </div>
+    );
+
     return (
         <ToastProvider>
             <div className={`vibe-selangor mode-${deviceMode} theme-${themeFamily}`} data-device-mode={deviceMode} data-theme-family={themeFamily}>
@@ -905,6 +908,7 @@ const App = () => {
                     installPrompt={deferredPrompt}
                     onInstallClick={handleInstallClick}
                 />
+                <Suspense fallback={lazyFallback}>
                 <AuthModal
                     isOpen={isAuthModalOpen}
                     onClose={() => setIsAuthModalOpen(false)}
@@ -1398,6 +1402,7 @@ const App = () => {
                         }}
                     />
                 )}
+                </Suspense>
             </div >
         </ToastProvider >
     );
