@@ -65,7 +65,13 @@ const LandingPage = ({
     const liveStatusText = useMemo(() => {
         const safeProfiles = profiles || [];
         const safeSubmissions = submissions || [];
-        const builderCount = safeProfiles.filter(p => !['owner', 'admin'].includes(p.role)).length;
+        const profileBuilderCount = safeProfiles.filter(p => !['owner', 'admin'].includes(p.role)).length;
+        const submissionBuilderCount = new Set(
+            safeSubmissions
+                .map((s) => s?.user_id)
+                .filter(Boolean)
+        ).size;
+        const builderCount = profileBuilderCount > 0 ? profileBuilderCount : submissionBuilderCount;
         const projectCount = safeSubmissions.length;
         return `[LIVE STATUS] ${builderCount} Builders / ${projectCount} Projects. Vibe Level: MAXIMUM!`;
     }, [profiles, submissions]);
@@ -118,8 +124,12 @@ const LandingPage = ({
         [classes]
     );
     const mobileBuildersCount = useMemo(
-        () => (profiles || []).filter((p) => !['owner', 'admin'].includes(p.role)).length,
-        [profiles]
+        () => {
+            const profileBuilderCount = (profiles || []).filter((p) => !['owner', 'admin'].includes(p.role)).length;
+            if (profileBuilderCount > 0) return profileBuilderCount;
+            return new Set((submissions || []).map((s) => s?.user_id).filter(Boolean)).size;
+        },
+        [profiles, submissions]
     );
     const isWebsiteLiveMode = !isMobileView && terminalMode === 'live';
     const districtNameEntries = useMemo(
@@ -1856,6 +1866,5 @@ const LandingPage = ({
 };
 
 export default LandingPage;
-
 
 

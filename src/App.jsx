@@ -120,6 +120,7 @@ const App = () => {
     const themeFamily = deviceMode === 'desktop' ? 'neo' : 'ios';
     const ijamOsMode = getIjamOsMode(deviceMode);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isMobileAuthDockOpen, setIsMobileAuthDockOpen] = useState(false);
     const [isTerminalEnlarged, setIsTerminalEnlarged] = useState(false);
     const [terminalMode, setTerminalMode] = useState('ijam');
 
@@ -248,6 +249,10 @@ const App = () => {
         document.body.setAttribute('data-device-mode', deviceMode);
         document.body.setAttribute('data-theme-family', themeFamily);
     }, [deviceMode, themeFamily]);
+
+    useEffect(() => {
+        if (session) setIsMobileAuthDockOpen(false);
+    }, [session]);
 
     const fetchData = async () => {
         const { data: classData } = await supabase.from('cohort_classes').select('*').order('date', { ascending: true });
@@ -1353,6 +1358,10 @@ const App = () => {
                                     window.scrollTo({ top: 0, behavior: 'smooth' });
                                     return;
                                 }
+                                if (id === 'login') {
+                                    setIsMobileAuthDockOpen((prev) => !prev);
+                                    return;
+                                }
                                 if (authPages.includes(id)) {
                                     if (session) { setPublicPage(id); window.scrollTo({ top: 0, behavior: 'smooth' }); }
                                     else setIsAuthModalOpen(true);
@@ -1367,6 +1376,57 @@ const App = () => {
                         />
                     )
                 }
+                {!session && isMobileView && isMobileAuthDockOpen && (
+                    <div
+                        style={{
+                            position: 'fixed',
+                            left: 0,
+                            right: 0,
+                            bottom: 86,
+                            zIndex: 10030,
+                            display: 'flex',
+                            justifyContent: 'center',
+                            pointerEvents: 'none'
+                        }}
+                    >
+                        <div
+                            style={{
+                                pointerEvents: 'auto',
+                                display: 'flex',
+                                gap: 8,
+                                padding: 8,
+                                borderRadius: 999,
+                                border: '1px solid rgba(148,163,184,0.35)',
+                                background: 'rgba(255,255,255,0.86)',
+                                backdropFilter: 'blur(14px) saturate(1.08)',
+                                boxShadow: '0 8px 22px rgba(15,23,42,0.18)'
+                            }}
+                        >
+                            <button
+                                className="btn btn-outline"
+                                style={{ padding: '8px 14px', fontSize: 11, borderRadius: 999 }}
+                                onClick={() => {
+                                    setAuthMode('signin');
+                                    setIsAuthModalOpen(true);
+                                    setIsMobileAuthDockOpen(false);
+                                }}
+                            >
+                                Sign In
+                            </button>
+                            <button
+                                className="btn btn-red"
+                                style={{ padding: '8px 14px', fontSize: 11, borderRadius: 999 }}
+                                onClick={() => {
+                                    setAuthMode('signup');
+                                    setIsAuthModalOpen(true);
+                                    setIsMobileAuthDockOpen(false);
+                                }}
+                            >
+                                Sign Up
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {/* Global Mobile Assistive Touch */}
                 {isMobileView && publicPage !== 'ijamos' && (
@@ -1387,6 +1447,10 @@ const App = () => {
                                 setPublicPage('home');
                                 setTerminalMode('live');
                                 window.scrollTo({ top: 0, behavior: 'smooth' });
+                                return;
+                            }
+                            if (id === 'login') {
+                                setIsMobileAuthDockOpen((prev) => !prev);
                                 return;
                             }
                             if (authPages.includes(id)) {

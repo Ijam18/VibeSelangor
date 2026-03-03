@@ -30,7 +30,7 @@ const ICON_LIBRARY = {
 };
 
 const STORAGE_KEY = 'mobile_home_icon_layout_v5';
-const DEFAULT_LAYOUT = ['ijamos', 'hall-of-fame', 'myapp', 'new-project', 'settings', 'kd'];
+const DEFAULT_LAYOUT = ['ijamos', 'hall-of-fame', 'showcase', 'forum', 'myapp', 'new-project', 'settings', 'kd'];
 
 function loadLayout() {
     try {
@@ -39,7 +39,7 @@ function loadLayout() {
         const parsed = JSON.parse(raw);
         if (!Array.isArray(parsed)) return DEFAULT_LAYOUT;
         const valid = parsed.filter((id) => ICON_LIBRARY[id]);
-        for (const pinned of ['ijamos', 'hall-of-fame', 'myapp', 'new-project', 'settings', 'kd']) {
+        for (const pinned of ['ijamos', 'hall-of-fame', 'showcase', 'forum', 'myapp', 'new-project', 'settings', 'kd']) {
             if (!valid.includes(pinned)) valid.push(pinned);
         }
         return Array.from(new Set(valid));
