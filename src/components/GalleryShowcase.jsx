@@ -12,7 +12,8 @@ const GalleryShowcase = ({
     isMobileView,
     limit,
     setPublicPage,
-    certificates = []
+    certificates = [],
+    showTopBorder = true
 }) => {
 
 
@@ -89,7 +90,7 @@ const GalleryShowcase = ({
 
 
     return (
-        <section id="gallery" style={{ borderTop: '3px solid black', padding: '24px 0 12px', background: '#fff', overflow: 'hidden' }}>
+        <section id="gallery" style={{ borderTop: showTopBorder ? '3px solid black' : 'none', padding: '24px 0 12px', background: '#fff', overflow: 'hidden' }}>
             <div className="container">
                 <div style={{ marginBottom: '24px', textAlign: 'center' }}>
                     <div className="pill pill-red" style={{ marginBottom: '10px' }}>THE SHOWCASE</div>

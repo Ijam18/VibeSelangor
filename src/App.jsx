@@ -31,6 +31,7 @@ import MobileAssistiveTouch from './components/MobileAssistiveTouch';
 import LandingPage from './pages/LandingPage';
 import ShowcasePage from './pages/ShowcasePage';
 import ResourcePage from './pages/ResourcePage';
+import HallOfFamePage from './pages/HallOfFamePage';
 import { HEADER_LINKS, OWNER_EMAIL, ADMIN_EMAILS } from './constants';
 import { resolveRoleByEmail } from './utils';
 import { getCurrentHolidayTheme, getHolidayThemeConfig } from './utils/holidayUtils';
@@ -140,6 +141,8 @@ const App = () => {
 
     const [isAddClassModalOpen, setIsAddClassModalOpen] = useState(false);
     const [selectedDetailProfile, setSelectedDetailProfile] = useState(null);
+    const [builderActionLoading, setBuilderActionLoading] = useState(false);
+    const [builderActionNotice, setBuilderActionNotice] = useState('');
     const [visitingStudio, setVisitingStudio] = useState(null); // { id, name } of builder whose studio to visit
 
     const currentUserProjectCount = useMemo(() => {
@@ -699,6 +702,174 @@ const App = () => {
         }
     };
 
+    const isMissingTableError = (error) => {
+        const message = String(error?.message || '').toLowerCase();
+        return message.includes('does not exist') || message.includes('relation') && message.includes('does not');
+    };
+
+    const handleAssignBuilderCertificate = async ({ builder, programClassId }) => {
+        if (!builder?.id || !programClassId) {
+            setBuilderActionNotice('Select a program before issuing certificate.');
+            return;
+        }
+        try {
+            setBuilderActionLoading(true);
+            setBuilderActionNotice('');
+            let programClass = (classes || []).find((item) => String(item.id) === String(programClassId));
+            if (!programClass) {
+                const { data, error } = await supabase
+                    .from('cohort_classes')
+                    .select('*')
+                    .eq('id', programClassId)
+                    .maybeSingle();
+                if (error) throw error;
+                programClass = data || null;
+            }
+            if (!programClass) {
+                setBuilderActionNotice('Program class not found.');
+                return;
+            }
+            const result = await svcIssueProgramCertificates({
+                supabase,
+                programClass,
+                profiles,
+                submissions,
+                targetBuilderId: builder.id,
+                assetFormat: 'both'
+            });
+            if ((result.errors || []).length === 0) {
+                const { data: latestCert, error: latestCertError } = await supabase
+                    .from('builder_certificates')
+                    .select('*')
+                    .eq('builder_id', builder.id)
+                    .eq('program_class_id', programClass.id)
+                    .order('issued_at', { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
+                if (latestCertError) throw latestCertError;
+
+                if (latestCert?.id) {
+                    const { data: existingHall, error: existingHallError } = await supabase
+                        .from('hall_of_fame_entries')
+                        .select('*')
+                        .eq('builder_id', builder.id)
+                        .maybeSingle();
+                    if (existingHallError && !isMissingTableError(existingHallError)) throw existingHallError;
+
+                    if (!existingHall) {
+                        const { error: insertHallError } = await supabase
+                            .from('hall_of_fame_entries')
+                            .insert([{
+                                builder_id: builder.id,
+                                certificate_id: latestCert.id,
+                                featured_project_url: latestCert.project_url || null,
+                                featured_quote: null,
+                                featured_order: 1000,
+                                is_active: true,
+                                featured_at: new Date().toISOString()
+                            }]);
+                        if (insertHallError && !isMissingTableError(insertHallError)) throw insertHallError;
+                    } else {
+                        const { error: updateHallError } = await supabase
+                            .from('hall_of_fame_entries')
+                            .update({
+                                certificate_id: latestCert.id,
+                                featured_project_url: existingHall.featured_project_url || latestCert.project_url || null,
+                                is_active: true,
+                                updated_at: new Date().toISOString()
+                            })
+                            .eq('id', existingHall.id);
+                        if (updateHallError && !isMissingTableError(updateHallError)) throw updateHallError;
+                    }
+                }
+            }
+            await fetchData();
+            const failed = (result.errors || []).length;
+            if (failed > 0) {
+                const firstError = result.errors?.[0]?.message || 'Unknown error';
+                setBuilderActionNotice(`Certificate failed (${failed}). ${firstError}`);
+                return;
+            }
+            setBuilderActionNotice(`Certificate updated. Issued ${result.issuedCount || 0}, updated ${result.updatedCount || 0}, failed 0. Added to Hall of Fame.`);
+        } catch (error) {
+            setBuilderActionNotice(String(error?.message || error || 'Failed to assign certificate.'));
+        } finally {
+            setBuilderActionLoading(false);
+        }
+    };
+
+    const handleRevokeBuilderCertificate = async ({ builder, certificateId }) => {
+        const targetId = certificateId || (certificates || []).find((item) => item.builder_id === builder?.id)?.id;
+        if (!targetId) {
+            setBuilderActionNotice('No certificate found for this builder.');
+            return;
+        }
+        const ok = window.confirm(`Revoke certificate for ${builder?.full_name || 'this builder'}?`);
+        if (!ok) return;
+        try {
+            setBuilderActionLoading(true);
+            setBuilderActionNotice('');
+            const { error } = await supabase.from('builder_certificates').delete().eq('id', targetId);
+            if (error) throw error;
+            await fetchData();
+            setBuilderActionNotice('Certificate revoked.');
+        } catch (error) {
+            setBuilderActionNotice(String(error?.message || error || 'Failed to revoke certificate.'));
+        } finally {
+            setBuilderActionLoading(false);
+        }
+    };
+
+    const handleDeleteBuilderProjects = async (builder) => {
+        if (!builder?.id) return;
+        const ok = window.confirm(`Delete all projects for ${builder.full_name || 'this builder'}?`);
+        if (!ok) return;
+        try {
+            setBuilderActionLoading(true);
+            setBuilderActionNotice('');
+            const { error } = await supabase.from('builder_progress').delete().eq('user_id', builder.id);
+            if (error) throw error;
+            await fetchData();
+            setBuilderActionNotice(`Deleted all projects for ${builder.full_name || 'builder'}.`);
+        } catch (error) {
+            setBuilderActionNotice(String(error?.message || error || 'Failed to delete projects.'));
+        } finally {
+            setBuilderActionLoading(false);
+        }
+    };
+
+    const handleDeleteBuilder = async (builder) => {
+        if (!builder?.id) return;
+        const role = String(builder?.role || '').toLowerCase();
+        if (role === 'owner' || role === 'admin') {
+            setBuilderActionNotice('Owner/admin cannot be deleted here.');
+            return;
+        }
+        const ok = window.confirm(`Delete builder "${builder.full_name || 'builder'}" and related records?`);
+        if (!ok) return;
+        try {
+            setBuilderActionLoading(true);
+            setBuilderActionNotice('');
+            const { error: hofError } = await supabase.from('hall_of_fame_entries').delete().eq('builder_id', builder.id);
+            if (hofError && !isMissingTableError(hofError)) throw hofError;
+            const { error: certError } = await supabase.from('builder_certificates').delete().eq('builder_id', builder.id);
+            if (certError) throw certError;
+            const { error: attendanceError } = await supabase.from('cohort_attendance').delete().eq('profile_id', builder.id);
+            if (attendanceError) throw attendanceError;
+            const { error: progressError } = await supabase.from('builder_progress').delete().eq('user_id', builder.id);
+            if (progressError) throw progressError;
+            const { error: profileError } = await supabase.from('profiles').delete().eq('id', builder.id);
+            if (profileError) throw profileError;
+            setSelectedDetailProfile(null);
+            await fetchData();
+            setBuilderActionNotice(`Deleted builder ${builder.full_name || 'builder'}.`);
+        } catch (error) {
+            setBuilderActionNotice(String(error?.message || error || 'Failed to delete builder.'));
+        } finally {
+            setBuilderActionLoading(false);
+        }
+    };
+
     // --- UI Components ---
 
 
@@ -778,6 +949,13 @@ const App = () => {
                     currentUser={currentUser}
                     isMobileView={isMobileView}
                     certificates={certificates}
+                    classes={classes}
+                    adminActionLoading={builderActionLoading}
+                    adminActionNotice={builderActionNotice}
+                    onAssignCertificate={handleAssignBuilderCertificate}
+                    onRevokeCertificate={handleRevokeBuilderCertificate}
+                    onDeleteProjects={handleDeleteBuilderProjects}
+                    onDeleteBuilder={handleDeleteBuilder}
                     onVisitStudio={(builder) => {
                         setVisitingStudio({ id: builder.id, name: builder.full_name });
                         setPublicPage('public-studio');
@@ -976,7 +1154,7 @@ const App = () => {
                     )
                 }
                 {
-                    !currentUser && !['home', 'map', 'how-it-works', 'coming-soon', 'showcase', 'leaderboard', 'forum', 'studio', 'public-studio', 'ijamos'].includes(publicPage) && (
+                    !currentUser && !['home', 'map', 'how-it-works', 'coming-soon', 'showcase', 'hall-of-fame', 'leaderboard', 'forum', 'studio', 'public-studio', 'ijamos'].includes(publicPage) && (
                         <LandingPage
                             profiles={profiles}
                             submissions={submissions}
@@ -1043,6 +1221,14 @@ const App = () => {
                     )
                 }
                 {
+                    publicPage === 'hall-of-fame' && (
+                        <HallOfFamePage
+                            isMobileView={isMobileView}
+                            setPublicPage={setPublicPage}
+                        />
+                    )
+                }
+                {
                     publicPage === 'builder-vault' && (
                         <BuilderVaultPage
                             session={session}
@@ -1078,7 +1264,7 @@ const App = () => {
                     )
                 }
                 {
-                    currentUser && (publicPage === 'dashboard' || !['home', 'map', 'how-it-works', 'coming-soon', 'showcase', 'forum', 'studio', 'leaderboard', 'ijamos', 'builder-vault', ...(isMobileView ? ['start-project'] : [])].includes(publicPage)) && (
+                    currentUser && (publicPage === 'dashboard' || !['home', 'map', 'how-it-works', 'coming-soon', 'showcase', 'hall-of-fame', 'forum', 'studio', 'leaderboard', 'ijamos', 'builder-vault', ...(isMobileView ? ['start-project'] : [])].includes(publicPage)) && (
                         <>
                             {(currentUser?.type === 'admin' || currentUser?.type === 'owner') && (
                                 <AdminDashboard
@@ -1166,7 +1352,7 @@ const App = () => {
                                 if (authPages.includes(id)) {
                                     if (session) { setPublicPage(id); window.scrollTo({ top: 0, behavior: 'smooth' }); }
                                     else setIsAuthModalOpen(true);
-                                } else if (['leaderboard', 'forum', 'showcase', 'ijamos', 'promptforge', 'coming-soon'].includes(id)) {
+                                } else if (['leaderboard', 'forum', 'showcase', 'hall-of-fame', 'ijamos', 'promptforge', 'coming-soon'].includes(id)) {
                                     setPublicPage(id);
                                     window.scrollTo({ top: 0, behavior: 'smooth' });
                                 } else {
@@ -1202,7 +1388,7 @@ const App = () => {
                             if (authPages.includes(id)) {
                                 if (session) { setPublicPage(id); window.scrollTo({ top: 0, behavior: 'smooth' }); }
                                 else setIsAuthModalOpen(true);
-                            } else if (['leaderboard', 'forum', 'showcase', 'ijamos', 'promptforge', 'coming-soon'].includes(id)) {
+                            } else if (['leaderboard', 'forum', 'showcase', 'hall-of-fame', 'ijamos', 'promptforge', 'coming-soon'].includes(id)) {
                                 setPublicPage(id);
                                 window.scrollTo({ top: 0, behavior: 'smooth' });
                             } else {

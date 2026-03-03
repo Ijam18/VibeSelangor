@@ -844,6 +844,7 @@ const ShowcasePage = ({
                 limit={null}
                 setPublicPage={setPublicPage}
                 certificates={certificates}
+                showTopBorder={false}
             />
 
         </div>

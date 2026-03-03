@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Check, Mail, ExternalLink, Gamepad2 } from 'lucide-react';
 import ThreadsIcon from '../ThreadsIcon';
 import { SPRINT_MODULE_STEPS } from '../../constants';
@@ -14,10 +14,32 @@ export default function BuilderDetailModal({
     currentUser,
     isMobileView,
     onVisitStudio,
-    certificates = []
+    certificates = [],
+    classes = [],
+    adminActionLoading = false,
+    adminActionNotice = '',
+    onAssignCertificate,
+    onRevokeCertificate,
+    onDeleteProjects,
+    onDeleteBuilder
 }) {
+    const builderCertificate = (certificates || []).find((c) => c.builder_id === builder?.id) || null;
+    const programOptions = useMemo(
+        () => (classes || [])
+            .filter((item) => String(item?.type || '').toLowerCase() === 'program')
+            .sort((a, b) => new Date(b?.date || 0) - new Date(a?.date || 0)),
+        [classes]
+    );
+    const [selectedProgramId, setSelectedProgramId] = useState('');
+    const canManage = currentUser?.type === 'admin' || currentUser?.type === 'owner';
+    useEffect(() => {
+        if (!builder?.id) {
+            setSelectedProgramId('');
+            return;
+        }
+        setSelectedProgramId(builderCertificate?.program_class_id || '');
+    }, [builder?.id, builderCertificate?.program_class_id]);
     if (!isOpen || !builder) return null;
-    const builderCertificate = (certificates || []).find((c) => c.builder_id === builder.id) || null;
 
     return (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backdropFilter: 'blur(8px)' }}>
@@ -103,6 +125,65 @@ export default function BuilderDetailModal({
                                     )}
                                 </div>
                             </div>
+
+                            {canManage && (
+                                <div>
+                                    <h4 style={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#666', borderBottom: '2px solid #eee', paddingBottom: '8px', marginBottom: '16px' }}>Admin Actions</h4>
+                                    <div style={{ display: 'grid', gap: 8 }}>
+                                        <select
+                                            value={selectedProgramId}
+                                            onChange={(event) => setSelectedProgramId(event.target.value)}
+                                            style={{ border: '2px solid black', borderRadius: 8, padding: '8px 10px', fontSize: 12, background: '#fff' }}
+                                        >
+                                            <option value="">Select program class...</option>
+                                            {programOptions.map((item) => (
+                                                <option key={item.id} value={item.id}>{item.title} ({new Date(item.date).toLocaleDateString()})</option>
+                                            ))}
+                                        </select>
+                                        <button
+                                            type="button"
+                                            className="btn btn-red"
+                                            style={{ padding: '9px 10px', fontSize: 11 }}
+                                            disabled={!selectedProgramId || adminActionLoading}
+                                            onClick={() => onAssignCertificate?.({ builder, programClassId: selectedProgramId })}
+                                        >
+                                            {adminActionLoading ? 'Working...' : builderCertificate ? 'Regenerate / Assign Certificate' : 'Assign Certificate'}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn btn-outline"
+                                            style={{ padding: '9px 10px', fontSize: 11, borderColor: '#b91c1c', color: '#b91c1c' }}
+                                            disabled={!builderCertificate || adminActionLoading}
+                                            onClick={() => onRevokeCertificate?.({ builder, certificateId: builderCertificate?.id })}
+                                        >
+                                            Revoke Certificate
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn btn-outline"
+                                            style={{ padding: '9px 10px', fontSize: 11 }}
+                                            disabled={adminActionLoading}
+                                            onClick={() => onDeleteProjects?.(builder)}
+                                        >
+                                            Delete Builder Projects
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn btn-outline"
+                                            style={{ padding: '9px 10px', fontSize: 11, borderColor: '#b91c1c', color: '#b91c1c' }}
+                                            disabled={adminActionLoading}
+                                            onClick={() => onDeleteBuilder?.(builder)}
+                                        >
+                                            Delete Builder
+                                        </button>
+                                        {adminActionNotice && (
+                                            <div style={{ fontSize: 11, color: adminActionNotice.toLowerCase().includes('failed') ? '#b91c1c' : '#0f172a' }}>
+                                                {adminActionNotice}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
 
                             <div>
                                 <h4 style={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#666', borderBottom: '2px solid #eee', paddingBottom: '6px', marginBottom: '16px' }}>Project Evolution</h4>

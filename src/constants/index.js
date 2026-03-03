@@ -90,6 +90,7 @@ export const HEADER_LINKS = [
     { label: 'Forum', page: 'forum' },
 
     { label: 'Showcase', page: 'showcase' },
+    { label: 'Hall of Fame', page: 'hall-of-fame' },
     { label: 'Leaderboard', page: 'leaderboard' },
     { label: 'How it works', page: 'how-it-works' },
     { label: 'Coming Soon', page: 'coming-soon' }

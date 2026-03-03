@@ -1,12 +1,25 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Calendar, LogOut, Check, ExternalLink, Sparkles, FileText, X, Award, Eye } from 'lucide-react';
+import { Calendar, LogOut, Check, ExternalLink, Sparkles, FileText, X, Award, Eye, ArrowUp, ArrowDown, Trash2 } from 'lucide-react';
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import ThreadsIcon from '../components/ThreadsIcon';
 import { DISTRICT_OPTIONS, SPRINT_MODULE_STEPS } from '../constants';
 import { truncateText, downloadCSV, formatWhatsAppLink } from '../utils';
 import MobileFeatureShell from '../components/MobileFeatureShell';
 import { supabase } from '../lib/supabase';
-import { issueProgramCertificates as svcIssueProgramCertificates, getEligibleProgramBuilders as svcGetEligibleProgramBuilders, deriveCertificateAssetUrl } from '../lib/certificateService';
+import {
+    issueProgramCertificates as svcIssueProgramCertificates,
+    getEligibleProgramBuilders as svcGetEligibleProgramBuilders,
+    getProgramCertificateCandidates as svcGetProgramCertificateCandidates,
+    generateCertificateSvg as svcGenerateCertificateSvg,
+    deriveCertificateAssetUrl
+} from '../lib/certificateService';
+import {
+    createHallOfFameEntry,
+    deleteHallOfFameEntry,
+    fetchAdminHallOfFame,
+    reorderHallOfFameEntries,
+    updateHallOfFameEntry
+} from '../lib/hallOfFameService';
 
 export default function AdminDashboard({
     profiles,
@@ -27,6 +40,7 @@ export default function AdminDashboard({
     const [adminTab, setAdminTab] = useState('overview');
     const [adminSearch, setAdminSearch] = useState('');
     const [adminFilter, setAdminFilter] = useState('all'); // all, with_idea, no_idea
+    const [builderFilters, setBuilderFilters] = useState({ district: 'all', certificate: 'all', sort: 'name_asc' });
     const [islandIndex, setIslandIndex] = useState(0);
     const [reportPeriod, setReportPeriod] = useState('weekly'); // daily, weekly, monthly, yearly, range
     const [reportRangeStart, setReportRangeStart] = useState('');
@@ -41,16 +55,39 @@ export default function AdminDashboard({
     const [tipsIndex, setTipsIndex] = useState(0);
     const [isExportOpen, setIsExportOpen] = useState(false);
     const [desktopBuilderVisibleCount, setDesktopBuilderVisibleCount] = useState(24);
-    const [issuingCertClassId, setIssuingCertClassId] = useState(null);
     const [certificateProgramId, setCertificateProgramId] = useState(null);
     const [programCertificates, setProgramCertificates] = useState([]);
     const [isProgramCertificatesLoading, setIsProgramCertificatesLoading] = useState(false);
     const [certificatePreview, setCertificatePreview] = useState(null);
     const [certificateAssetFormat, setCertificateAssetFormat] = useState('both');
+    const [certificateFilters, setCertificateFilters] = useState({
+        search: '',
+        district: 'all',
+        status: 'all',
+        eligibility: 'all',
+        sort: 'latest'
+    });
+    const [selectedQueueIds, setSelectedQueueIds] = useState([]);
+    const [issueRunState, setIssueRunState] = useState('idle');
+    const [issueRunSummary, setIssueRunSummary] = useState(null);
+    const [certificateNotice, setCertificateNotice] = useState('');
+    const [adminActionNotice, setAdminActionNotice] = useState('');
+    const [attendanceFilters, setAttendanceFilters] = useState({
+        search: '',
+        district: 'all',
+        classScope: 'all',
+        attendanceBand: 'all',
+        sort: 'name_asc'
+    });
     const [allCertificates, setAllCertificates] = useState([]);
+    const [hallOfFameRows, setHallOfFameRows] = useState([]);
+    const [isHallOfFameLoading, setIsHallOfFameLoading] = useState(false);
+    const [hallOfFameNotice, setHallOfFameNotice] = useState('');
+    const [selectedHallCertId, setSelectedHallCertId] = useState('');
 
     // Filter Logic moved here
     const filteredProfiles = useMemo(() => {
+        const certMap = new Map((allCertificates || []).map((cert) => [cert.builder_id, cert]));
         let list = profiles;
         if (adminSearch) {
             const s = adminSearch.toLowerCase();
@@ -62,9 +99,15 @@ export default function AdminDashboard({
         }
         if (adminFilter === 'with_idea') list = list.filter(p => p.idea_title);
         if (adminFilter === 'no_idea') list = list.filter(p => !p.idea_title);
+        if (builderFilters.district !== 'all') list = list.filter((p) => (p.district || 'Unknown') === builderFilters.district);
+        if (builderFilters.certificate === 'issued') list = list.filter((p) => certMap.has(p.id));
+        if (builderFilters.certificate === 'pending') list = list.filter((p) => !certMap.has(p.id));
+        if (builderFilters.sort === 'name_desc') list = [...list].sort((a, b) => String(b.full_name || '').localeCompare(String(a.full_name || '')));
+        if (builderFilters.sort === 'district') list = [...list].sort((a, b) => String(a.district || '').localeCompare(String(b.district || '')));
+        if (builderFilters.sort === 'name_asc') list = [...list].sort((a, b) => String(a.full_name || '').localeCompare(String(b.full_name || '')));
 
         return list;
-    }, [profiles, adminSearch, adminFilter]);
+    }, [profiles, allCertificates, adminSearch, adminFilter, builderFilters]);
 
     const profilesByIdea = useMemo(() => {
         const groups = {};
@@ -247,6 +290,71 @@ export default function AdminDashboard({
         [classes, attendanceClassId]
     );
 
+    const attendanceDistrictOptions = useMemo(() => {
+        const values = Array.from(new Set((builderProfiles || []).map((p) => p?.district).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+        return ['all', ...values];
+    }, [builderProfiles]);
+
+    const attendanceVisibleClasses = useMemo(() => {
+        const list = [...(classes || [])];
+        if (attendanceFilters.classScope === 'active') return list.filter((item) => String(item?.status || '').toLowerCase() === 'active');
+        if (attendanceFilters.classScope === 'ended') return list.filter((item) => String(item?.status || '').toLowerCase() !== 'active');
+        if (attendanceFilters.classScope === 'program') return list.filter((item) => String(item?.type || '').toLowerCase() === 'program');
+        return list;
+    }, [classes, attendanceFilters.classScope]);
+
+    const attendanceRows = useMemo(() => {
+        const totalClasses = attendanceVisibleClasses.length;
+        const query = String(attendanceFilters.search || '').trim().toLowerCase();
+        let rows = (builderProfiles || []).map((profile) => {
+            const presentCount = attendanceVisibleClasses.reduce((count, classItem) => {
+                const present = (attendance || []).some((item) => item.profile_id === profile.id && item.class_id === classItem.id && item.status === 'Present');
+                return present ? count + 1 : count;
+            }, 0);
+            const attendanceRate = totalClasses > 0 ? Math.round((presentCount / totalClasses) * 100) : 0;
+            return { profile, presentCount, attendanceRate, totalClasses };
+        });
+
+        if (query) {
+            rows = rows.filter((row) =>
+                String(row.profile?.full_name || '').toLowerCase().includes(query) ||
+                String(row.profile?.district || '').toLowerCase().includes(query)
+            );
+        }
+        if (attendanceFilters.district !== 'all') {
+            rows = rows.filter((row) => String(row.profile?.district || 'Unknown') === attendanceFilters.district);
+        }
+        if (attendanceFilters.attendanceBand === 'perfect') {
+            rows = rows.filter((row) => row.totalClasses > 0 && row.presentCount === row.totalClasses);
+        } else if (attendanceFilters.attendanceBand === 'at_risk') {
+            rows = rows.filter((row) => row.totalClasses > 0 && row.attendanceRate < 60);
+        } else if (attendanceFilters.attendanceBand === 'no_presence') {
+            rows = rows.filter((row) => row.presentCount === 0);
+        }
+
+        if (attendanceFilters.sort === 'rate_desc') {
+            rows.sort((a, b) => b.attendanceRate - a.attendanceRate || String(a.profile?.full_name || '').localeCompare(String(b.profile?.full_name || '')));
+        } else if (attendanceFilters.sort === 'rate_asc') {
+            rows.sort((a, b) => a.attendanceRate - b.attendanceRate || String(a.profile?.full_name || '').localeCompare(String(b.profile?.full_name || '')));
+        } else {
+            rows.sort((a, b) => String(a.profile?.full_name || '').localeCompare(String(b.profile?.full_name || '')));
+        }
+        return rows;
+    }, [attendance, attendanceFilters, attendanceVisibleClasses, builderProfiles]);
+
+    const attendanceSummary = useMemo(() => {
+        const totalRows = attendanceRows.length;
+        const avgRate = totalRows ? Math.round(attendanceRows.reduce((sum, row) => sum + row.attendanceRate, 0) / totalRows) : 0;
+        const perfect = attendanceRows.filter((row) => row.totalClasses > 0 && row.presentCount === row.totalClasses).length;
+        const atRisk = attendanceRows.filter((row) => row.totalClasses > 0 && row.attendanceRate < 60).length;
+        return {
+            totalRows,
+            avgRate,
+            perfect,
+            atRisk
+        };
+    }, [attendanceRows]);
+
     const getProgramWindow = (item) => {
         const start = new Date(item?.date || Date.now());
         start.setHours(0, 0, 0, 0);
@@ -264,27 +372,6 @@ export default function AdminDashboard({
             .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
     }, [classes]);
 
-    const getProjectUrl = (submission) =>
-        submission?.submission_url || submission?.project_url || submission?.demo_url || submission?.github_url || '';
-
-    const getEligibleBuildersForProgram = (programClass) => {
-        if (!programClass?.id) return [];
-        const { start, end } = getProgramWindow(programClass);
-        const builderOnlyProfiles = (profiles || []).filter((p) => !['owner', 'admin'].includes((p?.role || '').toLowerCase()));
-        const projectSubs = (submissions || []).filter((s) => {
-            if (!s?.user_id) return false;
-            const created = new Date(s.created_at);
-            return created >= start && created <= end && Boolean(getProjectUrl(s).trim());
-        });
-        const latestByBuilder = new Map();
-        projectSubs.forEach((s) => {
-            const prev = latestByBuilder.get(s.user_id);
-            if (!prev || new Date(s.created_at) > new Date(prev.created_at)) latestByBuilder.set(s.user_id, s);
-        });
-        return builderOnlyProfiles
-            .filter((p) => latestByBuilder.has(p.id))
-            .map((p) => ({ profile: p, latestSubmission: latestByBuilder.get(p.id) }));
-    };
 
     useEffect(() => {
         let ignore = false;
@@ -313,6 +400,21 @@ export default function AdminDashboard({
     }, [certificateProgramId]);
 
     useEffect(() => {
+        setSelectedQueueIds([]);
+        setIssueRunState('idle');
+        setIssueRunSummary(null);
+        setCertificateNotice('');
+        setCertificateFilters((prev) => ({
+            ...prev,
+            search: '',
+            district: 'all',
+            status: 'all',
+            eligibility: 'all',
+            sort: 'latest'
+        }));
+    }, [certificateProgramId]);
+
+    useEffect(() => {
         let ignore = false;
         const loadAllCertificates = async () => {
             const { data, error } = await supabase
@@ -332,135 +434,156 @@ export default function AdminDashboard({
         };
     }, [profiles.length, submissions.length]);
 
-    const generateCertificateSvg = ({ builderName, district, programTitle, appName, issuedAt }) => {
-        const esc = (value) => String(value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const issued = new Date(issuedAt || Date.now()).toLocaleDateString();
-        return `
-<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="990" viewBox="0 0 1400 990">
-  <defs>
-    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
-      <stop offset="0%" stop-color="#fff7ed" />
-      <stop offset="100%" stop-color="#fee2e2" />
-    </linearGradient>
-  </defs>
-  <rect x="0" y="0" width="1400" height="990" fill="url(#bg)" />
-  <rect x="40" y="40" width="1320" height="910" rx="24" fill="#ffffff" stroke="#111827" stroke-width="8" />
-  <rect x="40" y="40" width="1320" height="32" fill="#CE1126" />
-  <rect x="460" y="40" width="220" height="32" fill="#F7C948" />
-  <text x="90" y="160" fill="#0f172a" font-size="58" font-weight="800" font-family="Arial, sans-serif">VIBESELANGOR CERTIFICATE</text>
-  <text x="90" y="220" fill="#475569" font-size="28" font-family="Arial, sans-serif">This certifies that</text>
-  <text x="90" y="300" fill="#111827" font-size="64" font-weight="700" font-family="Arial, sans-serif">${esc(builderName)}</text>
-  <text x="90" y="360" fill="#334155" font-size="30" font-family="Arial, sans-serif">District: ${esc(district)} | App: ${esc(appName)}</text>
-  <text x="90" y="420" fill="#334155" font-size="30" font-family="Arial, sans-serif">Completed: ${esc(programTitle)}</text>
-  <text x="90" y="480" fill="#64748b" font-size="24" font-family="Arial, sans-serif">Issued on ${esc(issued)}</text>
-  <line x1="90" y1="620" x2="520" y2="620" stroke="#111827" stroke-width="3"/>
-  <text x="90" y="650" fill="#64748b" font-size="20" font-family="Arial, sans-serif">Program Lead</text>
-  <line x1="820" y1="620" x2="1240" y2="620" stroke="#111827" stroke-width="3"/>
-  <text x="820" y="650" fill="#64748b" font-size="20" font-family="Arial, sans-serif">KrackedDevs Selangor</text>
-</svg>`.trim();
-    };
-
-    const uploadCertificateAsset = async ({ programClass, profile, latestSubmission, issuedAt }) => {
-        const appName = latestSubmission?.project_name || profile?.idea_title || 'Builder Project';
-        const svg = generateCertificateSvg({
-            builderName: profile?.full_name || 'Builder',
-            district: profile?.district || 'Selangor',
-            programTitle: programClass?.title || 'Program',
-            appName,
-            issuedAt
-        });
-        const fileName = `${programClass.id}/${profile.id}-${Date.now()}.svg`;
-        const bucket = 'builder_certificates';
-        const { error: uploadError } = await supabase.storage
-            .from(bucket)
-            .upload(fileName, new Blob([svg], { type: 'image/svg+xml' }), {
-                cacheControl: '3600',
-                upsert: true,
-                contentType: 'image/svg+xml'
-            });
-        if (uploadError) throw uploadError;
-        const { data } = supabase.storage.from(bucket).getPublicUrl(fileName);
-        return data?.publicUrl || '';
-    };
-
-    const issueSingleCertificate = async ({ programClass, profile, latestSubmission, existingCertificate = null }) => {
-        const issuedAt = new Date().toISOString();
-        const certificateUrl = await uploadCertificateAsset({ programClass, profile, latestSubmission, issuedAt });
-        const payload = {
-            builder_id: profile.id,
-            builder_name: profile.full_name || 'Builder',
-            district: profile.district || 'Unknown',
-            program_class_id: programClass.id,
-            program_title: programClass.title || 'Program',
-            app_name: latestSubmission?.project_name || profile?.idea_title || 'Builder Project',
-            project_url: getProjectUrl(latestSubmission),
-            certificate_url: certificateUrl,
-            issued_at: issuedAt
-        };
-        if (existingCertificate?.id) {
-            const { error } = await supabase.from('builder_certificates').update(payload).eq('id', existingCertificate.id);
-            if (error) throw error;
-        } else {
-            const { error } = await supabase.from('builder_certificates').insert([payload]);
-            if (error) throw error;
-        }
-    };
-
-    const handleIssueProgramCertificates = async (programClass) => {
-        if (!programClass?.id) return;
-        const eligibleRows = svcGetEligibleProgramBuilders({ programClass, profiles, submissions });
-        if (!eligibleRows.length) {
-            alert('No eligible builders found for this program window.');
-            return;
-        }
-        setIssuingCertClassId(programClass.id);
+    const loadHallOfFameRows = async () => {
+        setIsHallOfFameLoading(true);
+        setHallOfFameNotice('');
         try {
-            const { issuedCount, updatedCount, errors } = await svcIssueProgramCertificates({
-                supabase,
-                programClass,
-                profiles,
-                submissions,
-                assetFormat: certificateAssetFormat
-            });
-            const failed = errors?.length || 0;
-            alert(`Issued ${issuedCount}, updated ${updatedCount}, failed ${failed} certificate(s) for ${programClass.title}.`);
-            if (certificateProgramId === programClass.id) {
-                const { data: refreshed } = await supabase
-                    .from('builder_certificates')
-                    .select('*')
-                    .eq('program_class_id', programClass.id);
-                setProgramCertificates(refreshed || []);
-            }
-            const { data: certRows } = await supabase.from('builder_certificates').select('*').order('issued_at', { ascending: false });
-            setAllCertificates(certRows || []);
+            const rows = await fetchAdminHallOfFame();
+            setHallOfFameRows(rows);
         } catch (error) {
-            const msg = String(error?.message || error || 'Unknown error');
-            if (msg.toLowerCase().includes('bucket')) {
-                alert("Certificate storage bucket missing. To fix:\n\n1. Go to Supabase Dashboard > Storage\n2. Create bucket 'builder_certificates' (public)\n3. Enable public access\n4. Click Retry\n\nNote: If bucket exists, you may have reached Supabase storage limits (1GB on free tier).");
-            } else if (msg.toLowerCase().includes('builder_certificates')) {
-                alert("Certificates table missing. Run the SQL to create 'builder_certificates' first.");
-            } else {
-                alert(`Failed to issue certificates: ${msg}`);
-            }
+            setHallOfFameRows([]);
+            setHallOfFameNotice(String(error?.message || error || 'Failed to load hall of fame.'));
         } finally {
-            setIssuingCertClassId(null);
+            setIsHallOfFameLoading(false);
         }
     };
+
+    useEffect(() => {
+        loadHallOfFameRows();
+    }, []);
 
     const certificateProgram = useMemo(
         () => (classes || []).find((c) => c.id === certificateProgramId) || null,
         [classes, certificateProgramId]
     );
 
-    const certificateBuilderRows = useMemo(() => {
+    const certificateCandidateRows = useMemo(() => {
         if (!certificateProgram) return [];
-        const eligible = svcGetEligibleProgramBuilders({ programClass: certificateProgram, profiles, submissions });
-        const existingMap = new Map((programCertificates || []).map((row) => [row.builder_id, row]));
-        return eligible.map((row) => ({
-            ...row,
-            certificate: existingMap.get(row.profile.id) || null
-        }));
+        return svcGetProgramCertificateCandidates({
+            programClass: certificateProgram,
+            profiles,
+            submissions,
+            existingCertificates: programCertificates
+        });
     }, [certificateProgram, programCertificates, profiles, submissions]);
+
+    const certificateDistrictOptions = useMemo(() => {
+        const rows = certificateCandidateRows || [];
+        return ['all', ...Array.from(new Set(rows.map((row) => row.district).filter(Boolean))).sort((a, b) => a.localeCompare(b))];
+    }, [certificateCandidateRows]);
+
+    const filteredCandidates = useMemo(() => {
+        let rows = [...(certificateCandidateRows || [])];
+        const q = String(certificateFilters.search || '').trim().toLowerCase();
+        if (q) {
+            rows = rows.filter((row) =>
+                row.full_name.toLowerCase().includes(q) ||
+                String(row.app_name || '').toLowerCase().includes(q)
+            );
+        }
+        if (certificateFilters.district !== 'all') rows = rows.filter((row) => row.district === certificateFilters.district);
+        if (certificateFilters.status === 'issued') rows = rows.filter((row) => row.has_certificate);
+        if (certificateFilters.status === 'pending') rows = rows.filter((row) => !row.has_certificate);
+        if (certificateFilters.eligibility === 'eligible') rows = rows.filter((row) => row.eligibility_status === 'eligible');
+        if (certificateFilters.eligibility === 'ineligible') rows = rows.filter((row) => row.eligibility_status === 'ineligible');
+        if (certificateFilters.sort === 'oldest') rows.sort((a, b) => new Date(a.latest_submission_at || 0) - new Date(b.latest_submission_at || 0));
+        else rows.sort((a, b) => new Date(b.latest_submission_at || 0) - new Date(a.latest_submission_at || 0));
+        return rows;
+    }, [certificateCandidateRows, certificateFilters]);
+
+    const selectedQueueRows = useMemo(
+        () => certificateCandidateRows.filter((row) => selectedQueueIds.includes(row.builder_id)),
+        [certificateCandidateRows, selectedQueueIds]
+    );
+
+    const ineligibilityLabel = (reason) => {
+        if (reason === 'missing_url') return 'Missing valid project URL';
+        if (reason === 'outside_window') return 'Outside program window';
+        return 'No submission in program window';
+    };
+
+    const getCertificatePreviewImageUrl = (submission) => {
+        const media = submission?.screenshot_url || submission?.image_url || '';
+        if (media) return media;
+        const project = submission?.submission_url || submission?.project_url || submission?.demo_url || submission?.github_url || '';
+        if (/\.(png|jpe?g|gif|webp|svg)(\?|#|$)/i.test(project)) return project;
+        return '';
+    };
+
+    const toggleQueueBuilder = (builderId) => {
+        setSelectedQueueIds((prev) => (prev.includes(builderId) ? prev.filter((id) => id !== builderId) : [...prev, builderId]));
+    };
+
+    const refreshCertificateData = async (programId) => {
+        const targetProgramId = programId || certificateProgram?.id;
+        if (targetProgramId) {
+            const { data: refreshed } = await supabase
+                .from('builder_certificates')
+                .select('*')
+                .eq('program_class_id', targetProgramId);
+            setProgramCertificates(refreshed || []);
+        }
+        const { data: allRefreshed } = await supabase
+            .from('builder_certificates')
+            .select('*')
+            .order('issued_at', { ascending: false });
+        setAllCertificates(allRefreshed || []);
+    };
+
+    const handleIssueSelectedQueue = async () => {
+        if (!certificateProgram || !selectedQueueIds.length) return;
+        setIssueRunState('running');
+        setIssueRunSummary(null);
+        try {
+            setCertificateNotice('');
+            const result = await svcIssueProgramCertificates({
+                supabase,
+                programClass: certificateProgram,
+                profiles,
+                submissions,
+                assetFormat: certificateAssetFormat,
+                selectedBuilderIds: selectedQueueIds
+            });
+            setIssueRunState((result.errors || []).length ? 'failed' : 'done');
+            setIssueRunSummary({
+                issued: result.issuedCount || 0,
+                updated: result.updatedCount || 0,
+                failed: (result.errors || []).length,
+                errors: result.errors || []
+            });
+            await refreshCertificateData(certificateProgram.id);
+            setSelectedQueueIds([]);
+            setCertificateNotice('Queue issuance completed.');
+        } catch (error) {
+            setIssueRunState('failed');
+            setIssueRunSummary({
+                issued: 0,
+                updated: 0,
+                failed: selectedQueueIds.length,
+                errors: [{ message: String(error?.message || error || 'Failed to issue certificates.') }]
+            });
+            setCertificateNotice(String(error?.message || error || 'Failed to issue certificates.'));
+        }
+    };
+
+    const handleRevokeCertificate = async (row) => {
+        if (!row?.certificate?.id) return;
+        const ok = window.confirm(`Revoke certificate for ${row.full_name || 'this builder'}? This will remove the current certificate record.`);
+        if (!ok) return;
+        try {
+            setCertificateNotice('');
+            const { error } = await supabase
+                .from('builder_certificates')
+                .delete()
+                .eq('id', row.certificate.id);
+            if (error) throw error;
+            await refreshCertificateData(row.program_class_id);
+            setSelectedQueueIds((prev) => prev.filter((id) => id !== row.builder_id));
+            setCertificateNotice(`Certificate revoked for ${row.full_name || 'builder'}.`);
+        } catch (error) {
+            setCertificateNotice(String(error?.message || error || 'Failed to revoke certificate.'));
+        }
+    };
 
     const latestEndedProgram = useMemo(() => endedPrograms[0] || null, [endedPrograms]);
     const eligibleUncertifiedRows = useMemo(() => {
@@ -473,6 +596,144 @@ export default function AdminDashboard({
         );
         return eligible.filter((row) => !issuedIds.has(row.profile.id));
     }, [latestEndedProgram, profiles, submissions, allCertificates]);
+
+    const hallOfFameBuilderIds = useMemo(
+        () => new Set((hallOfFameRows || []).map((row) => row.builder_id)),
+        [hallOfFameRows]
+    );
+
+    const certificateOptions = useMemo(() => {
+        return (allCertificates || [])
+            .filter((cert) => cert?.id && cert?.builder_id && !hallOfFameBuilderIds.has(cert.builder_id))
+            .map((cert) => ({
+                ...cert,
+                label: `${cert.builder_name || 'Builder'} - ${cert.program_title || 'Program'}`
+            }));
+    }, [allCertificates, hallOfFameBuilderIds]);
+
+    const handleAddHallOfFame = async () => {
+        if (!selectedHallCertId) {
+            setHallOfFameNotice('Select a certificate to add a graduate.');
+            return;
+        }
+        const cert = (allCertificates || []).find((item) => item.id === selectedHallCertId);
+        if (!cert?.builder_id) {
+            setHallOfFameNotice('Certificate not found.');
+            return;
+        }
+        try {
+            await createHallOfFameEntry({
+                builder_id: cert.builder_id,
+                certificate_id: cert.id,
+                featured_project_url: cert.project_url || '',
+                featured_quote: '',
+                featured_order: hallOfFameRows.length + 1,
+                is_active: true
+            });
+            setSelectedHallCertId('');
+            await loadHallOfFameRows();
+            setHallOfFameNotice('Graduate added to Hall of Fame.');
+        } catch (error) {
+            setHallOfFameNotice(String(error?.message || error || 'Failed to add graduate.'));
+        }
+    };
+
+    const handleUpdateHallOfFame = async (row, patch) => {
+        try {
+            await updateHallOfFameEntry(row.id, { ...row, ...patch });
+            await loadHallOfFameRows();
+            setHallOfFameNotice('Hall of Fame entry updated.');
+        } catch (error) {
+            setHallOfFameNotice(String(error?.message || error || 'Failed to update entry.'));
+        }
+    };
+
+    const handleDeleteHallOfFame = async (rowId) => {
+        try {
+            await deleteHallOfFameEntry(rowId);
+            await loadHallOfFameRows();
+            setHallOfFameNotice('Entry removed.');
+        } catch (error) {
+            setHallOfFameNotice(String(error?.message || error || 'Failed to remove entry.'));
+        }
+    };
+
+    const handleMoveHallOfFame = async (index, direction) => {
+        const targetIndex = direction === 'up' ? index - 1 : index + 1;
+        if (targetIndex < 0 || targetIndex >= hallOfFameRows.length) return;
+        const reordered = [...hallOfFameRows];
+        const [moved] = reordered.splice(index, 1);
+        reordered.splice(targetIndex, 0, moved);
+        const payload = reordered.map((item, idx) => ({ id: item.id, featured_order: idx + 1 }));
+        try {
+            const next = await reorderHallOfFameEntries(payload);
+            setHallOfFameRows(next);
+            setHallOfFameNotice('Order updated.');
+        } catch (error) {
+            setHallOfFameNotice(String(error?.message || error || 'Failed to reorder entries.'));
+        }
+    };
+
+    const handleDeleteBuilderProjects = async (profile) => {
+        const builderName = profile?.full_name || 'this builder';
+        const role = String(profile?.role || '').toLowerCase();
+        if (role === 'owner' || role === 'admin') {
+            setAdminActionNotice('Admin/owner records cannot be deleted here.');
+            return;
+        }
+        const confirmed = window.confirm(`Delete all projects for ${builderName}? This removes all rows from builder_progress for this builder.`);
+        if (!confirmed) return;
+
+        try {
+            setAdminActionNotice('');
+            const { error } = await supabase.from('builder_progress').delete().eq('user_id', profile.id);
+            if (error) throw error;
+            await fetchData();
+            setAdminActionNotice(`Deleted all projects for ${builderName}.`);
+        } catch (error) {
+            setAdminActionNotice(String(error?.message || error || 'Failed to delete builder projects.'));
+        }
+    };
+
+    const handleDeleteBuilder = async (profile) => {
+        const builderName = profile?.full_name || 'this builder';
+        const role = String(profile?.role || '').toLowerCase();
+        if (role === 'owner' || role === 'admin') {
+            setAdminActionNotice('Admin/owner records cannot be deleted here.');
+            return;
+        }
+        const confirmed = window.confirm(`Delete builder "${builderName}" and related records? This action cannot be undone.`);
+        if (!confirmed) return;
+
+        try {
+            setAdminActionNotice('');
+            const isMissingTableError = (error) => {
+                const message = String(error?.message || '').toLowerCase();
+                return message.includes('does not exist') || (message.includes('relation') && message.includes('does not'));
+            };
+            const { error: hofError } = await supabase.from('hall_of_fame_entries').delete().eq('builder_id', profile.id);
+            if (hofError && !isMissingTableError(hofError)) throw hofError;
+
+            const { error: certError } = await supabase.from('builder_certificates').delete().eq('builder_id', profile.id);
+            if (certError) throw certError;
+
+            const { error: attendanceError } = await supabase.from('cohort_attendance').delete().eq('profile_id', profile.id);
+            if (attendanceError) throw attendanceError;
+
+            const { error: progressError } = await supabase.from('builder_progress').delete().eq('user_id', profile.id);
+            if (progressError) throw progressError;
+
+            const { error: profileError } = await supabase.from('profiles').delete().eq('id', profile.id);
+            if (profileError) throw profileError;
+
+            setSelectedDetailProfile(null);
+            await fetchData();
+            await loadHallOfFameRows();
+            setAdminActionNotice(`Deleted builder ${builderName} and related records.`);
+        } catch (error) {
+            setAdminActionNotice(String(error?.message || error || 'Failed to delete builder.'));
+        }
+    };
 
     const sanitizeFileToken = (value, fallback = 'Unknown') => {
         const clean = String(value || fallback)
@@ -1438,11 +1699,10 @@ export default function AdminDashboard({
                                             {String(c?.type || '').toLowerCase() === 'program' && (
                                                 <button
                                                     type="button"
-                                                    onClick={() => handleIssueProgramCertificates(c)}
-                                                    disabled={issuingCertClassId === c.id}
+                                                    onClick={() => setCertificateProgramId(c.id)}
                                                     style={{ ...iosSecondaryBtn, padding: '6px 9px', fontSize: 10 }}
                                                 >
-                                                    {issuingCertClassId === c.id ? 'Issuing...' : 'Issue Cert'}
+                                                    Cert Manager
                                                 </button>
                                             )}
                                         </div>
@@ -1548,6 +1808,7 @@ export default function AdminDashboard({
             <div style={{ display: 'flex', gap: '20px', marginBottom: '24px', borderBottom: '2px solid #eee' }}>
                 <button onClick={() => setAdminTab('overview')} style={{ padding: '12px 12px', border: 'none', background: 'none', borderBottom: adminTab === 'overview' ? '4px solid var(--selangor-red)' : '4px solid transparent', fontWeight: '900', fontSize: '13px', cursor: 'pointer', color: adminTab === 'overview' ? 'black' : '#888', transition: 'all 0.2s' }}>OVERVIEW</button>
                 <button onClick={() => setAdminTab('attendance')} style={{ padding: '12px 12px', border: 'none', background: 'none', borderBottom: adminTab === 'attendance' ? '4px solid var(--selangor-red)' : '4px solid transparent', fontWeight: '900', fontSize: '13px', cursor: 'pointer', color: adminTab === 'attendance' ? 'black' : '#888', transition: 'all 0.2s' }}>ATTENDANCE</button>
+                <button onClick={() => setAdminTab('hall-of-fame')} style={{ padding: '12px 12px', border: 'none', background: 'none', borderBottom: adminTab === 'hall-of-fame' ? '4px solid var(--selangor-red)' : '4px solid transparent', fontWeight: '900', fontSize: '13px', cursor: 'pointer', color: adminTab === 'hall-of-fame' ? 'black' : '#888', transition: 'all 0.2s' }}>HALL OF FAME</button>
                 <button onClick={() => setAdminTab('reports')} style={{ padding: '12px 12px', border: 'none', background: 'none', borderBottom: adminTab === 'reports' ? '4px solid var(--selangor-red)' : '4px solid transparent', fontWeight: '900', fontSize: '13px', cursor: 'pointer', color: adminTab === 'reports' ? 'black' : '#888', transition: 'all 0.2s' }}>REPORTS</button>
             </div>
 
@@ -1710,6 +1971,11 @@ export default function AdminDashboard({
                     <div style={{ gridColumn: 'span 7' }}>
                         <div className="neo-card" style={{ border: '3px solid black', boxShadow: '6px 6px 0px black', padding: '16px' }}>
                             <h3 style={{ fontSize: '18px', marginBottom: '16px' }}>Builder Progress ({filteredProfiles.length})</h3>
+                            {adminActionNotice && (
+                                <div style={{ marginBottom: 10, fontSize: 11, color: adminActionNotice.toLowerCase().includes('failed') ? '#b91c1c' : '#0f172a' }}>
+                                    {adminActionNotice}
+                                </div>
+                            )}
                             <div className="scroll-box" style={{ maxHeight: '550px' }}>
                                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                     <thead>
@@ -1718,6 +1984,7 @@ export default function AdminDashboard({
                                             <th style={{ padding: '12px', fontSize: '12px' }}>LATEST PROJECT / IDEA</th>
                                             <th style={{ padding: '12px', fontSize: '12px' }}>SPRINT STEP</th>
                                             <th style={{ padding: '12px', fontSize: '12px' }}>STATUS</th>
+                                            <th style={{ padding: '12px', fontSize: '12px' }}>ACTIONS</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1755,9 +2022,35 @@ export default function AdminDashboard({
                                                     </td>
                                                     <td style={{ padding: '12px' }}>
                                                         {isCheckedIn ?
-                                                            <span className="pill pill-teal" style={{ fontSize: '9px', fontWeight: '950' }}>✓ CHECKED IN</span> :
+                                                            <span className="pill pill-teal" style={{ fontSize: '9px', fontWeight: '950' }}>CHECKED IN</span> :
                                                             <span className="pill" style={{ opacity: 0.4, fontSize: '9px' }}>PENDING</span>
                                                         }
+                                                    </td>
+                                                    <td style={{ padding: '12px' }}>
+                                                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-outline"
+                                                                style={{ padding: '4px 7px', fontSize: 10 }}
+                                                                onClick={(event) => {
+                                                                    event.stopPropagation();
+                                                                    handleDeleteBuilderProjects(p);
+                                                                }}
+                                                            >
+                                                                Delete Projects
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-outline"
+                                                                style={{ padding: '4px 7px', fontSize: 10, color: '#b91c1c', borderColor: '#b91c1c' }}
+                                                                onClick={(event) => {
+                                                                    event.stopPropagation();
+                                                                    handleDeleteBuilder(p);
+                                                                }}
+                                                            >
+                                                                Delete Builder
+                                                            </button>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             );
@@ -1772,7 +2065,7 @@ export default function AdminDashboard({
                         <div className="neo-card" style={{ border: '3px solid black', boxShadow: '6px 6px 0px black', padding: '16px', height: '100%' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                                 <h3 style={{ fontSize: '18px' }}>Builders ({profiles.length})</h3>
-                                <div style={{ display: 'flex', gap: '8px' }}>
+                                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                                     <input
                                         className="builder-upload-input"
                                         placeholder="Search..."
@@ -1788,6 +2081,25 @@ export default function AdminDashboard({
                                         <option value="all">All</option>
                                         <option value="with_idea">With Idea</option>
                                         <option value="no_idea">No Idea</option>
+                                    </select>
+                                    <select
+                                        value={builderFilters.district}
+                                        onChange={(e) => setBuilderFilters((prev) => ({ ...prev, district: e.target.value }))}
+                                        style={{ padding: '6px 10px', border: '2px solid black', borderRadius: '8px', fontSize: '12px' }}
+                                    >
+                                        <option value="all">All Districts</option>
+                                        {DISTRICT_OPTIONS.map((district) => (
+                                            <option key={district} value={district}>{district}</option>
+                                        ))}
+                                    </select>
+                                    <select
+                                        value={builderFilters.certificate}
+                                        onChange={(e) => setBuilderFilters((prev) => ({ ...prev, certificate: e.target.value }))}
+                                        style={{ padding: '6px 10px', border: '2px solid black', borderRadius: '8px', fontSize: '12px' }}
+                                    >
+                                        <option value="all">Any Cert</option>
+                                        <option value="issued">Issued</option>
+                                        <option value="pending">Pending</option>
                                     </select>
                                 </div>
                             </div>
@@ -1837,6 +2149,24 @@ export default function AdminDashboard({
                                                                 <span className="pill pill-teal">{p.role}</span>
                                                             </div>
                                                         </div>
+                                                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-outline"
+                                                                style={{ padding: '4px 7px', fontSize: 10 }}
+                                                                onClick={() => handleDeleteBuilderProjects(p)}
+                                                            >
+                                                                Delete Projects
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-outline"
+                                                                style={{ padding: '4px 7px', fontSize: 10, color: '#b91c1c', borderColor: '#b91c1c' }}
+                                                                onClick={() => handleDeleteBuilder(p)}
+                                                            >
+                                                                Delete Builder
+                                                            </button>
+                                                        </div>
                                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '13px' }}>
                                                             <div>
                                                                 <div style={{ fontWeight: '800', marginBottom: '2px' }}>Contact:</div>
@@ -1872,6 +2202,70 @@ export default function AdminDashboard({
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <h3 style={{ fontSize: '20px', margin: 0 }}>Attendance Matrix</h3>
                         </div>
+                        <div style={{ border: '2px solid black', borderRadius: 12, background: '#fff', padding: 12, display: 'grid', gap: 8 }}>
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                                <input
+                                    value={attendanceFilters.search}
+                                    onChange={(event) => setAttendanceFilters((prev) => ({ ...prev, search: event.target.value }))}
+                                    placeholder="Search builder or district..."
+                                    style={{ border: '2px solid black', borderRadius: 8, padding: '6px 8px', fontSize: 11, minWidth: 220 }}
+                                />
+                                <select
+                                    value={attendanceFilters.district}
+                                    onChange={(event) => setAttendanceFilters((prev) => ({ ...prev, district: event.target.value }))}
+                                    style={{ border: '2px solid black', borderRadius: 8, padding: '6px 8px', fontSize: 11 }}
+                                >
+                                    {attendanceDistrictOptions.map((district) => (
+                                        <option key={district} value={district}>
+                                            {district === 'all' ? 'All Districts' : district}
+                                        </option>
+                                    ))}
+                                </select>
+                                <select
+                                    value={attendanceFilters.classScope}
+                                    onChange={(event) => setAttendanceFilters((prev) => ({ ...prev, classScope: event.target.value }))}
+                                    style={{ border: '2px solid black', borderRadius: 8, padding: '6px 8px', fontSize: 11 }}
+                                >
+                                    <option value="all">All Classes</option>
+                                    <option value="active">Active Classes</option>
+                                    <option value="ended">Ended Classes</option>
+                                    <option value="program">Program Classes</option>
+                                </select>
+                                <select
+                                    value={attendanceFilters.attendanceBand}
+                                    onChange={(event) => setAttendanceFilters((prev) => ({ ...prev, attendanceBand: event.target.value }))}
+                                    style={{ border: '2px solid black', borderRadius: 8, padding: '6px 8px', fontSize: 11 }}
+                                >
+                                    <option value="all">Any Attendance</option>
+                                    <option value="perfect">Perfect</option>
+                                    <option value="at_risk">At Risk (&lt;60%)</option>
+                                    <option value="no_presence">No Presence</option>
+                                </select>
+                                <select
+                                    value={attendanceFilters.sort}
+                                    onChange={(event) => setAttendanceFilters((prev) => ({ ...prev, sort: event.target.value }))}
+                                    style={{ border: '2px solid black', borderRadius: 8, padding: '6px 8px', fontSize: 11 }}
+                                >
+                                    <option value="name_asc">Sort: Name</option>
+                                    <option value="rate_desc">Sort: Highest Rate</option>
+                                    <option value="rate_asc">Sort: Lowest Rate</option>
+                                </select>
+                                <button
+                                    className="btn btn-outline"
+                                    style={{ padding: '6px 9px', fontSize: 10 }}
+                                    onClick={() => setAttendanceFilters({ search: '', district: 'all', classScope: 'all', attendanceBand: 'all', sort: 'name_asc' })}
+                                >
+                                    Clear
+                                </button>
+                            </div>
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: 10, color: '#334155', fontWeight: 700 }}>
+                                <span>Builders: {attendanceSummary.totalRows}</span>
+                                <span>Average: {attendanceSummary.avgRate}%</span>
+                                <span>Perfect: {attendanceSummary.perfect}</span>
+                                <span>At Risk: {attendanceSummary.atRisk}</span>
+                                <span>Classes in view: {attendanceVisibleClasses.length}</span>
+                            </div>
+                        </div>
                         <div style={{ border: '2px solid black', borderRadius: 12, background: '#fff', padding: 12 }}>
                             <div style={{ fontSize: 12, fontWeight: 800, marginBottom: 10 }}>Program Certificates</div>
                             {endedPrograms.length === 0 ? (
@@ -1893,15 +2287,7 @@ export default function AdminDashboard({
                                                 >
                                                     <Eye size={12} /> Manage
                                                 </button>
-                                                <button
-                                                    type="button"
-                                                    className="btn btn-outline"
-                                                    style={{ padding: '6px 10px', fontSize: 11 }}
-                                                    onClick={() => handleIssueProgramCertificates(program)}
-                                                    disabled={issuingCertClassId === program.id}
-                                                >
-                                                    {issuingCertClassId === program.id ? 'Issuing...' : 'Issue All'}
-                                                </button>
+                                                
                                             </div>
                                         </div>
                                     ))}
@@ -1914,7 +2300,7 @@ export default function AdminDashboard({
                             <thead>
                                 <tr style={{ textAlign: 'left', borderBottom: '2px solid black' }}>
                                     <th style={{ padding: '12px', fontSize: '12px', position: 'sticky', left: 0, background: 'white', zIndex: 2 }}>BUILDER</th>
-                                    {classes.map(c => (
+                                    {attendanceVisibleClasses.map(c => (
                                         <th key={c.id} style={{ padding: '12px', fontSize: '11px', whiteSpace: 'nowrap', writingMode: 'vertical-rl', transform: 'rotate(180deg)', height: '120px' }}>
                                             {c.title} <br /> <span style={{ opacity: 0.5, fontSize: '9px' }}>{new Date(c.date).toLocaleDateString()}</span>
                                         </th>
@@ -1922,13 +2308,13 @@ export default function AdminDashboard({
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredProfiles.map(p => (
+                                {attendanceRows.map(({ profile: p, attendanceRate, presentCount, totalClasses }) => (
                                     <tr key={p.id} style={{ borderBottom: '1px solid #eee' }}>
                                         <td style={{ padding: '12px', fontWeight: '800', fontSize: '13px', position: 'sticky', left: 0, background: 'white', borderRight: '1px solid #eee' }}>
                                             {p.full_name}
-                                            <div style={{ fontSize: '10px', opacity: 0.5 }}>{p.district}</div>
+                                            <div style={{ fontSize: '10px', opacity: 0.5 }}>{p.district} • {presentCount}/{totalClasses} ({attendanceRate}%)</div>
                                         </td>
-                                        {classes.map(c => {
+                                        {attendanceVisibleClasses.map(c => {
                                             const isPresent = attendance.some(a => a.profile_id === p.id && a.class_id === c.id && a.status === 'Present');
                                             return (
                                                 <td key={c.id} style={{ textAlign: 'center', padding: '8px', background: isPresent ? '#f0fff4' : 'transparent' }}>
@@ -1957,8 +2343,124 @@ export default function AdminDashboard({
                                         })}
                                     </tr>
                                 ))}
+                                {attendanceRows.length === 0 && (
+                                    <tr>
+                                        <td colSpan={attendanceVisibleClasses.length + 1} style={{ padding: 12, fontSize: 12 }}>
+                                            No builders matched the attendance filters.
+                                        </td>
+                                    </tr>
+                                )}
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            ) : adminTab === 'hall-of-fame' ? (
+                <div className="neo-card" style={{ border: '3px solid black', boxShadow: '6px 6px 0px black', padding: '24px' }}>
+                    <div style={{ display: 'grid', gap: 14 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                            <h3 style={{ fontSize: '20px', margin: 0 }}>Hall of Fame Manager</h3>
+                            <button className="btn btn-outline" style={{ padding: '8px 12px', fontSize: 11 }} onClick={loadHallOfFameRows}>
+                                Refresh
+                            </button>
+                        </div>
+
+                        <div style={{ border: '2px solid black', borderRadius: 12, background: '#fff', padding: 12, display: 'grid', gap: 10 }}>
+                            <div style={{ fontSize: 12, fontWeight: 800 }}>Add Graduate (Certificate Required)</div>
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                                <select
+                                    value={selectedHallCertId}
+                                    onChange={(event) => setSelectedHallCertId(event.target.value)}
+                                    style={{ minWidth: 280, maxWidth: '100%', border: '2px solid black', borderRadius: 8, padding: '7px 8px', fontSize: 12, background: '#fff' }}
+                                >
+                                    <option value="">Select certificate...</option>
+                                    {certificateOptions.map((item) => (
+                                        <option key={item.id} value={item.id}>
+                                            {item.label}
+                                        </option>
+                                    ))}
+                                </select>
+                                <button className="btn btn-red" style={{ padding: '7px 11px', fontSize: 11 }} type="button" onClick={handleAddHallOfFame}>
+                                    Add to Hall of Fame
+                                </button>
+                            </div>
+                            {hallOfFameNotice && (
+                                <div style={{ fontSize: 11, color: hallOfFameNotice.toLowerCase().includes('failed') ? '#b91c1c' : '#0f172a' }}>
+                                    {hallOfFameNotice}
+                                </div>
+                            )}
+                        </div>
+
+                        <div style={{ border: '2px solid black', borderRadius: 12, overflow: 'hidden', background: '#fff' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                <thead>
+                                    <tr style={{ borderBottom: '2px solid black', background: '#f8fafc', textAlign: 'left' }}>
+                                        <th style={{ padding: 10, fontSize: 11 }}>Order</th>
+                                        <th style={{ padding: 10, fontSize: 11 }}>Graduate</th>
+                                        <th style={{ padding: 10, fontSize: 11 }}>Program</th>
+                                        <th style={{ padding: 10, fontSize: 11 }}>Project URL</th>
+                                        <th style={{ padding: 10, fontSize: 11 }}>Quote</th>
+                                        <th style={{ padding: 10, fontSize: 11 }}>Active</th>
+                                        <th style={{ padding: 10, fontSize: 11 }}>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {isHallOfFameLoading && (
+                                        <tr><td colSpan={7} style={{ padding: 12, fontSize: 12 }}>Loading entries...</td></tr>
+                                    )}
+                                    {!isHallOfFameLoading && hallOfFameRows.length === 0 && (
+                                        <tr><td colSpan={7} style={{ padding: 12, fontSize: 12 }}>No Hall of Fame entries yet.</td></tr>
+                                    )}
+                                    {!isHallOfFameLoading && hallOfFameRows.map((row, index) => (
+                                        <tr key={`${row.id}-${row.updated_at || ''}`} style={{ borderBottom: '1px solid #e5e7eb', verticalAlign: 'top' }}>
+                                            <td style={{ padding: 10, fontSize: 12, fontWeight: 800 }}>{index + 1}</td>
+                                            <td style={{ padding: 10 }}>
+                                                <div style={{ fontSize: 12, fontWeight: 800 }}>{row.profile?.full_name || row.certificate?.builder_name || 'Builder'}</div>
+                                                <div style={{ fontSize: 10, opacity: 0.66 }}>{row.profile?.district || row.certificate?.district || '-'}</div>
+                                            </td>
+                                            <td style={{ padding: 10, fontSize: 12 }}>{row.certificate?.program_title || '-'}</td>
+                                            <td style={{ padding: 10 }}>
+                                                <input
+                                                    defaultValue={row.featured_project_url || row.certificate?.project_url || ''}
+                                                    onBlur={(event) => handleUpdateHallOfFame(row, { featured_project_url: event.target.value })}
+                                                    style={{ width: 180, border: '1px solid #94a3b8', borderRadius: 6, padding: '5px 6px', fontSize: 11 }}
+                                                />
+                                            </td>
+                                            <td style={{ padding: 10 }}>
+                                                <textarea
+                                                    defaultValue={row.featured_quote || ''}
+                                                    onBlur={(event) => handleUpdateHallOfFame(row, { featured_quote: event.target.value })}
+                                                    rows={2}
+                                                    style={{ width: 200, border: '1px solid #94a3b8', borderRadius: 6, padding: '5px 6px', fontSize: 11, resize: 'vertical' }}
+                                                />
+                                            </td>
+                                            <td style={{ padding: 10 }}>
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-outline"
+                                                    style={{ padding: '5px 8px', fontSize: 10 }}
+                                                    onClick={() => handleUpdateHallOfFame(row, { is_active: !row.is_active })}
+                                                >
+                                                    {row.is_active ? 'Active' : 'Inactive'}
+                                                </button>
+                                            </td>
+                                            <td style={{ padding: 10 }}>
+                                                <div style={{ display: 'flex', gap: 6 }}>
+                                                    <button type="button" className="btn btn-outline" style={{ padding: '5px 8px', fontSize: 10 }} onClick={() => handleMoveHallOfFame(index, 'up')} disabled={index === 0}>
+                                                        <ArrowUp size={11} />
+                                                    </button>
+                                                    <button type="button" className="btn btn-outline" style={{ padding: '5px 8px', fontSize: 10 }} onClick={() => handleMoveHallOfFame(index, 'down')} disabled={index === hallOfFameRows.length - 1}>
+                                                        <ArrowDown size={11} />
+                                                    </button>
+                                                    <button type="button" className="btn btn-outline" style={{ padding: '5px 8px', fontSize: 10 }} onClick={() => handleDeleteHallOfFame(row.id)}>
+                                                        <Trash2 size={11} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             ) : (
@@ -2038,48 +2540,112 @@ export default function AdminDashboard({
                                     <option value="pdf">Issue: PDF only</option>
                                     <option value="png">Issue: PNG only</option>
                                 </select>
-                                <button
-                                    type="button"
-                                    className="btn btn-outline"
-                                    style={{ padding: '6px 10px', fontSize: 11 }}
-                                    onClick={() => handleIssueProgramCertificates(certificateProgram)}
-                                    disabled={issuingCertClassId === certificateProgram.id}
-                                >
-                                    {issuingCertClassId === certificateProgram.id ? 'Issuing...' : 'Issue/Update All'}
-                                </button>
                                 <button type="button" className="btn btn-outline" style={{ padding: '6px 10px', fontSize: 11 }} onClick={() => setCertificateProgramId(null)}>Close</button>
                             </div>
                         </div>
+                        <div style={{ border: '2px solid black', borderRadius: 10, background: '#fff', padding: 10, marginBottom: 10, display: 'grid', gap: 8 }}>
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                                <input
+                                    value={certificateFilters.search}
+                                    onChange={(event) => setCertificateFilters((prev) => ({ ...prev, search: event.target.value }))}
+                                    placeholder="Search builder or app..."
+                                    style={{ border: '2px solid black', borderRadius: 8, padding: '6px 8px', fontSize: 11, minWidth: 220 }}
+                                />
+                                <select value={certificateFilters.district} onChange={(event) => setCertificateFilters((prev) => ({ ...prev, district: event.target.value }))} style={{ border: '2px solid black', borderRadius: 8, padding: '6px 8px', fontSize: 11 }}>
+                                    {certificateDistrictOptions.map((district) => (
+                                        <option key={district} value={district}>{district === 'all' ? 'All Districts' : district}</option>
+                                    ))}
+                                </select>
+                                <select value={certificateFilters.status} onChange={(event) => setCertificateFilters((prev) => ({ ...prev, status: event.target.value }))} style={{ border: '2px solid black', borderRadius: 8, padding: '6px 8px', fontSize: 11 }}>
+                                    <option value="all">Any Status</option>
+                                    <option value="issued">Issued</option>
+                                    <option value="pending">Pending</option>
+                                </select>
+                                <select value={certificateFilters.eligibility} onChange={(event) => setCertificateFilters((prev) => ({ ...prev, eligibility: event.target.value }))} style={{ border: '2px solid black', borderRadius: 8, padding: '6px 8px', fontSize: 11 }}>
+                                    <option value="all">Any Eligibility</option>
+                                    <option value="eligible">Eligible</option>
+                                    <option value="ineligible">Ineligible</option>
+                                </select>
+                                <select value={certificateFilters.sort} onChange={(event) => setCertificateFilters((prev) => ({ ...prev, sort: event.target.value }))} style={{ border: '2px solid black', borderRadius: 8, padding: '6px 8px', fontSize: 11 }}>
+                                    <option value="latest">Latest</option>
+                                    <option value="oldest">Oldest</option>
+                                </select>
+                                <button className="btn btn-outline" style={{ padding: '6px 9px', fontSize: 10 }} onClick={() => setCertificateFilters({ search: '', district: 'all', status: 'all', eligibility: 'all', sort: 'latest' })}>
+                                    Clear
+                                </button>
+                            </div>
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: 10, color: '#334155', fontWeight: 700 }}>
+                                <span>Total: {certificateCandidateRows.length}</span>
+                                <span>Eligible: {certificateCandidateRows.filter((row) => row.eligibility_status === 'eligible').length}</span>
+                                <span>Queued: {selectedQueueIds.length}</span>
+                                <span>Issued: {certificateCandidateRows.filter((row) => row.has_certificate).length}</span>
+                            </div>
+                            {certificateNotice && (
+                                <div style={{ fontSize: 11, color: certificateNotice.toLowerCase().includes('failed') ? '#b91c1c' : '#0f172a' }}>
+                                    {certificateNotice}
+                                </div>
+                            )}
+                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                <button type="button" className="btn btn-outline" style={{ padding: '6px 10px', fontSize: 11 }} onClick={() => setSelectedQueueIds([])}>Clear Queue</button>
+                                <button type="button" className="btn btn-red" style={{ padding: '6px 10px', fontSize: 11 }} disabled={!selectedQueueIds.length || issueRunState === 'running'} onClick={handleIssueSelectedQueue}>
+                                    {issueRunState === 'running' ? 'Issuing Queue...' : 'Confirm & Issue Queue'}
+                                </button>
+                            </div>
+                            {issueRunSummary && (
+                                <div style={{ border: '1px solid #e2e8f0', borderRadius: 8, background: '#f8fafc', padding: 8, fontSize: 11 }}>
+                                    <div style={{ fontWeight: 800, marginBottom: 4 }}>Run Result: issued {issueRunSummary.issued}, updated {issueRunSummary.updated}, failed {issueRunSummary.failed}</div>
+                                    {(issueRunSummary.errors || []).slice(0, 5).map((error, idx) => (
+                                        <div key={`issue-err-${idx}`} style={{ color: '#b91c1c' }}>{error.builder_name || 'Builder'}: {error.message}</div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
                         <div style={{ border: '2px solid black', borderRadius: 10, overflow: 'hidden' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
                                     <tr style={{ borderBottom: '2px solid black', background: '#f8fafc', textAlign: 'left' }}>
+                                        <th style={{ padding: 10, fontSize: 11 }}>Queue</th>
                                         <th style={{ padding: 10, fontSize: 11 }}>Builder</th>
                                         <th style={{ padding: 10, fontSize: 11 }}>App</th>
                                         <th style={{ padding: 10, fontSize: 11 }}>Status</th>
+                                        <th style={{ padding: 10, fontSize: 11 }}>Eligibility</th>
                                         <th style={{ padding: 10, fontSize: 11 }}>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {isProgramCertificatesLoading && (
-                                        <tr><td colSpan={4} style={{ padding: 12, fontSize: 12 }}>Loading certificate rows...</td></tr>
+                                        <tr><td colSpan={6} style={{ padding: 12, fontSize: 12 }}>Loading certificate rows...</td></tr>
                                     )}
-                                    {!isProgramCertificatesLoading && certificateBuilderRows.length === 0 && (
-                                        <tr><td colSpan={4} style={{ padding: 12, fontSize: 12 }}>No eligible builders for this program window.</td></tr>
+                                    {!isProgramCertificatesLoading && filteredCandidates.length === 0 && (
+                                        <tr><td colSpan={6} style={{ padding: 12, fontSize: 12 }}>No builders matched this filter.</td></tr>
                                     )}
-                                    {!isProgramCertificatesLoading && certificateBuilderRows.map((row) => (
-                                        <tr key={row.profile.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                                    {!isProgramCertificatesLoading && filteredCandidates.map((row) => (
+                                        <tr key={row.builder_id} style={{ borderBottom: '1px solid #e5e7eb', opacity: row.eligibility_status === 'ineligible' ? 0.8 : 1 }}>
                                             <td style={{ padding: 10 }}>
-                                                <div style={{ fontSize: 12, fontWeight: 800 }}>{row.profile.full_name || 'Builder'}</div>
-                                                <div style={{ fontSize: 10, opacity: 0.66 }}>{row.profile.district || '-'}</div>
+                                                <input
+                                                    type="checkbox"
+                                                    disabled={row.eligibility_status !== 'eligible'}
+                                                    checked={selectedQueueIds.includes(row.builder_id)}
+                                                    onChange={() => toggleQueueBuilder(row.builder_id)}
+                                                />
                                             </td>
-                                            <td style={{ padding: 10, fontSize: 12 }}>{row.latestSubmission?.project_name || row.profile.idea_title || '-'}</td>
+                                            <td style={{ padding: 10 }}>
+                                                <div style={{ fontSize: 12, fontWeight: 800 }}>{row.full_name || 'Builder'}</div>
+                                                <div style={{ fontSize: 10, opacity: 0.66 }}>{row.district || '-'}</div>
+                                            </td>
+                                            <td style={{ padding: 10, fontSize: 12 }}>{row.app_name || '-'}</td>
                                             <td style={{ padding: 10, fontSize: 11 }}>
-                                                {row.certificate ? (
+                                                {row.has_certificate ? (
                                                     <span className="pill pill-teal" style={{ fontSize: 9 }}>Issued</span>
                                                 ) : (
                                                     <span className="pill" style={{ fontSize: 9 }}>Pending</span>
                                                 )}
+                                            </td>
+                                            <td style={{ padding: 10, fontSize: 11 }}>
+                                                {row.eligibility_status === 'eligible'
+                                                    ? <span className="pill pill-teal" style={{ fontSize: 9 }}>Eligible</span>
+                                                    : <span className="pill" style={{ fontSize: 9 }}>{ineligibilityLabel(row.ineligibility_reason)}</span>}
                                             </td>
                                             <td style={{ padding: 10 }}>
                                                 <div style={{ display: 'flex', gap: 6 }}>
@@ -2087,12 +2653,14 @@ export default function AdminDashboard({
                                                         type="button"
                                                         className="btn btn-outline"
                                                         style={{ padding: '5px 8px', fontSize: 10 }}
-                                                        onClick={() => setCertificatePreview({
-                                                            programClass: certificateProgram,
-                                                            profile: row.profile,
-                                                            latestSubmission: row.latestSubmission,
-                                                            certificate: row.certificate || null
-                                                        })}
+                                                        onClick={() => {
+                                                            setCertificatePreview({
+                                                                programClass: certificateProgram,
+                                                                profile: row.profile,
+                                                                latestSubmission: row.latestSubmission,
+                                                                certificate: row.certificate || null
+                                                            });
+                                                        }}
                                                     >
                                                         <Eye size={11} /> Preview
                                                     </button>
@@ -2116,6 +2684,14 @@ export default function AdminDashboard({
                                                             >
                                                                 <ExternalLink size={11} /> PNG
                                                             </a>
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-outline"
+                                                                style={{ padding: '5px 8px', fontSize: 10, borderColor: '#b91c1c', color: '#b91c1c' }}
+                                                                onClick={() => handleRevokeCertificate(row)}
+                                                            >
+                                                                <X size={11} /> Revoke
+                                                            </button>
                                                         </>
                                                     )}
                                                 </div>
@@ -2124,6 +2700,25 @@ export default function AdminDashboard({
                                     ))}
                                 </tbody>
                             </table>
+                        </div>
+
+                        <div style={{ border: '2px solid black', borderRadius: 10, background: '#fff', padding: 10, marginTop: 10 }}>
+                            <div style={{ fontSize: 12, fontWeight: 800, marginBottom: 6 }}>Queue Summary</div>
+                            {selectedQueueRows.length === 0 ? (
+                                <div style={{ fontSize: 11, color: '#64748b' }}>Queue is empty.</div>
+                            ) : (
+                                <div style={{ display: 'grid', gap: 6 }}>
+                                    {selectedQueueRows.map((row) => (
+                                        <div key={`queue-${row.builder_id}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, border: '1px solid #e2e8f0', borderRadius: 8, padding: '6px 8px' }}>
+                                            <div style={{ minWidth: 0 }}>
+                                                <div style={{ fontSize: 11, fontWeight: 700 }}>{row.full_name}</div>
+                                                <div style={{ fontSize: 10, color: '#64748b' }}>{row.district} · {row.program_title}</div>
+                                            </div>
+                                            <button type="button" className="btn btn-outline" style={{ padding: '4px 8px', fontSize: 10 }} onClick={() => toggleQueueBuilder(row.builder_id)}>Remove</button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -2143,16 +2738,20 @@ export default function AdminDashboard({
                             <div style={{ fontSize: 14, fontWeight: 900 }}>Certificate Preview</div>
                             <button type="button" className="btn btn-outline" style={{ padding: '6px 10px', fontSize: 11 }} onClick={() => setCertificatePreview(null)}>Close</button>
                         </div>
-                        <div style={{ border: '2px solid black', borderRadius: 12, padding: 14, background: 'linear-gradient(135deg, #fff7ed, #fee2e2)' }}>
-                            <div style={{ fontSize: 26, fontWeight: 900, lineHeight: 1.05 }}>VIBESELANGOR CERTIFICATE</div>
-                            <div style={{ marginTop: 6, fontSize: 12, opacity: 0.72 }}>This certifies that</div>
-                            <div style={{ marginTop: 6, fontSize: 30, fontWeight: 900 }}>{certificatePreview.profile.full_name || 'Builder'}</div>
-                            <div style={{ marginTop: 8, fontSize: 13, opacity: 0.86 }}>
-                                District: {certificatePreview.profile.district || '-'} | App: {certificatePreview.latestSubmission?.project_name || certificatePreview.profile.idea_title || '-'}
-                            </div>
-                            <div style={{ marginTop: 4, fontSize: 13, opacity: 0.86 }}>
-                                Completed: {certificatePreview.programClass.title}
-                            </div>
+                        <div style={{ border: '2px solid black', borderRadius: 12, padding: 10, background: 'linear-gradient(135deg, #fff7ed, #fee2e2)' }}>
+                            <img
+                                alt="Certificate preview"
+                                src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svcGenerateCertificateSvg({
+                                    builderName: certificatePreview.profile.full_name || 'Builder',
+                                    district: certificatePreview.profile.district || 'Selangor',
+                                    programTitle: certificatePreview.programClass.title,
+                                    appName: certificatePreview.latestSubmission?.project_name || certificatePreview.profile.idea_title || 'Builder Project',
+                                    issuedAt: new Date().toISOString(),
+                                    websiteImageHref: getCertificatePreviewImageUrl(certificatePreview.latestSubmission),
+                                    themeVariant: 'selangor-neo-classic'
+                                }))}`}
+                                style={{ width: '100%', borderRadius: 10, border: '1px solid #cbd5e1', background: '#fff' }}
+                            />
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 10 }}>
                             <button
@@ -2170,21 +2769,14 @@ export default function AdminDashboard({
                                             targetBuilderId: certificatePreview.profile.id,
                                             assetFormat: certificateAssetFormat
                                         });
-                                        const { data: refreshed } = await supabase
-                                            .from('builder_certificates')
-                                            .select('*')
-                                            .eq('program_class_id', certificatePreview.programClass.id);
-                                        setProgramCertificates(refreshed || []);
-                                        const { data: allRefreshed } = await supabase
-                                            .from('builder_certificates')
-                                            .select('*')
-                                            .order('issued_at', { ascending: false });
-                                        setAllCertificates(allRefreshed || []);
+                                        await refreshCertificateData(certificatePreview.programClass.id);
+                                        setCertificateNotice('Certificate updated successfully.');
                                         setCertificatePreview(null);
                                         alert(exists
                                             ? `Certificate regenerated (${updatedCount || issuedCount}), failed ${errors?.length || 0}.`
                                             : `Certificate issued (${issuedCount || updatedCount}), failed ${errors?.length || 0}.`);
                                     } catch (error) {
+                                        setCertificateNotice(String(error?.message || error || 'Failed to issue certificate.'));
                                         alert(`Failed to issue certificate: ${String(error?.message || error)}`);
                                     }
                                 }}
@@ -2198,6 +2790,7 @@ export default function AdminDashboard({
         </div >
     );
 };
+
 
 
 

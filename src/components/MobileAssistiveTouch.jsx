@@ -7,6 +7,7 @@ const DEFAULT_ACTIONS = [
     { id: 'home', label: 'Home', nav: 'home', icon: Home },
     { id: 'forum', label: 'Forum', nav: 'forum', icon: MessageSquare },
     { id: 'showcase', label: 'Showcase', nav: 'showcase', icon: Trophy },
+    { id: 'hall-of-fame', label: 'Hall', nav: 'hall-of-fame', icon: Trophy },
     { id: 'map', label: 'Map', nav: 'map', icon: MapPin },
     { id: 'ijamos', label: 'IjamOS', nav: 'ijamos', icon: Zap },
     { id: 'how', label: 'How?', nav: 'how-it-works', icon: CircleHelp },

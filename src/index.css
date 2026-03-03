@@ -2308,3 +2308,81 @@ section {
     transform: scale(1);
   }
 }
+
+/* Wallpaper Gallery Styles */
+.wallpaper-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 16px;
+}
+
+.wallpaper-thumb {
+  aspect-ratio: 16/9;
+  border-radius: 8px;
+  border: 3px solid transparent;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.wallpaper-thumb:hover {
+  transform: scale(1.05);
+  border-color: rgba(245, 208, 0, 0.5);
+}
+
+.wallpaper-thumb.selected {
+  border-color: #f5d000;
+  box-shadow: 0 0 0 4px rgba(245, 208, 0, 0.3), 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+/* Dock Spacing and Container */
+.ijam-desktop .dock-container {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 24px;
+    background: rgba(11, 18, 32, 0.6);
+    backdrop-filter: blur(28px) saturate(1.2);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    margin: 0 auto 8px 8px 0;
+    max-width: calc(100vw - 32px);
+}
+
+.ijam-desktop .dock-icon {
+    position: relative;
+    transition: transform 0.2s ease;
+    cursor: grab;
+}
+
+.ijam-desktop .dock-icon:active {
+    cursor: grabbing;
+}
+
+.ijam-desktop .dock-icon.dragging {
+    opacity: 0.4;
+    transform: scale(1.05);
+}
+
+/* Dock separator for app groups */
+.dock-separator {
+    width: 1px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 1px;
+    margin: 0 4px;
+}
+

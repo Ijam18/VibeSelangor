@@ -9,7 +9,8 @@ import {
     SendHorizontal,
     Settings,
     Folder,
-    Rocket
+    Rocket,
+    Trophy
 } from 'lucide-react';
 import LiveIslandBlip from './LiveIslandBlip';
 import { supabase } from '../lib/supabase';
@@ -18,6 +19,7 @@ import MobileStatusBar from './MobileStatusBar';
 const ICON_LIBRARY = {
     forum: { id: 'forum', label: 'Forum', icon: MessageSquare, bg: 'linear-gradient(160deg, #dc2626, #991b1b)' },
     showcase: { id: 'showcase', label: 'Showcase', icon: Star, bg: 'linear-gradient(160deg, #f59e0b, #d97706)' },
+    'hall-of-fame': { id: 'hall-of-fame', label: 'Hall of Fame', icon: Trophy, bg: 'linear-gradient(160deg, #fbbf24, #d97706)' },
     map: { id: 'map', label: 'Map', icon: Map, bg: 'linear-gradient(160deg, #ef4444, #b91c1c)' },
     'how-it-works': { id: 'how-it-works', label: 'How?', icon: CircleHelp, bg: 'linear-gradient(160deg, #f97316, #ea580c)' },
     ijamos: { id: 'ijamos', label: 'IjamOS', icon: Zap, bg: 'linear-gradient(160deg, #ef4444, #b91c1c)' },
@@ -28,7 +30,7 @@ const ICON_LIBRARY = {
 };
 
 const STORAGE_KEY = 'mobile_home_icon_layout_v5';
-const DEFAULT_LAYOUT = ['ijamos', 'myapp', 'new-project', 'settings', 'kd'];
+const DEFAULT_LAYOUT = ['ijamos', 'hall-of-fame', 'myapp', 'new-project', 'settings', 'kd'];
 
 function loadLayout() {
     try {
@@ -37,7 +39,7 @@ function loadLayout() {
         const parsed = JSON.parse(raw);
         if (!Array.isArray(parsed)) return DEFAULT_LAYOUT;
         const valid = parsed.filter((id) => ICON_LIBRARY[id]);
-        for (const pinned of ['ijamos', 'myapp', 'new-project', 'settings', 'kd']) {
+        for (const pinned of ['ijamos', 'hall-of-fame', 'myapp', 'new-project', 'settings', 'kd']) {
             if (!valid.includes(pinned)) valid.push(pinned);
         }
         return Array.from(new Set(valid));
@@ -80,6 +82,8 @@ export default function MobileHomeScreen({
     const [editMode, setEditMode] = useState(false);
     const [showAddSheet, setShowAddSheet] = useState(false);
     const [draggingId, setDraggingId] = useState(null);
+    const [currentPage, setCurrentPage] = useState(0);
+    const swipeStartRef = useRef(null);
     const longPressTimer = useRef(null);
     const iconRefs = useRef({});
     const terminalScrollRef = useRef(null);
@@ -89,6 +93,7 @@ export default function MobileHomeScreen({
     const [liveMessages, setLiveMessages] = useState([]);
     const [liveInput, setLiveInput] = useState('');
     const [liveLoading, setLiveLoading] = useState(false);
+    const allowIconRemoval = false;
 
     const triggerHaptic = (ms = 10) => {
         if (
@@ -217,8 +222,10 @@ export default function MobileHomeScreen({
     const hiddenIcons = useMemo(() => Object.values(ICON_LIBRARY).filter((item) => !iconOrder.includes(item.id)), [iconOrder]);
     const isPhonePortrait = viewportWidth <= 430;
     const isPhoneLandscape = viewportWidth > 430 && viewportWidth <= 699;
-    const iconBoxSize = isTabletView ? 72 : (viewportWidth <= 360 ? 50 : viewportWidth <= 430 ? 56 : viewportWidth <= 699 ? 60 : viewportWidth <= 860 ? 64 : 68);
-    const iconGridCols = isTabletView ? 6 : (isPhonePortrait ? 4 : isPhoneLandscape ? 5 : 6);
+    const iconBoxSize = isTabletView ? 72 : (viewportWidth <= 360 ? 44 : viewportWidth <= 430 ? 50 : viewportWidth <= 699 ? 54 : viewportWidth <= 860 ? 64 : 68);
+    const usePagedMobileGrid = !isTabletView;
+    const pageSize = usePagedMobileGrid ? 8 : Number.MAX_SAFE_INTEGER;
+    const iconGridCols = usePagedMobileGrid ? 4 : (isTabletView ? 6 : (isPhonePortrait ? 4 : isPhoneLandscape ? 5 : 6));
     const shellPadding = isPhonePortrait
         ? '10px 12px 108px'
         : isPhoneLandscape
@@ -231,6 +238,19 @@ export default function MobileHomeScreen({
         : isPhoneLandscape
             ? Math.max(250, Math.min(340, Math.round(featureHeight * 0.46)))
             : (isTabletView ? Math.max(240, Math.min(320, Math.round(featureHeight * 0.36))) : Math.max(320, Math.min(460, Math.round(featureHeight * 0.54))));
+
+    const pagedIcons = useMemo(() => {
+        if (!usePagedMobileGrid) return [visibleIcons];
+        const chunks = [];
+        for (let i = 0; i < visibleIcons.length; i += pageSize) chunks.push(visibleIcons.slice(i, i + pageSize));
+        return chunks.length ? chunks : [[]];
+    }, [visibleIcons, usePagedMobileGrid, pageSize]);
+    const pageCount = pagedIcons.length;
+    const pageIcons = pagedIcons[currentPage] || [];
+
+    useEffect(() => {
+        if (currentPage > pageCount - 1) setCurrentPage(Math.max(0, pageCount - 1));
+    }, [currentPage, pageCount]);
 
     const cancelLongPress = () => {
         if (longPressTimer.current) {
@@ -249,7 +269,7 @@ export default function MobileHomeScreen({
     };
 
     const reorderToTarget = (sourceId, clientX, clientY) => {
-        const target = visibleIcons
+        const target = pageIcons
             .map((item) => {
                 const rect = iconRefs.current[item.id]?.getBoundingClientRect?.();
                 if (!rect) return null;
@@ -308,7 +328,8 @@ export default function MobileHomeScreen({
     };
 
     const removeIcon = (id) => {
-        if (['ijamos', 'myapp', 'settings', 'kd'].includes(id)) return;
+        if (!allowIconRemoval) return;
+        if (['ijamos', 'hall-of-fame', 'myapp', 'settings', 'kd'].includes(id)) return;
         triggerHaptic(12);
         setIconOrder((prev) => prev.filter((iconId) => iconId !== id));
     };
@@ -316,6 +337,23 @@ export default function MobileHomeScreen({
     const addIcon = (id) => {
         triggerHaptic(12);
         setIconOrder((prev) => (prev.includes(id) ? prev : [...prev, id]));
+    };
+
+    const handleGridPointerDown = (event) => {
+        if (!usePagedMobileGrid || editMode) return;
+        swipeStartRef.current = { x: event.clientX, y: event.clientY };
+    };
+
+    const handleGridPointerUp = (event) => {
+        if (!usePagedMobileGrid || editMode || !swipeStartRef.current) return;
+        const dx = event.clientX - swipeStartRef.current.x;
+        const dy = event.clientY - swipeStartRef.current.y;
+        swipeStartRef.current = null;
+        if (Math.abs(dx) < 44 || Math.abs(dx) < Math.abs(dy)) return;
+        setCurrentPage((prev) => {
+            if (dx < 0) return Math.min(prev + 1, pageCount - 1);
+            return Math.max(prev - 1, 0);
+        });
     };
 
     const sendFromInput = () => {
@@ -613,9 +651,11 @@ export default function MobileHomeScreen({
 
                 <div
                     style={{ display: 'grid', gridTemplateColumns: `repeat(${iconGridCols}, minmax(0, 1fr))`, gap: viewportWidth >= 700 ? 14 : 12, marginTop: 20, marginBottom: 14, touchAction: editMode ? 'none' : 'pan-x' }}
+                    onPointerDown={handleGridPointerDown}
                     onPointerMove={handleIconPointerMove}
+                    onPointerUp={handleGridPointerUp}
                 >
-                    {visibleIcons.map((item, index) => {
+                    {pageIcons.map((item, index) => {
                         const Icon = item.icon;
                         const isDragging = draggingId === item.id;
                         return (
@@ -631,7 +671,7 @@ export default function MobileHomeScreen({
                                     transition: 'transform 120ms ease, opacity 120ms ease'
                                 }}
                             >
-                                {editMode && !['ijamos', 'myapp', 'settings', 'kd'].includes(item.id) && (
+                                {allowIconRemoval && editMode && !['ijamos', 'hall-of-fame', 'myapp', 'settings', 'kd'].includes(item.id) && (
                                     <button
                                         onClick={() => removeIcon(item.id)}
                                         style={{
@@ -713,6 +753,26 @@ export default function MobileHomeScreen({
                         );
                     })}
                 </div>
+                {usePagedMobileGrid && pageCount > 1 && (
+                    <div style={{ marginTop: 6, marginBottom: 6, display: 'flex', justifyContent: 'center', gap: 6 }}>
+                        {pagedIcons.map((_, idx) => (
+                            <button
+                                key={`page-dot-${idx}`}
+                                onClick={() => setCurrentPage(idx)}
+                                aria-label={`Go to icon page ${idx + 1}`}
+                                style={{
+                                    width: idx === currentPage ? 18 : 8,
+                                    height: 8,
+                                    borderRadius: 999,
+                                    border: 'none',
+                                    background: idx === currentPage ? '#dc2626' : 'rgba(15,23,42,0.2)',
+                                    transition: 'all 140ms ease',
+                                    cursor: 'pointer'
+                                }}
+                            />
+                        ))}
+                    </div>
+                )}
 
             </div>
 
