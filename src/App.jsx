@@ -1,20 +1,20 @@
-import React, { useState, useEffect, useMemo, Suspense, lazy } from 'react';
+﻿import React, { useState, useEffect, useMemo, Suspense, lazy } from 'react';
 import {
     Zap, MessageSquare,
     User, MessageCircle, Menu, ShieldCheck
 } from 'lucide-react';
-import { supabase } from './lib/supabase';
+import { supabase } from './shared/lib/supabase';
 import { ToastProvider, useToast } from './components/ToastNotification';
-import MobileNavSidebar from './components/MobileNavSidebar';
-import MobileBottomNav from './components/MobileBottomNav';
+import MobileNavSidebar from './features/mobile/components/MobileNavSidebar';
+import MobileBottomNav from './features/mobile/components/MobileBottomNav';
 import ThreadsIcon from './components/ThreadsIcon';
-import { awardGameRewards } from './lib/gameService';
-import MobileAssistiveTouch from './components/MobileAssistiveTouch';
-import { HEADER_LINKS, OWNER_EMAIL, ADMIN_EMAILS } from './constants';
-import { resolveRoleByEmail } from './utils';
-import { getCurrentHolidayTheme, getHolidayThemeConfig } from './utils/holidayUtils';
-import { getDeviceMode, getIjamOsMode } from './utils/deviceMode';
-import { issueProgramCertificates as svcIssueProgramCertificates } from './lib/certificateService';
+import { awardGameRewards } from './shared/lib/gameService';
+import MobileAssistiveTouch from './features/mobile/components/MobileAssistiveTouch';
+import { HEADER_LINKS, OWNER_EMAIL, ADMIN_EMAILS } from './shared/constants';
+import { resolveRoleByEmail } from './shared/utils';
+import { getCurrentHolidayTheme, getHolidayThemeConfig } from './shared/utils/holidayUtils';
+import { getDeviceMode, getIjamOsMode } from './shared/utils/deviceMode';
+import { issueProgramCertificates as svcIssueProgramCertificates } from './shared/lib/certificateService';
 
 const BuilderStudioPage = lazy(() => import('./pages/BuilderStudioPage'));
 const ComingSoonPage = lazy(() => import('./pages/ComingSoonPage'));
@@ -1191,7 +1191,7 @@ const App = () => {
                 {
                     publicPage === 'studio' && !session && (
                         <div style={{ padding: '60px 20px', textAlign: 'center' }}>
-                            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎮</div>
+                            <div style={{ fontSize: '48px', marginBottom: '16px' }}>ðŸŽ®</div>
                             <h2 style={{ marginBottom: '8px' }}>Builder Arcade</h2>
                             <p style={{ color: '#666', marginBottom: '24px' }}>Log in to access the arcade and squash some bugs!</p>
                             <button className="btn btn-red" onClick={() => setIsAuthModalOpen(true)}>Login to Access Arcade</button>
@@ -1473,3 +1473,6 @@ const App = () => {
 };
 
 export default App;
+
+
+

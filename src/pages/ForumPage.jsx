@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { supabase } from '../lib/supabase';
+﻿import React, { useState, useEffect, useMemo } from 'react';
+import { supabase } from '../shared/lib/supabase';
 import { useToast } from '../components/ToastNotification';
 import { MessageSquare, Pin, Send, ChevronDown, ChevronUp, Plus, User, X, ExternalLink } from 'lucide-react';
-import { sanitizeAuthorText } from '../utils';
-import { awardGameRewards } from '../lib/gameService';
-import MobileFeatureShell from '../components/MobileFeatureShell';
-import { callAssistantChat } from '../lib/assistantApi';
-import { getLiveProgramMeta } from '../utils/liveProgram';
+import { sanitizeAuthorText } from '../shared/utils';
+import { awardGameRewards } from '../shared/lib/gameService';
+import MobileFeatureShell from '../features/mobile/components/MobileFeatureShell';
+import { callAssistantChat } from '../shared/lib/assistantApi';
+import { getLiveProgramMeta } from '../shared/utils/liveProgram';
 import LiveIslandBlip from '../components/LiveIslandBlip';
 
 export default function ForumPage({ session, currentUser, isMobileView, setPublicPage, classes = [] }) {
@@ -657,3 +657,6 @@ export default function ForumPage({ session, currentUser, isMobileView, setPubli
         </section>
     );
 }
+
+
+

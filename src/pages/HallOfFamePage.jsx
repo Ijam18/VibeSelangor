@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { Award, Brain, ExternalLink, GraduationCap, HeartPulse, Shield, Sparkles, Trophy, Wallet } from 'lucide-react';
-import MobileFeatureShell from '../components/MobileFeatureShell';
-import { fetchPublicHallOfFame } from '../lib/hallOfFameService';
+import MobileFeatureShell from '../features/mobile/components/MobileFeatureShell';
+import { fetchPublicHallOfFame } from '../shared/lib/hallOfFameService';
 
 export default function HallOfFamePage({ isMobileView, setPublicPage }) {
     const [entries, setEntries] = useState([]);
@@ -372,3 +372,5 @@ export default function HallOfFamePage({ isMobileView, setPublicPage }) {
         </div>
     );
 }
+
+

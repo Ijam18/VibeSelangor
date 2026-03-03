@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { Pencil, Plus, Save, X, ImagePlus, Eye, EyeOff, Archive, RotateCcw, Link2, History, Lock, Unlock, Award, ExternalLink } from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import MobileFeatureShell from '../components/MobileFeatureShell';
-import { DISTRICT_OPTIONS } from '../constants';
+import { supabase } from '../shared/lib/supabase';
+import MobileFeatureShell from '../features/mobile/components/MobileFeatureShell';
+import { DISTRICT_OPTIONS } from '../shared/constants';
 
 const EMPTY_FORM = {
     project_name: '',
@@ -96,7 +96,7 @@ export default function BuilderVaultPage({
             id: `p-${p.id}-${p.updated_at || p.created_at}`,
             type: 'project',
             title: p.project_name || 'Project update',
-            description: `${p.status || 'Draft'}${p.submission_url ? ' • URL set' : ''}`,
+            description: `${p.status || 'Draft'}${p.submission_url ? ' â€¢ URL set' : ''}`,
             at: p.updated_at || p.created_at
         }));
         return [...versionEntries, ...projectEntries]
@@ -1100,3 +1100,5 @@ export default function BuilderVaultPage({
         </section>
     );
 }
+
+

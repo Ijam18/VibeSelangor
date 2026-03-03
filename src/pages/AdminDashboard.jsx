@@ -1,25 +1,25 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { Calendar, LogOut, Check, ExternalLink, Sparkles, FileText, X, Award, Eye, ArrowUp, ArrowDown, Trash2 } from 'lucide-react';
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import ThreadsIcon from '../components/ThreadsIcon';
-import { DISTRICT_OPTIONS, SPRINT_MODULE_STEPS } from '../constants';
-import { truncateText, downloadCSV, formatWhatsAppLink } from '../utils';
-import MobileFeatureShell from '../components/MobileFeatureShell';
-import { supabase } from '../lib/supabase';
+import { DISTRICT_OPTIONS, SPRINT_MODULE_STEPS } from '../shared/constants';
+import { truncateText, downloadCSV, formatWhatsAppLink } from '../shared/utils';
+import MobileFeatureShell from '../features/mobile/components/MobileFeatureShell';
+import { supabase } from '../shared/lib/supabase';
 import {
     issueProgramCertificates as svcIssueProgramCertificates,
     getEligibleProgramBuilders as svcGetEligibleProgramBuilders,
     getProgramCertificateCandidates as svcGetProgramCertificateCandidates,
     generateCertificateSvg as svcGenerateCertificateSvg,
     deriveCertificateAssetUrl
-} from '../lib/certificateService';
+} from '../shared/lib/certificateService';
 import {
     createHallOfFameEntry,
     deleteHallOfFameEntry,
     fetchAdminHallOfFame,
     reorderHallOfFameEntries,
     updateHallOfFameEntry
-} from '../lib/hallOfFameService';
+} from '../shared/lib/hallOfFameService';
 
 export default function AdminDashboard({
     profiles,
@@ -1107,7 +1107,7 @@ export default function AdminDashboard({
                         <div class="brand-row">
                             <div>
                                 <h1 class="brand-title">VIBESELANGOR AMBASSADOR REPORT</h1>
-                                <div class="brand-sub">Built by _zarulijam • Support KrackedDevs Selangor Ambassador • Contact: +60183104961</div>
+                                <div class="brand-sub">Built by _zarulijam â€¢ Support KrackedDevs Selangor Ambassador â€¢ Contact: +60183104961</div>
                             </div>
                         </div>
                         <div class="meta-chip-wrap">
@@ -1201,7 +1201,7 @@ export default function AdminDashboard({
                     </tbody>
                 </table>
                 <div class="footer-last">
-                    <div>© 2026 VIBESELANGOR • Ambassador Ops Report</div>
+                    <div>Â© 2026 VIBESELANGOR â€¢ Ambassador Ops Report</div>
                     <div class="footer-center">NO CODE. JUST VIBES.</div>
                     <div>Contact: +60183104961</div>
                 </div>
@@ -1238,8 +1238,8 @@ export default function AdminDashboard({
             padding: '9px 10px'
         };
         const islandMessages = [
-            `${adminAnalytics.builders} Builders • ${adminAnalytics.projectsSubmitted} Projects`,
-            `Ideas: ${adminAnalytics.ideasSubmitted} • Today: ${adminAnalytics.todaysSubmissions}`,
+            `${adminAnalytics.builders} Builders â€¢ ${adminAnalytics.projectsSubmitted} Projects`,
+            `Ideas: ${adminAnalytics.ideasSubmitted} â€¢ Today: ${adminAnalytics.todaysSubmissions}`,
             adminAnalytics.topDistricts[0] ? `Top: ${adminAnalytics.topDistricts[0][0]}` : 'Top district pending'
         ];
 
@@ -1317,7 +1317,7 @@ export default function AdminDashboard({
                             </div>
                             {selectedTopBuilder && (
                                 <div style={{ border: '1px solid #e2e8f0', borderRadius: 10, background: '#fff', padding: '7px 8px' }}>
-                                    <div style={{ fontSize: 10, color: '#64748b' }}>{selectedTopBuilder.district} • {selectedTopBuilder.projects} projects • {selectedTopBuilder.logs} logs</div>
+                                    <div style={{ fontSize: 10, color: '#64748b' }}>{selectedTopBuilder.district} â€¢ {selectedTopBuilder.projects} projects â€¢ {selectedTopBuilder.logs} logs</div>
                                     <div style={{ marginTop: 2, fontSize: 10, color: '#475569' }}>{selectedTopBuilder.latestProject}</div>
                                 </div>
                             )}
@@ -1389,7 +1389,7 @@ export default function AdminDashboard({
                             {(submissions || []).slice(0, 8).map((item) => (
                                 <button key={item.id} onClick={() => setSelectedDetailProfile(profiles.find((p) => p.id === item.user_id) || null)} style={{ textAlign: 'left', borderRadius: 10, border: '1px solid #e2e8f0', background: '#f8fafc', padding: '7px 8px' }}>
                                     <div style={{ fontSize: 12, fontWeight: 600, color: '#0f172a' }}>{item.project_name || 'Untitled Project'}</div>
-                                    <div style={{ marginTop: 2, fontSize: 10, color: '#64748b' }}>{item.builder_name || 'Builder'} • {new Date(item.created_at).toLocaleString()}</div>
+                                    <div style={{ marginTop: 2, fontSize: 10, color: '#64748b' }}>{item.builder_name || 'Builder'} â€¢ {new Date(item.created_at).toLocaleString()}</div>
                                 </button>
                             ))}
                         </div>
@@ -1666,7 +1666,7 @@ export default function AdminDashboard({
                                             <div>
                                                 <div style={{ fontSize: 11, fontWeight: 600, color: '#0f172a' }}>{c.title}</div>
                                                 <div style={{ marginTop: 2, fontSize: 10, color: '#64748b' }}>
-                                                    {new Date(c.date).toLocaleDateString()} • {c.time} • {c.presentCount} present
+                                                    {new Date(c.date).toLocaleDateString()} â€¢ {c.time} â€¢ {c.presentCount} present
                                                 </div>
                                             </div>
                                             <span style={{
@@ -1919,7 +1919,7 @@ export default function AdminDashboard({
                                     {selectedTopBuilder && (
                                         <div style={{ border: '2px solid black', borderRadius: 10, padding: '10px', background: '#fff' }}>
                                             <div style={{ marginTop: 2, fontSize: '12px', opacity: 0.82 }}>{selectedTopBuilder.district}</div>
-                                            <div style={{ marginTop: 4, fontSize: '12px' }}>Projects: <b>{selectedTopBuilder.projects}</b> • Logs: <b>{selectedTopBuilder.logs}</b></div>
+                                            <div style={{ marginTop: 4, fontSize: '12px' }}>Projects: <b>{selectedTopBuilder.projects}</b> â€¢ Logs: <b>{selectedTopBuilder.logs}</b></div>
                                             <div style={{ marginTop: 6, fontSize: '12px', opacity: 0.86 }}>{truncateText(selectedTopBuilder.latestProject, 84)}</div>
                                         </div>
                                     )}
@@ -1940,7 +1940,7 @@ export default function AdminDashboard({
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                                     <div>
                                                         <div style={{ fontSize: '13px', fontWeight: '900' }}>{c.title}</div>
-                                                        <div style={{ fontSize: '11px', opacity: 0.6, marginTop: '2px' }}>{new Date(c.date).toLocaleDateString()} • {c.time}</div>
+                                                        <div style={{ fontSize: '11px', opacity: 0.6, marginTop: '2px' }}>{new Date(c.date).toLocaleDateString()} â€¢ {c.time}</div>
                                                     </div>
                                                     <button
                                                         onClick={() => handleToggleClassStatus(c.id, c.status)}
@@ -2312,7 +2312,7 @@ export default function AdminDashboard({
                                     <tr key={p.id} style={{ borderBottom: '1px solid #eee' }}>
                                         <td style={{ padding: '12px', fontWeight: '800', fontSize: '13px', position: 'sticky', left: 0, background: 'white', borderRight: '1px solid #eee' }}>
                                             {p.full_name}
-                                            <div style={{ fontSize: '10px', opacity: 0.5 }}>{p.district} • {presentCount}/{totalClasses} ({attendanceRate}%)</div>
+                                            <div style={{ fontSize: '10px', opacity: 0.5 }}>{p.district} â€¢ {presentCount}/{totalClasses} ({attendanceRate}%)</div>
                                         </td>
                                         {attendanceVisibleClasses.map(c => {
                                             const isPresent = attendance.some(a => a.profile_id === p.id && a.class_id === c.id && a.status === 'Present');
@@ -2712,7 +2712,7 @@ export default function AdminDashboard({
                                         <div key={`queue-${row.builder_id}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, border: '1px solid #e2e8f0', borderRadius: 8, padding: '6px 8px' }}>
                                             <div style={{ minWidth: 0 }}>
                                                 <div style={{ fontSize: 11, fontWeight: 700 }}>{row.full_name}</div>
-                                                <div style={{ fontSize: 10, color: '#64748b' }}>{row.district} · {row.program_title}</div>
+                                                <div style={{ fontSize: 10, color: '#64748b' }}>{row.district} Â· {row.program_title}</div>
                                             </div>
                                             <button type="button" className="btn btn-outline" style={{ padding: '4px 8px', fontSize: 10 }} onClick={() => toggleQueueBuilder(row.builder_id)}>Remove</button>
                                         </div>
@@ -2790,6 +2790,9 @@ export default function AdminDashboard({
         </div >
     );
 };
+
+
+
 
 
 

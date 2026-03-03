@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from '../lib/supabase';
+﻿import React, { useState, useEffect, useRef } from 'react';
+import { supabase } from '../shared/lib/supabase';
 import { useToast } from './ToastNotification';
 import { Send, X, Minimize2, Maximize2 } from 'lucide-react';
-import { sanitizeAuthorText } from '../utils';
+import { sanitizeAuthorText } from '../shared/utils';
 
 export default function LiveChat({ session, activeClass }) {
     const { addToast } = useToast();
@@ -149,7 +149,7 @@ export default function LiveChat({ session, activeClass }) {
                         {loading && messages.length === 0 ? (
                             <div style={{ textAlign: 'center', opacity: 0.5, fontSize: '12px', marginTop: '20px' }}>Connecting to live chat...</div>
                         ) : messages.length === 0 ? (
-                            <div style={{ textAlign: 'center', opacity: 0.5, fontSize: '12px', marginTop: '20px' }}>Chat is quiet. Say hello! 👋</div>
+                            <div style={{ textAlign: 'center', opacity: 0.5, fontSize: '12px', marginTop: '20px' }}>Chat is quiet. Say hello! ðŸ‘‹</div>
                         ) : (
                             messages.map((msg, i) => {
                                 const isMe = msg.user_id === session?.user?.id;
@@ -228,3 +228,6 @@ export default function LiveChat({ session, activeClass }) {
         </div>
     );
 }
+
+
+

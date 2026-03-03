@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     Home,
     Globe, Server,
@@ -28,17 +28,17 @@ import {
     Waypoints,
     Wand2
 } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
-import { callNvidiaLLM, localIntelligence, ZARULIJAM_SYSTEM_PROMPT } from '../../lib/nvidia';
+import { supabase } from '../../shared/lib/supabase';
+import { callNvidiaLLM, localIntelligence, ZARULIJAM_SYSTEM_PROMPT } from '../../shared/lib/nvidia';
 import BuilderStudioPage from '../../pages/BuilderStudioPage';
 import VibeSimulator from '../../components/simulator/VibeSimulator';
 import MindMapperApp from '../../components/mindmapper/MindMapperApp';
 import PromptForgeApp from '../../components/promptforge/PromptForgeApp';
-import { useWeather } from '../../utils/useWeather';
-import { useSoundEffects } from '../../utils/useSoundEffects';
+import { useWeather } from '../../shared/utils/useWeather';
+import { useSoundEffects } from '../../shared/utils/useSoundEffects';
 import { motion, AnimatePresence } from 'framer-motion';
 import IjamBotMascot from '../../components/IjamBotMascot';
-import MobileStatusBar from '../../components/MobileStatusBar';
+import MobileStatusBar from '../mobile/components/MobileStatusBar';
 import { useIjamOSWindowManager } from './hooks/useIjamOSWindowManager';
 
 const LESSONS_IJAM = [
@@ -682,7 +682,7 @@ const LESSONS_IJAM = [
         summary: 'Retention penting supaya app kau bukan sekadar viral sehari dua, tapi terus digunakan.',
         eli5: 'User retention macam orang datang balik ke kedai sebab servis sedap dan barang berguna.',
         steps: [
-            'Kenal pasti “aha moment” user seawal mungkin.',
+            'Kenal pasti â€œaha momentâ€ user seawal mungkin.',
             'Permudahkan onboarding supaya user cepat faham value.',
             'Tambah habit trigger (email reminder, progress tracker).',
             'Pantau drop-off point dan baiki friction.',
@@ -1589,7 +1589,7 @@ const LESSONS_FORMAL = [
         summary: 'Retention keeps your app useful over time, not just during launch hype.',
         eli5: 'Retention means people return because your app keeps helping them.',
         steps: [
-            'Identify the user “aha moment” early.',
+            'Identify the user â€œaha momentâ€ early.',
             'Reduce onboarding friction.',
             'Add habit loops (reminders, progress cues).',
             'Measure and fix drop-off points.',
@@ -2246,12 +2246,12 @@ const sectionStyle = {
 };
 
 const BOT_CLICK_RESPONSES = [
-    { text: 'Eh! Jangan kacau aku! 😤', emotion: 'frustrated' },
-    { text: 'You are making me angry! 🔴', emotion: 'frustrated' },
-    { text: 'Okay okay... chill! 😅', emotion: 'surprised' },
-    { text: "Let's START the journey! 🚀", emotion: 'excited' },
-    { text: "Siap ke? Let's VIBE! ✨", emotion: 'motivated' },
-    { text: 'Assalamualaikum Builder! 👋', emotion: 'celebrating' },
+    { text: 'Eh! Jangan kacau aku! ðŸ˜¤', emotion: 'frustrated' },
+    { text: 'You are making me angry! ðŸ”´', emotion: 'frustrated' },
+    { text: 'Okay okay... chill! ðŸ˜…', emotion: 'surprised' },
+    { text: "Let's START the journey! ðŸš€", emotion: 'excited' },
+    { text: "Siap ke? Let's VIBE! âœ¨", emotion: 'motivated' },
+    { text: 'Assalamualaikum Builder! ðŸ‘‹', emotion: 'celebrating' },
 ];
 
 const panelStyle = {
@@ -2391,11 +2391,11 @@ const buildIjamBotLessonBrief = ({ lesson, tips, tone }) => {
         explain,
         '',
         tone === 'ijam' ? 'klik "> show next step" untuk mula.' : 'Click "> show next step" to begin.',
-        tone === 'ijam' ? '\nkalau stuck, terus type: debug <isu kau> (¬‿¬)' : ''
+        tone === 'ijam' ? '\nkalau stuck, terus type: debug <isu kau> (Â¬â€¿Â¬)' : ''
     ].join('\n');
 };
 
-// ─── IjamOS v3 App Registry ─────────────────────────────────────────────────
+// â”€â”€â”€ IjamOS v3 App Registry â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const APP_REGISTRY = [
     { type: 'terminal', label: 'TERMINAL', icon: Bot, color: '#bfdbfe', defaultW: 860, defaultH: 560, title: 'IJAM_TERMINAL // IjamOS v3' },
     { type: 'files', label: 'FILES', icon: Folder, color: '#f5d000', defaultW: 820, defaultH: 540, title: 'FILE_EXPLORER // IjamOS v3' },
@@ -2410,7 +2410,7 @@ const APP_REGISTRY = [
     { type: 'trash', label: 'RECYCLE', icon: Trash2, color: '#ef4444', defaultW: 500, defaultH: 320, title: 'RECYCLE_BIN // DELETED CONTENT' },
 ];
 
-// ─── Wallpaper Gallery Data ───────────────────────────────────────────────────
+// â”€â”€â”€ Wallpaper Gallery Data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const WALLPAPER_GALLERY = [
     // Malaysia-Themed Wallpapers
     { id: 'merdeka', name: 'Merdeka Red', type: 'gradient', colors: ['#DC2626', '#FFFFFF', '#FF0000'] },
@@ -2428,7 +2428,7 @@ const WALLPAPER_GALLERY = [
     { id: 'malam', name: 'Malam (Night)', type: 'time-based', times: '21-6', colors: ['#0C1220', '#1E3A8A', '#3B82F6'] },
 ];
 
-// ─── IjamOS v3 Draggable Window Frame ───────────────────────────────────────
+// â”€â”€â”€ IjamOS v3 Draggable Window Frame â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const WindowFrame = ({
     winState,
     title,
@@ -2537,7 +2537,7 @@ const WindowFrame = ({
     return (
         <div ref={frameRef} onMouseDown={onFocus}
             style={{ ...boxStyle, display: 'flex', flexDirection: 'column', background: '#111827', overflow: 'hidden', boxShadow: '0 28px 80px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,0.06)' }}>
-            {/* ── Title bar ── */}
+            {/* â”€â”€ Title bar â”€â”€ */}
             <div
                 onMouseDown={(e) => {
                     if (isMax || mobileMode) return;
@@ -2588,7 +2588,7 @@ const WindowFrame = ({
                 )}
             </div>
             <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>{children}</div>
-            {/* ── Resize handles (hidden when maximized) ── */}
+            {/* â”€â”€ Resize handles (hidden when maximized) â”€â”€ */}
             {!mobileMode && !isMax && onResize && RESIZE_HANDLES.map(({ edge, s }) => (
                 <div key={edge}
                     style={{ position: 'absolute', zIndex: 10, ...s }}
@@ -2671,7 +2671,7 @@ const IjamOSWorkspace = ({ session, currentUser, isMobileView, deviceMode = 'des
 
     const [activeTab, setActiveTab] = useState('lessons'); // 'lessons', 'ai', 'cloud', 'social'
     const [searchQuery, setSearchQuery] = useState('');
-    // ── IjamOS v3 Window & Dock State ────────────────────────────────────────
+    // â”€â”€ IjamOS v3 Window & Dock State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const [windowStates, setWindowStates] = useState({});      // { [type]: { isOpen, isMinimized, isMaximized, x, y, w, h, zIndex } }
     const [focusedWindow, setFocusedWindow] = useState(null);
     const [zCounter, setZCounter] = useState(100);
@@ -3003,7 +3003,7 @@ const IjamOSWorkspace = ({ session, currentUser, isMobileView, deviceMode = 'des
             });
 
             if (error) throw error;
-            appendTerminal('system', '[✓] Profile configurations synced to cloud.');
+            appendTerminal('system', '[âœ“] Profile configurations synced to cloud.');
             alert('Settings saved successfully!');
         } catch (err) {
             console.error('Save failed:', err);
@@ -3018,7 +3018,7 @@ const IjamOSWorkspace = ({ session, currentUser, isMobileView, deviceMode = 'des
         setCurrentWallpaper(wallpaperId);
         localStorage.setItem('vibe_wallpaper', wallpaperId);
         playSuccess();
-        appendTerminal('system', `[✓] Wallpaper changed to: ${wallpaperId}`);
+        appendTerminal('system', `[âœ“] Wallpaper changed to: ${wallpaperId}`);
     };
 
     const getWallpaperStyle = (wallpaper) => {
@@ -3076,7 +3076,7 @@ const IjamOSWorkspace = ({ session, currentUser, isMobileView, deviceMode = 'des
                 updated_at: new Date().toISOString()
             });
 
-            appendTerminal('system', '[✓] Showcase image uploaded to cloud array.');
+            appendTerminal('system', '[âœ“] Showcase image uploaded to cloud array.');
         } catch (error) {
             console.error('Upload Error:', error);
             alert('Error uploading image: ' + error.message + '\n\nMake sure the "builder_showcase" storage bucket exists in Supabase.');
@@ -3337,7 +3337,7 @@ const IjamOSWorkspace = ({ session, currentUser, isMobileView, deviceMode = 'des
         setBootLines([]);
         setBootProgress(0);
 
-        // Phase 1 — Wake up IJAM_BOT
+        // Phase 1 â€” Wake up IJAM_BOT
         setBootPhase('waking');
         setBotEmotion('sleepy');
         setSpeechBubble('zzz...');
@@ -3346,20 +3346,20 @@ const IjamOSWorkspace = ({ session, currentUser, isMobileView, deviceMode = 'des
         await new Promise(r => setTimeout(r, 900));
 
         setBotEmotion('surprised');
-        setSpeechBubble('Wh— huh?! OH! A new builder!');
+        setSpeechBubble('Whâ€” huh?! OH! A new builder!');
         await new Promise(r => setTimeout(r, 1000));
 
-        // Phase 2 — Boot sequence with IJAM_BOT reacting
+        // Phase 2 â€” Boot sequence with IJAM_BOT reacting
         setBootPhase('booting');
         setBotEmotion('focused');
         setSpeechBubble('Let me boot up the system...');
 
         const seq = [
-            { text: '> IJAM_OS v3.0 — KERNEL LOADED', emotion: 'focused', progress: 12, bubble: 'Kernel... check ✓' },
+            { text: '> IJAM_OS v3.0 â€” KERNEL LOADED', emotion: 'focused', progress: 12, bubble: 'Kernel... check âœ“' },
             { text: '> LOADING CURRICULUM MODULES [7/7]', emotion: 'thinking', progress: 28, bubble: 'Pulling in the lessons...' },
             { text: '> SYNCING ANTIGRAVITY CO-PILOT', emotion: 'thinking', progress: 44, bubble: 'AI co-pilot coming online!' },
-            { text: '> VERIFYING BUILDER CREDENTIALS', emotion: 'focused', progress: 60, bubble: 'Who are you? Oh wait—', delay: 700 },
-            { text: '> CALIBRATING VIBE ENGINE ████████', emotion: 'excited', progress: 76, bubble: 'The vibe is strong with this one 🔥' },
+            { text: '> VERIFYING BUILDER CREDENTIALS', emotion: 'focused', progress: 60, bubble: 'Who are you? Oh waitâ€”', delay: 700 },
+            { text: '> CALIBRATING VIBE ENGINE â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆ', emotion: 'excited', progress: 76, bubble: 'The vibe is strong with this one ðŸ”¥' },
             { text: '> DEPLOYING IJAM_BOT INSTANCE', emotion: 'motivated', progress: 90, bubble: "That's me! I'm awake!", delay: 600 },
             { text: '> ALL SYSTEMS NOMINAL. READY.', emotion: 'happy', progress: 100, bubble: null },
         ];
@@ -3373,17 +3373,17 @@ const IjamOSWorkspace = ({ session, currentUser, isMobileView, deviceMode = 'des
             await new Promise(r => setTimeout(r, step.delay || 560));
         }
 
-        // Phase 3 — Welcome
+        // Phase 3 â€” Welcome
         setBootPhase('welcome');
         setBotEmotion('celebrating');
-        setSpeechBubble(`Assalamualaikum, Builder! 👋\nIjamOS v3.0 is ready.\nLet's build something awesome!`);
+        setSpeechBubble(`Assalamualaikum, Builder! ðŸ‘‹\nIjamOS v3.0 is ready.\nLet's build something awesome!`);
         speakText('Assalamualaikum! Welcome, Builder! I am IJAM BOT. Let us build something awesome together!', { emotion: 'excited' });
         await new Promise(r => setTimeout(r, 1800));
 
-        // Phase 4 — Ready
+        // Phase 4 â€” Ready
         setBootPhase('ready');
         setBotEmotion('excited');
-        setSpeechBubble('Click START MY JOURNEY when ready! 🚀');
+        setSpeechBubble('Click START MY JOURNEY when ready! ðŸš€');
         setBootText('READY TO START');
         setIsBooting(false);
     };
@@ -3402,7 +3402,7 @@ const IjamOSWorkspace = ({ session, currentUser, isMobileView, deviceMode = 'des
         ]);
     };
 
-    // ── Bot free-roaming interactions ──────────────────────────────────────────
+    // â”€â”€ Bot free-roaming interactions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     const moveBotTo = useCallback((tx, ty) => {
         setBotPos(prev => {
@@ -3434,7 +3434,7 @@ const IjamOSWorkspace = ({ session, currentUser, isMobileView, deviceMode = 'des
         if (bootPhase === 'idle') return;
         if (e.target.closest('[data-ijambot]')) return;
         const rect = e.currentTarget.getBoundingClientRect();
-        const BOT_W = 103, BOT_H = 180; // size=180 → w=round(180*100/175)=103
+        const BOT_W = 103, BOT_H = 180; // size=180 â†’ w=round(180*100/175)=103
         const tx = Math.max(0, Math.min(e.clientX - rect.left - BOT_W / 2, rect.width - BOT_W));
         const ty = Math.max(0, Math.min(e.clientY - rect.top - BOT_H / 2, rect.height - BOT_H));
         moveBotTo(tx, ty);
@@ -3479,7 +3479,7 @@ YOU DID IT. APP DEPLOYED!`);
                 appendTerminal('assistant', 'Steady! Context is king. Next question...');
                 appendTerminal('assistant', 'QUESTION 2: Code kau kat local dah siap. Nak simpan kat GitHub kena guna command "git push" atau "git pull"?');
                 setOnboardingStep(2);
-                addVibes(20, 'Onboarding Progress ✨');
+                addVibes(20, 'Onboarding Progress âœ¨');
             } else {
                 appendTerminal('assistant', 'Hmm, tak tepat tu. Kena bagi detail (Master Prompt) baru AI faham. Try again?');
             }
@@ -3488,7 +3488,7 @@ YOU DID IT. APP DEPLOYED!`);
                 appendTerminal('assistant', 'Betul! Push untuk hantar, Pull untuk ambil. Last one...');
                 appendTerminal('assistant', 'QUESTION 3: Lepas push ke GitHub, tool apa kita guna untuk bagi website tu LIVE kat internet?\n(A) Vercel\n(B) Supabase\n(C) Antigravity');
                 setOnboardingStep(3);
-                addVibes(20, 'Onboarding Progress ✨');
+                addVibes(20, 'Onboarding Progress âœ¨');
             } else {
                 appendTerminal('assistant', 'Eh silap tu. "git pull" tu untuk tarik code orang lain. Kita nak hantar (push) code kita.');
             }
@@ -3498,7 +3498,7 @@ YOU DID IT. APP DEPLOYED!`);
                 appendTerminal('assistant', 'VIBE_OS UNLOCKED. Semua lesson dah terbuka untuk kau.');
                 setIsOnboarding(false);
                 setOnboardingStep(0);
-                addVibes(50, 'Onboarding Completed 🏆');
+                addVibes(50, 'Onboarding Completed ðŸ†');
 
                 // Show first lesson brief
                 const firstLesson = lessons[0];
@@ -3593,7 +3593,7 @@ YOU DID IT. APP DEPLOYED!`);
                 {/* Ambient red glow behind bot */}
                 <div style={{ position: 'absolute', top: '52%', left: '50%', transform: 'translate(-50%,-50%)', width: '340px', height: '340px', background: 'radial-gradient(circle, rgba(200,16,46,0.18) 0%, transparent 68%)', pointerEvents: 'none', animation: 'lock-glow 3s ease-in-out infinite' }} />
 
-                {/* ── LOCK SCREEN CONTENT — centered column ── */}
+                {/* â”€â”€ LOCK SCREEN CONTENT â€” centered column â”€â”€ */}
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0', paddingBottom: '40px' }}>
 
                     {/* Live clock */}
@@ -3604,7 +3604,7 @@ YOU DID IT. APP DEPLOYED!`);
                         {systemDate}
                     </div>
 
-                    {/* Bot avatar — hold to wake */}
+                    {/* Bot avatar â€” hold to wake */}
                     <motion.button
                         onPointerDown={onHoldStart}
                         onPointerUp={onHoldEnd}
@@ -3616,7 +3616,7 @@ YOU DID IT. APP DEPLOYED!`);
                         <div style={{ width: '200px', height: '200px', borderRadius: '50%', background: `radial-gradient(circle, rgba(200,16,46,${isHolding ? 0.7 : 0.5}) 0%, rgba(200,16,46,0.2) 50%, rgba(200,16,46,0) 72%)`, display: 'grid', placeItems: 'center', animation: 'lock-float 3.6s ease-in-out infinite', transition: 'background 0.2s' }}>
                             {/* Bot icon + progress ring wrapper */}
                             <div style={{ position: 'relative', width: 148, height: 148 }}>
-                                {/* IJAM_BOT face icon — Selangor colorway */}
+                                {/* IJAM_BOT face icon â€” Selangor colorway */}
                                 <svg viewBox="0 0 120 120" width="148" height="148" style={{ filter: `drop-shadow(0 0 ${isHolding ? 28 : 18}px rgba(200,16,46,0.6)) drop-shadow(0 0 8px rgba(245,208,0,0.3))`, animation: isHolding ? 'lock-pulse-active 0.6s ease-in-out infinite' : 'lock-pulse 3.6s ease-in-out infinite', transition: 'filter 0.2s' }}>
                                     {/* Red rounded-square body */}
                                     <rect width="120" height="120" rx="24" fill="#C8102E" />
@@ -3632,7 +3632,7 @@ YOU DID IT. APP DEPLOYED!`);
                                     {/* Mouth bar */}
                                     <rect x="32" y="78" width="56" height="10" rx="5" fill="white" />
                                 </svg>
-                                {/* Gold progress ring — shown during hold */}
+                                {/* Gold progress ring â€” shown during hold */}
                                 {isHolding && (
                                     <svg style={{ position: 'absolute', top: 0, left: 0, transform: 'rotate(-90deg)', pointerEvents: 'none' }}
                                         viewBox="0 0 148 148" width="148" height="148">
@@ -3783,7 +3783,7 @@ YOU DID IT. APP DEPLOYED!`);
                                                 style={{ width: '100%', textAlign: 'left', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '2px 0', marginBottom: isCollapsed ? '0' : '6px', borderBottom: '1px solid #334155', paddingBottom: '4px' }}
                                             >
                                                 <span style={{ color: '#f5d000', fontSize: '12px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{stageName}</span>
-                                                <span style={{ color: '#f5d000', fontSize: '11px', fontWeight: 900 }}>{isCollapsed ? '▸' : '▾'}</span>
+                                                <span style={{ color: '#f5d000', fontSize: '11px', fontWeight: 900 }}>{isCollapsed ? 'â–¸' : 'â–¾'}</span>
                                             </button>
                                             {!isCollapsed && (
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -3838,7 +3838,7 @@ YOU DID IT. APP DEPLOYED!`);
                                                                     }
                                                                 }}
                                                             >
-                                                                <span style={{ fontSize: '10px', flexShrink: 0 }}>{isDone ? '✓' : '○'}</span>
+                                                                <span style={{ fontSize: '10px', flexShrink: 0 }}>{isDone ? 'âœ“' : 'â—‹'}</span>
                                                                 {lesson.title}
                                                             </button>
                                                         );
@@ -4084,7 +4084,7 @@ YOU DID IT. APP DEPLOYED!`);
                     if (item.type === 'url') openExternal(item.data.url);
                 };
 
-                const ICON = { drive: '💾', folder: '📁', lesson: '📄', url: '🔗' };
+                const ICON = { drive: 'ðŸ’¾', folder: 'ðŸ“', lesson: 'ðŸ“„', url: 'ðŸ”—' };
                 const TYPE_LABEL = { drive: 'Local Disk', folder: 'File Folder', lesson: 'Lesson File', url: 'URL Shortcut' };
 
                 const sidebarBtnStyle = (active) => ({
@@ -4100,20 +4100,20 @@ YOU DID IT. APP DEPLOYED!`);
                     <WindowFrame {...mobileWindowProps} winState={windowStates.files} title="FILE_EXPLORER // IjamOS v3" AppIcon={Folder} onClose={() => { closeApp('files'); setExplorerPath([]); setExplorerSearch(''); setExplorerSelected(null); }} onMinimize={() => minimizeApp('files')} onMaximize={() => maximizeApp('files')} onFocus={() => focusApp('files')} onMove={(x, y) => moveApp('files', x, y)} onResize={(w, h) => resizeApp('files', w, h)}>
                         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
 
-                            {/* ── TOOLBAR ── */}
+                            {/* â”€â”€ TOOLBAR â”€â”€ */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 10px', borderBottom: '2px solid #1e293b', background: '#0b1220', flexShrink: 0, flexWrap: 'wrap' }}>
                                 <div style={{ display: 'flex', gap: '3px' }}>
                                     <button onClick={() => navTo(explorerPath.slice(0, -1))} disabled={!explorerPath.length}
-                                        style={{ background: 'none', border: '1px solid #1e293b', borderRadius: '4px', padding: '4px 8px', color: explorerPath.length ? '#94a3b8' : '#1e3a5f', cursor: explorerPath.length ? 'pointer' : 'default', fontSize: '14px', lineHeight: 1 }}>←</button>
+                                        style={{ background: 'none', border: '1px solid #1e293b', borderRadius: '4px', padding: '4px 8px', color: explorerPath.length ? '#94a3b8' : '#1e3a5f', cursor: explorerPath.length ? 'pointer' : 'default', fontSize: '14px', lineHeight: 1 }}>â†</button>
                                     <button onClick={() => navTo([])}
-                                        style={{ background: 'none', border: '1px solid #1e293b', borderRadius: '4px', padding: '4px 8px', color: '#f5d000', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>⌂</button>
+                                        style={{ background: 'none', border: '1px solid #1e293b', borderRadius: '4px', padding: '4px 8px', color: '#f5d000', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>âŒ‚</button>
                                 </div>
                                 {/* Address bar */}
                                 <div style={{ flex: 1, background: '#1e293b', border: '1px solid #334155', borderRadius: '4px', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: '5px', fontFamily: 'monospace', fontSize: '12px', minWidth: 0, overflow: 'hidden' }}>
                                     <span style={{ color: '#f5d000', fontWeight: 900, flexShrink: 0 }}>IjamOS</span>
                                     {explorerPath.map((seg, i) => (
                                         <React.Fragment key={i}>
-                                            <span style={{ color: '#334155', flexShrink: 0 }}>›</span>
+                                            <span style={{ color: '#334155', flexShrink: 0 }}>â€º</span>
                                             <button onClick={() => navTo(explorerPath.slice(0, i + 1))}
                                                 style={{ background: 'none', border: 'none', color: '#bfdbfe', cursor: 'pointer', fontFamily: 'monospace', fontSize: '12px', padding: 0, flexShrink: 0 }}>{seg}</button>
                                         </React.Fragment>
@@ -4124,39 +4124,39 @@ YOU DID IT. APP DEPLOYED!`);
                                     <Search size={12} color="#64748b" />
                                     <input value={explorerSearch} onChange={e => { setExplorerSearch(e.target.value); setExplorerSelected(null); }} placeholder="Search files..."
                                         style={{ background: 'transparent', border: 'none', outline: 'none', color: '#e2e8f0', fontFamily: 'monospace', fontSize: '12px', width: '120px' }} />
-                                    {explorerSearch && <button onClick={() => setExplorerSearch('')} style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer', fontSize: '12px', padding: 0, lineHeight: 1 }}>✕</button>}
+                                    {explorerSearch && <button onClick={() => setExplorerSearch('')} style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer', fontSize: '12px', padding: 0, lineHeight: 1 }}>âœ•</button>}
                                 </div>
                                 {/* View toggle */}
                                 <div style={{ display: 'flex', border: '1px solid #334155', borderRadius: '4px', overflow: 'hidden' }}>
                                     {['icons', 'list'].map(v => (
                                         <button key={v} onClick={() => setExplorerView(v)}
                                             style={{ background: explorerView === v ? '#334155' : 'transparent', border: 'none', color: explorerView === v ? '#f5d000' : '#475569', padding: '4px 9px', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>
-                                            {v === 'icons' ? '⊞' : '≡'}
+                                            {v === 'icons' ? 'âŠž' : 'â‰¡'}
                                         </button>
                                     ))}
                                 </div>
                             </div>
 
-                            {/* ── BODY ── */}
+                            {/* â”€â”€ BODY â”€â”€ */}
                             <div style={{ flex: 1, display: 'flex', minHeight: 0, overflow: 'hidden' }}>
 
                                 {/* Left sidebar */}
                                 {!isNarrowScreen && (
                                     <aside style={{ width: '168px', flexShrink: 0, borderRight: '2px solid #1e293b', background: '#06111a', padding: '8px 6px', overflowY: 'auto' }}>
                                         <div style={{ fontSize: '10px', fontWeight: 900, color: '#334155', letterSpacing: '0.12em', padding: '2px 8px 5px', textTransform: 'uppercase' }}>Quick Access</div>
-                                        <button onClick={() => navTo([])} style={sidebarBtnStyle(explorerPath.length === 0 && !explorerSearch)}>⌂ My Computer</button>
+                                        <button onClick={() => navTo([])} style={sidebarBtnStyle(explorerPath.length === 0 && !explorerSearch)}>âŒ‚ My Computer</button>
 
                                         <div style={{ fontSize: '10px', fontWeight: 900, color: '#334155', letterSpacing: '0.12em', padding: '10px 8px 4px', textTransform: 'uppercase' }}>Drives</div>
-                                        <button onClick={() => navTo(['C:'])} style={sidebarBtnStyle(explorerPath[0] === 'C:' && explorerPath.length === 1)}>💾 C:\ IjamOS</button>
+                                        <button onClick={() => navTo(['C:'])} style={sidebarBtnStyle(explorerPath[0] === 'C:' && explorerPath.length === 1)}>ðŸ’¾ C:\ IjamOS</button>
 
                                         <div style={{ fontSize: '10px', fontWeight: 900, color: '#334155', letterSpacing: '0.12em', padding: '10px 8px 4px', textTransform: 'uppercase' }}>Folders</div>
                                         {allStages.map(stage => (
                                             <button key={stage} onClick={() => navTo(['C:', stage])} style={sidebarBtnStyle(explorerPath[1] === stage)}>
-                                                📁 {stage.length > 15 ? stage.slice(0, 14) + '…' : stage}
+                                                ðŸ“ {stage.length > 15 ? stage.slice(0, 14) + 'â€¦' : stage}
                                             </button>
                                         ))}
                                         {dbLibraryItems.length > 0 && (
-                                            <button onClick={() => navTo(['C:', 'COMMUNITY_RESOURCES'])} style={sidebarBtnStyle(explorerPath[1] === 'COMMUNITY_RESOURCES')}>🌐 Community</button>
+                                            <button onClick={() => navTo(['C:', 'COMMUNITY_RESOURCES'])} style={sidebarBtnStyle(explorerPath[1] === 'COMMUNITY_RESOURCES')}>ðŸŒ Community</button>
                                         )}
                                     </aside>
                                 )}
@@ -4176,7 +4176,7 @@ YOU DID IT. APP DEPLOYED!`);
                                         <div style={{ flex: 1, overflowY: 'auto', padding: explorerView === 'icons' ? '14px' : '0' }}>
                                             {explorerSearch && (
                                                 <div style={{ padding: '6px 14px', fontFamily: 'monospace', fontSize: '11px', color: '#475569', borderBottom: '1px solid #1e293b' }}>
-                                                    Search results for <span style={{ color: '#f5d000' }}>"{explorerSearch}"</span> — {items.length} file{items.length !== 1 ? 's' : ''} found
+                                                    Search results for <span style={{ color: '#f5d000' }}>"{explorerSearch}"</span> â€” {items.length} file{items.length !== 1 ? 's' : ''} found
                                                 </div>
                                             )}
                                             {items.length === 0 ? (
@@ -4193,7 +4193,7 @@ YOU DID IT. APP DEPLOYED!`);
                                                             onMouseLeave={e => { if (!itemIsSelected(item)) e.currentTarget.style.background = 'transparent'; }}>
                                                             <span style={{ fontSize: '28px', lineHeight: 1 }}>{ICON[item.type]}</span>
                                                             <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#e2e8f0', textAlign: 'center', wordBreak: 'break-word', lineHeight: 1.3, maxWidth: '80px' }}>
-                                                                {item.name.length > 28 ? item.name.slice(0, 26) + '…' : item.name}
+                                                                {item.name.length > 28 ? item.name.slice(0, 26) + 'â€¦' : item.name}
                                                             </span>
                                                             {item.ext && <span style={{ fontFamily: 'monospace', fontSize: '9px', color: '#334155' }}>{item.ext}</span>}
                                                         </button>
@@ -4240,7 +4240,7 @@ YOU DID IT. APP DEPLOYED!`);
                                                     <div style={{ fontFamily: 'monospace', fontSize: '9px', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '5px' }}>Summary</div>
                                                     <div style={{ fontFamily: 'monospace', fontSize: '12px', color: '#64748b', lineHeight: 1.6 }}>
                                                         {((explorerSelected.data.summary || explorerSelected.data.description) ?? '').slice(0, 180)}
-                                                        {((explorerSelected.data.summary || explorerSelected.data.description) ?? '').length > 180 ? '…' : ''}
+                                                        {((explorerSelected.data.summary || explorerSelected.data.description) ?? '').length > 180 ? 'â€¦' : ''}
                                                     </div>
                                                 </div>
                                             )}
@@ -4269,11 +4269,11 @@ YOU DID IT. APP DEPLOYED!`);
                                 </div>
                             </div>
 
-                            {/* ── STATUS BAR ── */}
+                            {/* â”€â”€ STATUS BAR â”€â”€ */}
                             <div style={{ borderTop: '2px solid #1e293b', padding: '4px 12px', background: '#06111a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
                                 <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#334155' }}>
                                     {items.length} item{items.length !== 1 ? 's' : ''}
-                                    {explorerSelected ? ` · ${explorerSelected.name}${explorerSelected.ext || ''} selected` : ''}
+                                    {explorerSelected ? ` Â· ${explorerSelected.name}${explorerSelected.ext || ''} selected` : ''}
                                 </span>
                                 <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#1e3a5f' }}>
                                     IjamOS{explorerPath.length ? '\\' + explorerPath.join('\\') : ''}
@@ -4349,7 +4349,7 @@ YOU DID IT. APP DEPLOYED!`);
                                         <div key={stage} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: isStageDone ? 'rgba(134, 239, 172, 0.05)' : 'rgba(255,255,255,0.02)', border: isStageDone ? '1px solid #86efac' : '1px solid #1e293b', borderRadius: '8px' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                                 <div style={{ width: '18px', height: '18px', border: '2px solid', borderColor: isStageDone ? '#86efac' : '#334155', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#86efac' }}>
-                                                    {isStageDone && "✓"}
+                                                    {isStageDone && "âœ“"}
                                                 </div>
                                                 <span style={{ fontSize: '13px', fontWeight: 800, color: isStageDone ? '#86efac' : '#fff' }}>{stage.toUpperCase()}</span>
                                             </div>
@@ -4869,7 +4869,7 @@ YOU DID IT. APP DEPLOYED!`);
                         <div style={{ padding: '16px 20px 12px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <div>
                                 <div style={{ fontSize: '13px', fontWeight: 900, color: '#f5d000', letterSpacing: '0.06em' }}>IjamOS v3.0</div>
-                                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>{currentUser?.name || 'Administrator'} · Local Session</div>
+                                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>{currentUser?.name || 'Administrator'} Â· Local Session</div>
                             </div>
                             <button
                                 aria-label="Power off"
@@ -4988,16 +4988,16 @@ YOU DID IT. APP DEPLOYED!`);
                 </div>
             )}
 
-            {/* macOS-style Menu Bar — top */}
+            {/* macOS-style Menu Bar â€” top */}
             {isMacMode && (
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '28px', background: 'rgba(7,11,20,0.96)', borderBottom: '1px solid rgba(245,208,0,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px', zIndex: 499, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
-                    {/* Left: ⚡ IJAM_OS logo + macOS menu items */}
+                    {/* Left: âš¡ IJAM_OS logo + macOS menu items */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
                         <button
                             onClick={() => setIsStartMenuOpen(!isStartMenuOpen)}
                             style={{ background: isStartMenuOpen ? 'rgba(245,208,0,0.15)' : 'transparent', border: 'none', borderRadius: '4px', color: '#f5d000', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontFamily: 'monospace', fontSize: '11px', fontWeight: 900, padding: '2px 8px', transition: 'background 0.15s', letterSpacing: '0.04em' }}
                         >
-                            ⚡ IJAM_OS
+                            âš¡ IJAM_OS
                         </button>
                         {['File', 'View', 'Window', 'Help'].map(item => (
                             <button key={item}
@@ -5016,7 +5016,7 @@ YOU DID IT. APP DEPLOYED!`);
                     {/* Right: weather + clock */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                         <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', fontFamily: 'monospace', letterSpacing: '0.02em' }}>
-                            {isWeatherLoading ? '●●●' : weather ? `${weather.temperature}°C · ${weather.description}` : 'SELANGOR'}
+                            {isWeatherLoading ? 'â—â—â—' : weather ? `${weather.temperature}Â°C Â· ${weather.description}` : 'SELANGOR'}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <div style={{ fontFamily: 'monospace', fontSize: '11px', fontWeight: 900, color: 'rgba(255,255,255,0.85)', letterSpacing: '0.08em' }}>
@@ -5035,6 +5035,7 @@ YOU DID IT. APP DEPLOYED!`);
 };
 
 export default IjamOSWorkspace;
+
 
 
 

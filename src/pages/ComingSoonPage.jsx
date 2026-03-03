@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import ThreadsIcon from '../components/ThreadsIcon';
 import { Rocket, CheckCircle, Clock, Zap, Users, MessageSquare, Trophy, Smartphone, Brain, Star, Bot, Gamepad2, Globe, Image, MessageCircle, ArrowRight } from 'lucide-react';
 
@@ -10,6 +10,9 @@ const SHIPPED = [
     { icon: <Smartphone size={20} />, label: 'PWA Support', desc: 'Install on Android & iOS', page: 'how-it-works' },
     { icon: <Globe size={20} />, label: 'Selangor Map', desc: 'Live district builder tracker', page: 'home', sectionId: 'map' },
     { icon: <Image size={20} />, label: 'Showcase Gallery', desc: 'Browse all builder projects', page: 'showcase' },
+    { icon: <Trophy size={20} />, label: 'Hall of Fame', desc: 'Curated graduate highlights by cohort', page: 'hall-of-fame' },
+    { icon: <CheckCircle size={20} />, label: 'Certificate Manager', desc: 'Admin assign/revoke certificates from builder profile', page: 'dashboard' },
+    { icon: <Smartphone size={20} />, label: 'Mobile Home 4x2', desc: 'Paged icon grid with Hall of Fame shortcut', page: 'home' },
     { icon: <MessageCircle size={20} />, label: 'Live Class Chat', desc: 'Real-time chat during sessions', page: 'home', sectionId: 'how-it-works' },
 ];
 
@@ -43,7 +46,7 @@ const ROADMAP = [
         status: 'in-progress',
         icon: <Smartphone size={20} />,
         title: 'Mobile Polish',
-        detail: 'Deeper mobile UX improvements — swipe gestures, haptic feedback, and offline-first experience.',
+        detail: 'Deeper mobile UX improvements: smoother pagination, stronger accessibility, and offline-first polish.',
         eta: 'Ongoing'
     },
     {
@@ -55,11 +58,11 @@ const ROADMAP = [
         eta: 'Sprint 3'
     },
     {
-        id: 'achievements',
+        id: 'attendance-insights',
         status: 'in-progress',
-        icon: <Trophy size={20} />,
-        title: 'Achievement Badges',
-        detail: 'Earn badges for shipping, attending sessions, helping others, and reaching milestones.',
+        icon: <Users size={20} />,
+        title: 'Attendance Insights',
+        detail: 'Better filters and summary views for attendance and cohort engagement tracking.',
         eta: 'Sprint 2'
     },
 ];
@@ -67,7 +70,7 @@ const ROADMAP = [
 const STATUS_CONFIG = {
     'planned': { label: 'Planned', color: '#6b7280', bg: '#f3f4f6' },
     'in-progress': { label: 'In Progress', color: '#d97706', bg: '#fef3c7' },
-    'done': { label: 'Shipped ✓', color: '#059669', bg: '#d1fae5' },
+    'done': { label: 'Shipped', color: '#059669', bg: '#d1fae5' },
 };
 
 export default function ComingSoonPage({ setPublicPage }) {
@@ -103,7 +106,7 @@ export default function ComingSoonPage({ setPublicPage }) {
                         What's Coming Next
                     </h1>
                     <p style={{ maxWidth: '560px', margin: '0 auto', opacity: 0.7, fontSize: '16px', lineHeight: 1.6 }}>
-                        VibeSelangor is actively being built in public. Here's what's shipped and what's next.
+                        VibeSelangor is built in public. These are the latest shipped features and what is queued next.
                     </p>
                 </div>
 
@@ -208,7 +211,7 @@ export default function ComingSoonPage({ setPublicPage }) {
                                     </p>
                                 )}
                                 {!isExpanded && (
-                                    <p style={{ fontSize: '12px', opacity: 0.5, marginTop: '4px' }}>Click to expand ↓</p>
+                                    <p style={{ fontSize: '12px', opacity: 0.5, marginTop: '4px' }}>Click to expand</p>
                                 )}
                             </div>
                         );
@@ -242,7 +245,7 @@ export default function ComingSoonPage({ setPublicPage }) {
                             <MessageSquare size={18} /> Join Discord
                         </a>
                         <button className="btn btn-outline" onClick={() => setPublicPage('home')}>
-                            ← Back to Home
+                            Back to Home
                         </button>
                     </div>
                 </div>
@@ -251,3 +254,4 @@ export default function ComingSoonPage({ setPublicPage }) {
         </section>
     );
 }
+

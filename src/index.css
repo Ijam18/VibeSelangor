@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   --app-vh: 100vh;
   --bg-warm: #FDFCFB;
   /* Approved warm off-white */
@@ -358,7 +358,7 @@ section {
   max-height: 320px;
 }
 
-/* Builders Scroll Gallery — Always scrollable */
+/* Builders Scroll Gallery â€” Always scrollable */
 .builders-scroll-container {
   overflow-x: auto;
   padding: 0 4px 24px;
@@ -1032,7 +1032,7 @@ section {
     justify-content: flex-end !important;
   }
 
-  /* Hide nav links and auth actions on mobile — now in sidebar */
+  /* Hide nav links and auth actions on mobile â€” now in sidebar */
   .header-nav,
   .header-auth-actions,
   .mobile-quick-actions {
@@ -1396,7 +1396,7 @@ section {
   }
 }
 
-/* ─── Utility Classes ──────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Utility Classes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 /* Spin animation for loading spinners */
 @keyframes spin {
@@ -1441,7 +1441,7 @@ section {
   letter-spacing: 0.02em;
 }
 
-/* Shop grid — responsive 2-col on mobile, 3-col on desktop */
+/* Shop grid â€” responsive 2-col on mobile, 3-col on desktop */
 .shop-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -2385,4 +2385,5 @@ section {
     border-radius: 1px;
     margin: 0 4px;
 }
+
 

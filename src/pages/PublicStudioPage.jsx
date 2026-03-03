@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+﻿import React, { useState, useEffect } from 'react';
+import { supabase } from '../shared/lib/supabase';
 
 import { Heart, ArrowLeft, Zap, Trophy, MapPin, Star, Package, Gamepad2 } from 'lucide-react';
-import { GAME_LEVELS, GAME_ITEMS } from '../constants';
+import { GAME_LEVELS, GAME_ITEMS } from '../shared/constants';
 
 /**
  * PublicStudioPage
@@ -146,7 +146,7 @@ export default function PublicStudioPage({ targetUserId, targetUserName, session
                         <h2 style={{ fontSize: '24px', marginBottom: '4px' }}>{displayName}'s Studio</h2>
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                             <span className="pill pill-red" style={{ fontSize: '10px', padding: '2px 8px' }}>
-                                Lv.{level} — {levelInfo.label}
+                                Lv.{level} â€” {levelInfo.label}
                             </span>
                             {profile?.district && (
                                 <span style={{ fontSize: '12px', fontWeight: '700', opacity: 0.6, display: 'flex', alignItems: 'center', gap: '3px' }}>
@@ -223,7 +223,7 @@ export default function PublicStudioPage({ targetUserId, targetUserName, session
 
             {isSelf && (
                 <div style={{ textAlign: 'center', padding: '12px', background: '#f0f0f0', borderRadius: '10px', border: '2px solid #ddd', fontSize: '13px', fontWeight: '700', opacity: 0.7, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                    <Gamepad2 size={14} /> This is your own studio — visit other builders to give likes!
+                    <Gamepad2 size={14} /> This is your own studio â€” visit other builders to give likes!
                 </div>
             )}
 
@@ -254,3 +254,5 @@ export default function PublicStudioPage({ targetUserId, targetUserName, session
         </div>
     );
 }
+
+

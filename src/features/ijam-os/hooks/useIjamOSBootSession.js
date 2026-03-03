@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+﻿import { useCallback, useEffect, useRef, useState } from 'react';
 
 const HOLD_DURATION = 1500;
 
@@ -109,3 +109,4 @@ export const useIjamOSBootSession = ({ playKeystroke, speakText }) => {
     setIsBooting
   };
 };
+

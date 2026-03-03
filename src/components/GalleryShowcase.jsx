@@ -1,8 +1,8 @@
-import React, { useMemo, useRef, useState, useEffect } from 'react';
+﻿import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { ArrowRight, Sparkles, MapPin, MessageCircle } from 'lucide-react';
 import ThreadsIcon from './ThreadsIcon';
-import { SPRINT_MODULE_STEPS } from '../constants';
-import { truncateText, formatThreadsProfileUrl } from '../utils';
+import { SPRINT_MODULE_STEPS } from '../shared/constants';
+import { truncateText, formatThreadsProfileUrl } from '../shared/utils';
 
 const GalleryShowcase = ({
     profiles,
@@ -227,7 +227,7 @@ const GalleryShowcase = ({
                                                     return (
                                                         <div
                                                             key={i}
-                                                            title={`Day ${i + 1}${done ? ' ✓' : ''}`}
+                                                            title={`Day ${i + 1}${done ? ' âœ“' : ''}`}
                                                             style={{
                                                                 flex: 1,
                                                                 height: '5px',
@@ -242,7 +242,7 @@ const GalleryShowcase = ({
                                             </div>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '9px', fontWeight: '700', letterSpacing: '0.05em', marginTop: '2px' }}>
                                                 <div style={{ color: stepIndex === 7 ? '#FFD700' : '#888' }}>
-                                                    {stepIndex === 0 ? 'NOT STARTED' : stepIndex === 7 ? '⭐ SPRINT COMPLETE' : `DAY ${stepIndex} / 7`}
+                                                    {stepIndex === 0 ? 'NOT STARTED' : stepIndex === 7 ? 'â­ SPRINT COMPLETE' : `DAY ${stepIndex} / 7`}
                                                 </div>
                                                 {p.threads_handle && (
                                                     <a href={formatThreadsProfileUrl(p.threads_handle)} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'black', textDecoration: 'none', opacity: 0.7 }}>
@@ -314,3 +314,6 @@ const GalleryShowcase = ({
 };
 
 export default GalleryShowcase;
+
+
+

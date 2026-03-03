@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Radio, X, ChevronRight } from 'lucide-react';
 
 /**
@@ -7,7 +7,7 @@ import { Radio, X, ChevronRight } from 'lucide-react';
  * Used in both the header (badge) and landing page (full banner).
  */
 
-// ─── Pulsing dot for header ───────────────────────────────────────────────────
+// â”€â”€â”€ Pulsing dot for header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function LiveHeaderBadge({ onClick }) {
     return (
         <button
@@ -45,7 +45,7 @@ export function LiveHeaderBadge({ onClick }) {
     );
 }
 
-// ─── Full-width banner for landing page ───────────────────────────────────────
+// â”€â”€â”€ Full-width banner for landing page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function LiveBanner({ activeClass, onJoinClick, onDismiss }) {
     const [dismissed, setDismissed] = useState(false);
 
@@ -103,8 +103,8 @@ export function LiveBanner({ activeClass, onJoinClick, onDismiss }) {
                     letterSpacing: '0.02em',
                     textAlign: 'center'
                 }}>
-                    🔴 Class is LIVE now!
-                    {activeClass?.title && <span style={{ fontWeight: 400, opacity: 0.9 }}> — {activeClass.title}</span>}
+                    ðŸ”´ Class is LIVE now!
+                    {activeClass?.title && <span style={{ fontWeight: 400, opacity: 0.9 }}> â€” {activeClass.title}</span>}
                 </span>
 
                 <button
@@ -157,3 +157,4 @@ export function LiveBanner({ activeClass, onJoinClick, onDismiss }) {
 }
 
 export default LiveBanner;
+

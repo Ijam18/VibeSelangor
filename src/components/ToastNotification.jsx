@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { Check, X, AlertCircle, Info } from 'lucide-react';
 
 /**
@@ -13,7 +13,7 @@ import { Check, X, AlertCircle, Info } from 'lucide-react';
  *   showToast('Class is now LIVE', 'info');
  */
 
-// ─── Context ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Context â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const ToastContext = React.createContext(null);
 
 export function useToast() {
@@ -22,7 +22,7 @@ export function useToast() {
     return ctx;
 }
 
-// ─── Provider ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Provider â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function ToastProvider({ children }) {
     const [toasts, setToasts] = useState([]);
 
@@ -43,7 +43,7 @@ export function ToastProvider({ children }) {
     );
 }
 
-// ─── Container ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Container â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function ToastContainer({ toasts, onRemove }) {
     if (toasts.length === 0) return null;
     return (
@@ -66,7 +66,7 @@ function ToastContainer({ toasts, onRemove }) {
     );
 }
 
-// ─── Individual Toast ─────────────────────────────────────────────────────────
+// â”€â”€â”€ Individual Toast â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const TOAST_STYLES = {
     success: {
         bg: '#1a1a1a',
@@ -206,3 +206,4 @@ function ToastItem({ toast, onRemove }) {
 }
 
 export default ToastProvider;
+

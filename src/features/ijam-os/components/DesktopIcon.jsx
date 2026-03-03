@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 
 const DesktopIcon = ({ label, icon: Icon, onClick, color = '#f5d000', isPhoneMode = false, isTabletMode = false }) => (
   <button onClick={onClick} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: isPhoneMode ? '6px' : '8px', background: 'transparent', border: 'none', cursor: 'pointer', padding: isPhoneMode ? '8px 6px' : (isTabletMode ? '10px' : '12px'), borderRadius: '12px', transition: 'background 0.2s' }}>
@@ -10,3 +10,4 @@ const DesktopIcon = ({ label, icon: Icon, onClick, color = '#f5d000', isPhoneMod
 );
 
 export default DesktopIcon;
+

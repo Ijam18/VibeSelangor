@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import '../styles/presetQuestions.css';
 
 /**
@@ -22,21 +22,21 @@ const PresetQuestions = ({
                 id: 'join',
                 text: 'Macam mana nak join?',
                 keywords: ['join', 'daftar', 'register'],
-                emoji: '🚀',
+                emoji: 'ðŸš€',
                 color: '#3b82f6'
             },
             {
                 id: 'sprint',
                 text: '7-day sprint schedule?',
                 keywords: ['sprint', 'schedule', 'jadual'],
-                emoji: '📅',
+                emoji: 'ðŸ“…',
                 color: '#10b981'
             },
             {
                 id: 'necb',
                 text: 'Apa itu NECB?',
                 keywords: ['necb', 'philosophy', 'visi'],
-                emoji: '💡',
+                emoji: 'ðŸ’¡',
                 color: '#f59e0b'
             }
         ],
@@ -47,21 +47,21 @@ const PresetQuestions = ({
                 id: 'tools',
                 text: 'Tools apa yang perlu?',
                 keywords: ['tools', 'antigravity', 'supabase'],
-                emoji: '🛠️',
+                emoji: 'ðŸ› ï¸',
                 color: '#8b5cf6'
             },
             {
                 id: 'pwa',
                 text: 'Install PWA macam mana?',
                 keywords: ['pwa', 'install', 'app'],
-                emoji: '📱',
+                emoji: 'ðŸ“±',
                 color: '#ef4444'
             },
             {
                 id: 'deploy',
                 text: 'Deploy ke Vercel?',
                 keywords: ['deploy', 'vercel', 'hosting'],
-                emoji: '☁️',
+                emoji: 'â˜ï¸',
                 color: '#06b6d4'
             }
         ],
@@ -72,21 +72,21 @@ const PresetQuestions = ({
                 id: 'vibes',
                 text: 'Earn vibes lebih?',
                 keywords: ['vibes', 'earn', 'points'],
-                emoji: '💎',
+                emoji: 'ðŸ’Ž',
                 color: '#ec4899'
             },
             {
                 id: 'level',
                 text: 'Level up studio?',
                 keywords: ['level', 'studio', 'upgrade'],
-                emoji: '⬆️',
+                emoji: 'â¬†ï¸',
                 color: '#84cc16'
             },
             {
                 id: 'showcase',
                 text: 'Submit projek?',
                 keywords: ['showcase', 'submit', 'project'],
-                emoji: '🎯',
+                emoji: 'ðŸŽ¯',
                 color: '#f97316'
             }
         ]
@@ -102,7 +102,7 @@ const PresetQuestions = ({
                 id: 'quick-join',
                 text: 'Join sekarang!',
                 keywords: ['join', 'daftar'],
-                emoji: '⚡',
+                emoji: 'âš¡',
                 color: '#22c55e',
                 priority: true
             });
@@ -114,7 +114,7 @@ const PresetQuestions = ({
                 id: 'quick-start',
                 text: 'Panduan pemula',
                 keywords: ['beginner', 'pemula', 'start'],
-                emoji: '👶',
+                emoji: 'ðŸ‘¶',
                 color: '#a855f7',
                 priority: true
             });
@@ -179,7 +179,7 @@ const PresetQuestions = ({
             {contextSuggestions.length > 0 && (
                 <div className="context-suggestions">
                     <div className="suggestion-header">
-                        <span className="suggestion-title">💡 Untuk kau:</span>
+                        <span className="suggestion-title">ðŸ’¡ Untuk kau:</span>
                         <span className="suggestion-subtitle">Berdasarkan aktiviti terkini</span>
                     </div>
                     <div className="suggestion-buttons">
@@ -204,14 +204,14 @@ const PresetQuestions = ({
                 {/* Program Questions */}
                 <div className="category-section">
                     <div className="category-header">
-                        <span className="category-icon">🚀</span>
+                        <span className="category-icon">ðŸš€</span>
                         <span className="category-title">Program</span>
                         <button
                             className="expand-toggle"
                             onClick={() => setIsExpanded(!isExpanded)}
                             aria-label={isExpanded ? "Collapse categories" : "Expand categories"}
                         >
-                            {isExpanded ? '−' : '+'}
+                            {isExpanded ? 'âˆ’' : '+'}
                         </button>
                     </div>
                     <div className="category-buttons">
@@ -233,7 +233,7 @@ const PresetQuestions = ({
                 {/* Technical Questions */}
                 <div className={`category-section ${isExpanded ? 'visible' : 'hidden'}`}>
                     <div className="category-header">
-                        <span className="category-icon">🛠️</span>
+                        <span className="category-icon">ðŸ› ï¸</span>
                         <span className="category-title">Technical</span>
                     </div>
                     <div className="category-buttons">
@@ -255,7 +255,7 @@ const PresetQuestions = ({
                 {/* Studio Questions */}
                 <div className={`category-section ${isExpanded ? 'visible' : 'hidden'}`}>
                     <div className="category-header">
-                        <span className="category-icon">💎</span>
+                        <span className="category-icon">ðŸ’Ž</span>
                         <span className="category-title">Studio</span>
                     </div>
                     <div className="category-buttons">
@@ -282,7 +282,7 @@ const PresetQuestions = ({
                     onClick={() => onQuestionSelect?.('help')}
                     title="Lihat semua option"
                 >
-                    <span className="action-emoji">❓</span>
+                    <span className="action-emoji">â“</span>
                     <span className="action-text">Help</span>
                 </button>
                 <button
@@ -290,7 +290,7 @@ const PresetQuestions = ({
                     onClick={() => onQuestionSelect?.('menu')}
                     title="Quick menu"
                 >
-                    <span className="action-emoji">📋</span>
+                    <span className="action-emoji">ðŸ“‹</span>
                     <span className="action-text">Menu</span>
                 </button>
                 <button
@@ -298,7 +298,7 @@ const PresetQuestions = ({
                     onClick={() => onQuestionSelect?.('random')}
                     title="Soalan random"
                 >
-                    <span className="action-emoji">🎲</span>
+                    <span className="action-emoji">ðŸŽ²</span>
                     <span className="action-text">Random</span>
                 </button>
             </div>
@@ -306,15 +306,15 @@ const PresetQuestions = ({
             {/* Usage tips */}
             <div className="usage-tips">
                 <div className="tip-item">
-                    <span className="tip-icon">💡</span>
+                    <span className="tip-icon">ðŸ’¡</span>
                     <span className="tip-text">Klik butang untuk tanya soalan</span>
                 </div>
                 <div className="tip-item">
-                    <span className="tip-icon">🎯</span>
+                    <span className="tip-icon">ðŸŽ¯</span>
                     <span className="tip-text">Butang biru = soalan popular</span>
                 </div>
                 <div className="tip-item">
-                    <span className="tip-icon">⚡</span>
+                    <span className="tip-icon">âš¡</span>
                     <span className="tip-text">Butang hijau = quick action</span>
                 </div>
             </div>

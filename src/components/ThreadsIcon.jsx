@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 
 const ThreadsIcon = ({ size = 20 }) => (
     <svg width={size} height={size} viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'inline-block', verticalAlign: 'middle' }}>
@@ -8,3 +8,4 @@ const ThreadsIcon = ({ size = 20 }) => (
 );
 
 export default ThreadsIcon;
+

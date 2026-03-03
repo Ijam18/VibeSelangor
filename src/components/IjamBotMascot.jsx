@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 
 /**
  * Enhanced IjamBotMascot Component
@@ -190,32 +190,32 @@ const IjamBotMascot = ({ size = 48, mousePos, emotion = 'neutral' }) => {
     const getKaomojiText = (emotion) => {
         switch (emotion) {
             case 'happy':
-                return '(b ᵔ▽ᵔ)b';
+                return '(b áµ”â–½áµ”)b';
             case 'excited':
-                return '(☆▽☆)';
+                return '(â˜†â–½â˜†)';
             case 'sleepy':
-                return '(・_・;)';
+                return '(ãƒ»_ãƒ»;)';
             case 'thinking':
-                return '(¬‿¬)';
+                return '(Â¬â€¿Â¬)';
             case 'confused':
-                return '(o^▽^o)';
+                return '(o^â–½^o)';
             case 'sad':
-                return '(ง •̀_•́)ง';
+                return '(à¸‡ â€¢Ì€_â€¢Ì)à¸‡';
             // New emotions
             case 'frustrated':
-                return '(╬ಠ益ಠ)';
+                return '(â•¬à² ç›Šà² )';
             case 'motivated':
-                return '(ง •̀_•́)ง';
+                return '(à¸‡ â€¢Ì€_â€¢Ì)à¸‡';
             case 'celebrating':
-                return '٩(^ᴗ^)۶';
+                return 'Ù©(^á´—^)Û¶';
             case 'surprised':
-                return '(ﾟοﾟ人))';
+                return '(ï¾ŸÎ¿ï¾Ÿäºº))';
             case 'bored':
-                return '(´~`  )';
+                return '(Â´~`  )';
             case 'focused':
-                return '(￣^￣)ゞ';
+                return '(ï¿£^ï¿£)ã‚ž';
             default:
-                return '(✿◠‿◠)';
+                return '(âœ¿â— â€¿â— )';
         }
     };
 

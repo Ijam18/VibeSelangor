@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+﻿import React, { useState, useEffect } from 'react';
+import { supabase } from '../shared/lib/supabase';
 import { useToast } from '../components/ToastNotification';
 import { Bug, Zap, RefreshCw, Star, Trophy } from 'lucide-react';
 import BugSquash from '../components/game/BugSquash';
-import { GAME_LEVELS } from '../constants';
+import { GAME_LEVELS } from '../shared/constants';
 
 export default function BuilderStudioPage({ session }) {
     const { addToast } = useToast();
@@ -31,7 +31,7 @@ export default function BuilderStudioPage({ session }) {
             if (data) {
                 setGameState(data);
             } else {
-                // No row yet — try to insert a new one
+                // No row yet â€” try to insert a new one
                 const newGame = {
                     user_id: session.user.id,
                     vibes: 0,
@@ -47,7 +47,7 @@ export default function BuilderStudioPage({ session }) {
                     .single();
 
                 if (insertError) {
-                    // RLS or table missing — fall back to local demo state
+                    // RLS or table missing â€” fall back to local demo state
                     console.warn('builder_game insert failed (RLS/missing table), using local state:', insertError.message);
                     setGameState({ ...newGame, id: 'local', _isLocal: true });
                 } else {
@@ -56,7 +56,7 @@ export default function BuilderStudioPage({ session }) {
             }
         } catch (err) {
             console.warn('builder_game fetch failed, using local state:', err.message);
-            // Table missing or RLS blocks read — use local demo state
+            // Table missing or RLS blocks read â€” use local demo state
             setGameState({
                 id: 'local',
                 _isLocal: true,
@@ -137,7 +137,7 @@ export default function BuilderStudioPage({ session }) {
                     className="btn btn-outline"
                     style={{ padding: '10px 24px', textDecoration: 'none', fontSize: '13px' }}
                 >
-                    Open Supabase →
+                    Open Supabase â†’
                 </a>
             </div>
         </div>
@@ -166,7 +166,7 @@ export default function BuilderStudioPage({ session }) {
                 <div style={{ marginBottom: '20px' }}>
                     <h2 style={{ fontSize: '32px', fontWeight: '900', marginBottom: '4px' }}>Builder Arcade</h2>
                     <div style={{ fontSize: '14px', fontWeight: 800, color: '#CE1126', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        Lv.{currentLevel} — {levelInfo.label}
+                        Lv.{currentLevel} â€” {levelInfo.label}
                     </div>
                 </div>
 
@@ -239,3 +239,5 @@ export default function BuilderStudioPage({ session }) {
         </div>
     );
 }
+
+

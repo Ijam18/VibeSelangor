@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import {
     Rocket,
     Zap,
@@ -9,8 +9,8 @@ import {
     CheckCircle2,
     ArrowRight
 } from 'lucide-react';
-import MobileFeatureShell from '../components/MobileFeatureShell';
-import { supabase } from '../lib/supabase';
+import MobileFeatureShell from '../features/mobile/components/MobileFeatureShell';
+import { supabase } from '../shared/lib/supabase';
 
 const BLUEPRINT_STEPS = [
     {
@@ -270,3 +270,5 @@ export default function StartProjectPage({
         </MobileFeatureShell>
     );
 }
+
+

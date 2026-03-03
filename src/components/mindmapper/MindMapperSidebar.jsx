@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Lightbulb, Layers, Layout, ServerCog, Database, X } from 'lucide-react';
 
 const NODE_TYPES = [
@@ -78,3 +78,4 @@ export default function MindMapperSidebar({ compact = false, onClose = null, onQ
         </aside>
     );
 }
+

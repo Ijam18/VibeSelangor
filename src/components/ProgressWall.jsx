@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { SPRINT_MODULE_STEPS } from '../constants';
-import { truncateText, formatThreadsProfileUrl } from '../utils';
+﻿import React, { useState, useRef, useEffect } from 'react';
+import { SPRINT_MODULE_STEPS } from '../shared/constants';
+import { truncateText, formatThreadsProfileUrl } from '../shared/utils';
 import { ExternalLink, Calendar, MapPin, ArrowRight, MessageCircle } from 'lucide-react';
 import ThreadsIcon from './ThreadsIcon';
 
@@ -112,14 +112,14 @@ const ProjectCard = ({ s, profile, userSubmissionCount }) => {
                             )}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', opacity: 0.55, marginTop: '1px' }}>
-                            {districtLabel && <><MapPin size={9} />{districtLabel} · </>}
+                            {districtLabel && <><MapPin size={9} />{districtLabel} Â· </>}
                             <Calendar size={9} />
                             {new Date(s.created_at).toLocaleDateString('ms-MY', { day: 'numeric', month: 'short' })}
                         </div>
                     </div>
                 </div>
 
-                {/* Project title — support both column naming conventions */}
+                {/* Project title â€” support both column naming conventions */}
                 <div style={{ fontSize: '15px', fontWeight: '800', lineHeight: 1.3, color: '#111' }}>
                     {s.project_name || s.project_title || 'Project Update'}
                 </div>
@@ -144,7 +144,7 @@ const ProjectCard = ({ s, profile, userSubmissionCount }) => {
                     </div>
                 )}
 
-                {/* Link — support both column naming conventions */}
+                {/* Link â€” support both column naming conventions */}
                 {(s.submission_url || s.project_url) && (
                     <a href={s.submission_url || s.project_url} target="_blank" rel="noreferrer"
                         style={{
@@ -320,3 +320,6 @@ const ProgressWall = ({ submissions, profiles, session }) => {
 };
 
 export default ProgressWall;
+
+
+

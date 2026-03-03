@@ -1,4 +1,4 @@
-import {
+﻿import {
   Bot,
   Folder,
   User,
@@ -25,3 +25,4 @@ export const APP_REGISTRY = [
   { type: 'simulator', label: 'SIMULATOR', icon: Activity, color: '#86efac', defaultW: 820, defaultH: 580, title: 'VIBE_SIMULATOR // ARCHITECTURE' },
   { type: 'trash', label: 'RECYCLE', icon: Trash2, color: '#ef4444', defaultW: 500, defaultH: 320, title: 'RECYCLE_BIN // DELETED CONTENT' }
 ];
+

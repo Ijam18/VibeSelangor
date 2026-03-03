@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+﻿import React, { useState, useEffect } from 'react';
+import { supabase } from '../shared/lib/supabase';
 import { Trophy, FileText, MapPin, Search, Zap, Star, TrendingUp, Users, Medal, Globe, ChevronUp, ChevronDown } from 'lucide-react';
 
 const LEVEL_LABELS = ['', 'Newbie', 'Junior', 'Builder', 'Senior', 'Expert', 'Pro', 'Legendary'];
@@ -125,7 +125,7 @@ export default function BuilderLeaderboard({ isMobileView }) {
                     return {
                         id: profile.id,
                         name: profile.full_name || 'Anonymous',
-                        district: profile.district || '—',
+                        district: profile.district || 'â€”',
                         role: profile.role,
                         vibes: stats.total_vibes_earned || 0,
                         level: stats.level || 1,
@@ -143,7 +143,7 @@ export default function BuilderLeaderboard({ isMobileView }) {
         }
     };
 
-    const districts = [...new Set(leaderboardData.map(d => d.district).filter(d => d && d !== '—'))].sort();
+    const districts = [...new Set(leaderboardData.map(d => d.district).filter(d => d && d !== 'â€”'))].sort();
 
     const filteredData = leaderboardData
         .filter(item => {
@@ -303,7 +303,7 @@ export default function BuilderLeaderboard({ isMobileView }) {
                     </div>
                 )}
 
-                {/* Podium — horizontal 2-1-3 on mobile, flex row on desktop */}
+                {/* Podium â€” horizontal 2-1-3 on mobile, flex row on desktop */}
                 {!searchTerm && !districtFilter && topThree.length >= 1 && (
                     <div style={{
                         display: 'flex',
@@ -432,7 +432,7 @@ export default function BuilderLeaderboard({ isMobileView }) {
                     </div>
                 )}
 
-                {/* Builder List — scrollable card list on mobile, table on desktop */}
+                {/* Builder List â€” scrollable card list on mobile, table on desktop */}
                 <div className="neo-card no-jitter" style={{ maxHeight: '70vh', overflowY: 'auto', border: '2px solid black', background: 'white' }}>
                     {isMobileView ? (
                         /* Mobile: Compact card list */
@@ -513,4 +513,6 @@ export default function BuilderLeaderboard({ isMobileView }) {
         </section>
     );
 }
+
+
 

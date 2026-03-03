@@ -1,13 +1,13 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ExternalLink, Heart, MapPin, MessageCircle, Ellipsis, X, Grid3X3, Link2, Flag, Flame, Clock3, SlidersHorizontal } from 'lucide-react';
 import ProgressWall from '../components/ProgressWall';
 import GalleryShowcase from '../components/GalleryShowcase';
-import MobileFeatureShell from '../components/MobileFeatureShell';
+import MobileFeatureShell from '../features/mobile/components/MobileFeatureShell';
 import LiveIslandBlip from '../components/LiveIslandBlip';
-import { truncateText } from '../utils';
-import { SPRINT_MODULE_STEPS } from '../constants';
-import { supabase } from '../lib/supabase';
-import { getLiveProgramMeta } from '../utils/liveProgram';
+import { truncateText } from '../shared/utils';
+import { SPRINT_MODULE_STEPS } from '../shared/constants';
+import { supabase } from '../shared/lib/supabase';
+import { getLiveProgramMeta } from '../shared/utils/liveProgram';
 
 const FILTERS = [
     { id: 'all', label: 'All' },
@@ -852,4 +852,7 @@ const ShowcasePage = ({
 };
 
 export default ShowcasePage;
+
+
+
 

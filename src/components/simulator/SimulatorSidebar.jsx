@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Laptop, Brain, Github, Cloud, Database, BarChart3, Globe, Smartphone, X } from 'lucide-react';
 
 const NODE_TYPES = [
@@ -81,3 +81,4 @@ export default function SimulatorSidebar({ compact = false, onClose = null, onQu
         </aside>
     );
 }
+

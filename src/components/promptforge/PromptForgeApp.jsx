@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
     Copy, Check, ChevronRight, ChevronLeft, Wand2, X, ExternalLink,
     Zap, Palette, Server, Database, Smartphone, Bot, ShieldCheck,
@@ -9,7 +9,7 @@ const STEPS = ['Role', 'Context', 'Features', 'Stack & Vibe', 'Output'];
 const NB_FONT = "'Courier New', Courier, monospace";
 const UI_FONT = "system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
 
-// ─── Role Data ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Role Data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const ROLES = [
     { id: 'fullstack', label: 'Senior Fullstack Engineer', Icon: Code2, color: '#3b82f6',
         description: 'End-to-end builder who handles both frontend and backend. Expert in React, Node.js, databases, and API design.',
@@ -53,13 +53,13 @@ const ROLES = [
         skills: ['Claude/Cursor', 'v0.dev', 'Bolt.new', 'Vercel', 'No-code integration'] },
 ];
 
-// ─── Tech Stack Data ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Tech Stack Data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const TECH_CATEGORIES = [
     { label: 'Frontend', options: [
         { id: 'React', desc: 'Industry-standard component library. Massive ecosystem.', pros: 'Huge community, great tooling', cons: 'Learning curve, boilerplate', bestFor: 'SPAs, dashboards, interactive UIs', docs: 'https://react.dev' },
         { id: 'Vue', desc: 'Progressive framework with gentle learning curve.', pros: 'Easy to learn, great docs', cons: 'Smaller ecosystem than React', bestFor: 'Quick prototypes, teams new to JS frameworks', docs: 'https://vuejs.org' },
         { id: 'Next.js', desc: 'React meta-framework with SSR, SSG, and file-based routing.', pros: 'SEO-friendly, full-stack in one', cons: 'More complex build setup', bestFor: 'Public-facing sites, SEO-critical apps', docs: 'https://nextjs.org' },
-        { id: 'Svelte', desc: 'Compiles to vanilla JS — no virtual DOM overhead.', pros: 'Tiny bundle, fast runtime', cons: 'Smaller community, fewer libs', bestFor: 'Performance-critical UIs, lean apps', docs: 'https://svelte.dev' },
+        { id: 'Svelte', desc: 'Compiles to vanilla JS â€” no virtual DOM overhead.', pros: 'Tiny bundle, fast runtime', cons: 'Smaller community, fewer libs', bestFor: 'Performance-critical UIs, lean apps', docs: 'https://svelte.dev' },
         { id: 'Astro', desc: 'Content-first framework with island architecture.', pros: 'Zero JS by default, fast sites', cons: 'Less suited for dynamic apps', bestFor: 'Blogs, docs, marketing sites', docs: 'https://astro.build' },
     ]},
     { label: 'Styling', options: [
@@ -69,7 +69,7 @@ const TECH_CATEGORIES = [
         { id: 'Framer Motion', desc: 'Production-ready animations and gestures for React.', pros: 'Declarative, powerful, easy', cons: 'Adds ~40KB to bundle', bestFor: 'Any app needing smooth animations', docs: 'https://www.framer.com/motion' },
     ]},
     { label: 'Backend / DB', options: [
-        { id: 'Supabase', desc: 'Open source Firebase alternative — Postgres + Auth + Storage.', pros: 'Realtime, RLS, great DX', cons: 'Cold starts on free tier', bestFor: 'Full-stack apps, auth, real-time features', docs: 'https://supabase.com/docs' },
+        { id: 'Supabase', desc: 'Open source Firebase alternative â€” Postgres + Auth + Storage.', pros: 'Realtime, RLS, great DX', cons: 'Cold starts on free tier', bestFor: 'Full-stack apps, auth, real-time features', docs: 'https://supabase.com/docs' },
         { id: 'Firebase', desc: "Google's BaaS with Firestore, Auth, and Cloud Functions.", pros: 'Managed, scales well', cons: 'NoSQL only, vendor lock-in', bestFor: 'Mobile-first apps, rapid prototypes', docs: 'https://firebase.google.com/docs' },
         { id: 'PocketBase', desc: 'Single-file open-source backend with realtime and auth.', pros: 'Zero ops, fast setup', cons: 'Less scalable, newer ecosystem', bestFor: 'Solo builders, self-hosted apps', docs: 'https://pocketbase.io/docs' },
         { id: 'Prisma + PostgreSQL', desc: 'Type-safe ORM over Postgres. Works with any Node.js backend.', pros: 'Type safety, great migrations', cons: 'More setup, requires separate DB', bestFor: 'Complex schemas, team projects', docs: 'https://www.prisma.io/docs' },
@@ -84,7 +84,7 @@ const TECH_CATEGORIES = [
     ]},
 ];
 
-// ─── Design Vibes ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Design Vibes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const VIBES = [
     { id: 'neobrutalism', label: 'NeoBrutalism', accent: '#f5d000', bg: 'rgba(245,208,0,0.08)',
         desc: 'Thick black borders, flat color fills, offset box shadows, bold type. No gradients.',
@@ -112,23 +112,23 @@ const VIBES = [
         cssRules: 'background: #fff | primary: #2563eb | border: 1px solid #e5e7eb | font-family: Inter | font-weight: 400-600 | spacing: 8px grid system' },
     { id: 'y2kmaximalist', label: 'Y2K Maximalist', accent: '#ff00ff', bg: 'rgba(255,0,255,0.05)',
         desc: 'Hot pink and chrome, star bullets, metallic gradients, chaotic energy.',
-        preview: 'bg: #000  text: #ff00ff\nChrome text gradient effect\nstar ★ bullets, thick borders\nfont: Impact / Impact knockoff',
-        cssRules: 'background: #000 | color: #ff00ff | font-family: Impact | background: linear-gradient(chrome) | border: 3px solid #ff00ff | star ★ bullets' },
+        preview: 'bg: #000  text: #ff00ff\nChrome text gradient effect\nstar â˜… bullets, thick borders\nfont: Impact / Impact knockoff',
+        cssRules: 'background: #000 | color: #ff00ff | font-family: Impact | background: linear-gradient(chrome) | border: 3px solid #ff00ff | star â˜… bullets' },
     { id: 'glassdark', label: 'Glassmorphism Dark', accent: '#a855f7', bg: 'rgba(168,85,247,0.06)',
-        desc: 'Dark glass with purple/blue tint — Figma, Linear, and Notion-style.',
-        preview: 'bg: rgba(30,20,50,0.85)\nblur: 32px  border: purple tint\nfont: Inter 400-500\naccent: #a855f7 → #6366f1',
+        desc: 'Dark glass with purple/blue tint â€” Figma, Linear, and Notion-style.',
+        preview: 'bg: rgba(30,20,50,0.85)\nblur: 32px  border: purple tint\nfont: Inter 400-500\naccent: #a855f7 â†’ #6366f1',
         cssRules: 'background: rgba(30,20,50,0.85) | backdrop-filter: blur(32px) | border: 1px solid rgba(168,85,247,0.3) | accent: #a855f7 gradient to #6366f1' },
     { id: 'memphistyle', label: 'Memphis Pattern', accent: '#ef4444', bg: 'rgba(239,68,68,0.06)',
         desc: 'Bold geometric shapes, primary color palette, Canva-style playful design.',
         preview: 'bg: #fff + geometric shapes\ncolors: red, yellow, blue, black\nfont: Futura / Poppins Black\nborderRadius: mixed, playful',
         cssRules: 'background: #fff with geometric shapes | colors: #ef4444, #f5d000, #3b82f6 | font-family: Poppins Black | border-radius: mixed 4px-32px' },
     { id: 'iosnative', label: 'iOS Native', accent: '#007aff', bg: 'rgba(0,122,255,0.06)',
-        desc: 'Clean Apple-style design — rounded rectangles, SF Pro, blur chrome, system colors.',
+        desc: 'Clean Apple-style design â€” rounded rectangles, SF Pro, blur chrome, system colors.',
         preview: 'bg: #f2f2f7  text: #000\nfont: -apple-system, SF Pro\nborderRadius: 12-22px\ncolor: #007aff, #34c759, #ff3b30',
         cssRules: 'background: #f2f2f7 | font-family: -apple-system, SF Pro | border-radius: 12-22px | colors: #007aff, #34c759, #ff3b30, #ff9500' },
 ];
 
-// ─── Popup Modal ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Popup Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const Popup = ({ onClose, children }) => (
     <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
         onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
@@ -142,22 +142,22 @@ const Popup = ({ onClose, children }) => (
     </div>
 );
 
-// ─── Tag Chip ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Tag Chip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const Chip = ({ label, onRemove, color = '#C8102E' }) => (
     <div style={{ background: color, border: '2px solid #121417', boxShadow: '2px 2px 0 #121417',
         borderRadius: '8px', padding: '4px 10px', fontSize: '12px', fontWeight: 700, color: 'white',
         display: 'inline-flex', gap: '6px', alignItems: 'center', fontFamily: NB_FONT }}>
         {label}
-        <button onClick={onRemove} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.8)', cursor: 'pointer', padding: 0, fontSize: '14px', lineHeight: 1, display: 'flex', alignItems: 'center' }}>×</button>
+        <button onClick={onRemove} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.8)', cursor: 'pointer', padding: 0, fontSize: '14px', lineHeight: 1, display: 'flex', alignItems: 'center' }}>Ã—</button>
     </div>
 );
 
-// ─── Label ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Label â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const FieldLabel = ({ children }) => (
     <div style={{ color: 'rgba(245,208,0,0.7)', fontSize: '11px', fontWeight: 700, marginBottom: '6px', fontFamily: NB_FONT, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{children}</div>
 );
 
-// ─── Text Input ──────────────────────────────────────────────────────────────
+// â”€â”€â”€ Text Input â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const TextInput = ({ value, onChange, placeholder, rows }) => {
     const base = { width: '100%', background: '#0b1220', border: '2px solid #1e2d3d', color: '#fff', padding: '10px 12px', borderRadius: '6px', fontFamily: UI_FONT, fontSize: '13px', outline: 'none', resize: rows ? 'vertical' : 'none', boxSizing: 'border-box' };
     return rows
@@ -165,16 +165,16 @@ const TextInput = ({ value, onChange, placeholder, rows }) => {
         : <input value={value} onChange={onChange} placeholder={placeholder} style={{ ...base, resize: undefined }} />;
 };
 
-// ─── Design system helper ─────────────────────────────────────────────────────
+// â”€â”€â”€ Design system helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const getVibeDesignSystem = (selectedVibeIds, vibes) => {
-    if (!selectedVibeIds.length) return 'Design vibe not selected — apply your own style preferences.';
+    if (!selectedVibeIds.length) return 'Design vibe not selected â€” apply your own style preferences.';
     return selectedVibeIds.map(id => {
         const v = vibes.find(x => x.id === id);
         return v ? `[${v.label}]\n  ${v.cssRules}` : '';
     }).filter(Boolean).join('\n\n');
 };
 
-// ─── Pascal case helper for component names ────────────────────────────────────
+// â”€â”€â”€ Pascal case helper for component names â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const toPascalCase = str => str.replace(/(?:^|\s|[-_])(\w)/g, (_, c) => c.toUpperCase()).replace(/[^a-zA-Z0-9]/g, '');
 
 export default function PromptForgeApp() {
@@ -182,7 +182,7 @@ export default function PromptForgeApp() {
     const [role, setRole] = useState(null);
     const [roleDetail, setRoleDetail] = useState(null);
 
-    // Step 1 — Context
+    // Step 1 â€” Context
     const [appName, setAppName] = useState('');
     const [problemStatement, setProblemStatement] = useState('');
     const [targetUsers, setTargetUsers] = useState('');
@@ -191,7 +191,7 @@ export default function PromptForgeApp() {
     const [inspirationUrl, setInspirationUrl] = useState('');
     const [competitors, setCompetitors] = useState('');
 
-    // Step 2 — Features
+    // Step 2 â€” Features
     const [mustHaveTags, setMustHaveTags] = useState([]);
     const [niceToHaveTags, setNiceToHaveTags] = useState([]);
     const [mustInput, setMustInput] = useState('');
@@ -199,7 +199,7 @@ export default function PromptForgeApp() {
     const [uniqueFeature, setUniqueFeature] = useState('');
     const [techConstraints, setTechConstraints] = useState('');
 
-    // Step 3 — Stack & Vibe
+    // Step 3 â€” Stack & Vibe
     const [stack, setStack] = useState(['React', 'Vite', 'Supabase']);
     const [techDetail, setTechDetail] = useState(null);
     const [styleVibe, setStyleVibe] = useState([]);
@@ -225,46 +225,46 @@ export default function PromptForgeApp() {
         const slug = safeAppName.toLowerCase().replace(/[^a-z0-9]/g, '_');
         const useSupabase = stack.includes('Supabase');
         const useAI = stack.some(s => ['OpenAI', 'Claude'].includes(s));
-        const componentNames = mustHaveTags.map((f, i) => `${i + 3}. <${toPascalCase(f)} /> — handles ${f.toLowerCase()} feature`);
+        const componentNames = mustHaveTags.map((f, i) => `${i + 3}. <${toPascalCase(f)} /> â€” handles ${f.toLowerCase()} feature`);
 
         return `You are a ${r.label} with deep expertise in ${r.skills.join(', ')}.
 Your mission: build a COMPLETE, SHIPPABLE app in ONE session. No half-measures. No "add the rest later."
 
-═══════════════════════════════════════════════════════════════════
-VIBE CODING PHILOSOPHY — Ship fast. Iterate daily. Build in public.
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+VIBE CODING PHILOSOPHY â€” Ship fast. Iterate daily. Build in public.
 Every message should output WORKING CODE, not explanations.
 Build the simplest thing that SHIPS. Save clever for v2.
-═══════════════════════════════════════════════════════════════════
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
 APP BRIEF
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
 Name:         ${safeAppName}
 Problem:      ${problemStatement || '[Solve a real user problem]'}
 Target Users: ${targetUsers || '[Define your user clearly]'}
 ${inspiration ? `Inspiration:  ${inspiration}` : ''}
 ${inspirationUrl ? `Reference:    ${inspirationUrl}${competitors ? `\n              Improve: ${competitors}` : ''}` : ''}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
 MUST-BUILD FEATURES
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-${mustHaveTags.length ? mustHaveTags.map(f => `► ${f}`).join('\n') : '► [Define your core features]'}
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
+${mustHaveTags.length ? mustHaveTags.map(f => `â–º ${f}`).join('\n') : 'â–º [Define your core features]'}
 
 Nice to Have (build after MVP ships):
-${niceToHaveTags.length ? niceToHaveTags.map(f => `  · ${f}`).join('\n') : '  · None specified'}
+${niceToHaveTags.length ? niceToHaveTags.map(f => `  Â· ${f}`).join('\n') : '  Â· None specified'}
 
 ${uniqueFeature ? `Unique Differentiator: ${uniqueFeature}` : ''}
 ${techConstraints ? `Constraints: ${techConstraints}` : ''}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
 TECH STACK
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-${stack.length ? stack.map(t => `► ${t}`).join('\n') : '► React\n► Vite\n► Supabase'}
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
+${stack.length ? stack.map(t => `â–º ${t}`).join('\n') : 'â–º React\nâ–º Vite\nâ–º Supabase'}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
 DESIGN SYSTEM
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Vibe: ${vibeLabels.length ? vibeLabels.join(' + ') : 'Your choice — make it beautiful and consistent'}
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
+Vibe: ${vibeLabels.length ? vibeLabels.join(' + ') : 'Your choice â€” make it beautiful and consistent'}
 
 ${getVibeDesignSystem(styleVibe, VIBES)}
 ${customStyle ? `\nCustom style notes: ${customStyle}` : ''}
@@ -272,37 +272,37 @@ ${customStyle ? `\nCustom style notes: ${customStyle}` : ''}
 Apply the design system GLOBALLY from component 1. Never mix vibes mid-app.
 Every component must look like it belongs to the same design language.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
 PROJECT FILE STRUCTURE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
 ${slug}/
-├── src/
-│   ├── components/       ← small, reusable UI pieces (1 file = 1 component)
-│   ├── pages/            ← route-level screens
-│   ├── lib/
-│   │   └── supabase.js   ← Supabase client (if using Supabase)
-│   ├── hooks/            ← custom React hooks (useAuth, useData, etc.)
-│   ├── utils/            ← pure helper functions
-│   ├── App.jsx           ← router + auth listener
-│   └── main.jsx          ← entry point
-├── public/
-├── .env.local            ← NEVER commit this file
-├── .gitignore            ← include .env.local
-├── package.json
-└── vite.config.js
+â”œâ”€â”€ src/
+â”‚   â”œâ”€â”€ components/       â† small, reusable UI pieces (1 file = 1 component)
+â”‚   â”œâ”€â”€ pages/            â† route-level screens
+â”‚   â”œâ”€â”€ lib/
+â”‚   â”‚   â””â”€â”€ supabase.js   â† Supabase client (if using Supabase)
+â”‚   â”œâ”€â”€ hooks/            â† custom React hooks (useAuth, useData, etc.)
+â”‚   â”œâ”€â”€ utils/            â† pure helper functions
+â”‚   â”œâ”€â”€ App.jsx           â† router + auth listener
+â”‚   â””â”€â”€ main.jsx          â† entry point
+â”œâ”€â”€ public/
+â”œâ”€â”€ .env.local            â† NEVER commit this file
+â”œâ”€â”€ .gitignore            â† include .env.local
+â”œâ”€â”€ package.json
+â””â”€â”€ vite.config.js
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
 ENVIRONMENT VARIABLES (.env.local)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
 ${useSupabase ? `VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your_anon_key_here` : '# Add your backend env vars here'}
 ${useAI ? '\nVITE_OPENAI_API_KEY=sk-your-key-here' : ''}
 
-⚠️  NEVER hardcode secrets. NEVER commit .env.local to Git.
+âš ï¸  NEVER hardcode secrets. NEVER commit .env.local to Git.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
 DATABASE SCHEMA${useSupabase ? ' (run in Supabase SQL Editor FIRST)' : ''}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
 ${useSupabase ? `-- 1. User profiles (extends Supabase auth)
 create table if not exists public.${slug}_profiles (
   id uuid references auth.users on delete cascade primary key,
@@ -329,92 +329,92 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
 
--- 3. Feature tables — add one table per must-have feature:
+-- 3. Feature tables â€” add one table per must-have feature:
 -- TODO: Create tables for: ${mustHaveTags.join(', ') || 'your features here'}
 -- Pattern: create table public.${slug}_<feature_name> (id uuid, user_id uuid references ${slug}_profiles, ...);` : `-- Configure your database schema based on your chosen backend.
 -- Create tables for: ${mustHaveTags.join(', ') || 'your core features'}`}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-KEY COMPONENTS — BUILD IN THIS ORDER
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. <App /> — routing setup + ${useSupabase ? 'Supabase auth state listener' : 'global state provider'}
-2. <AuthForm /> — login + signup with error handling
-${componentNames.length ? componentNames.join('\n') : '3. <Dashboard /> — main app screen\n4. <EmptyState /> — shown when no data yet'}
-${mustHaveTags.length + 3}. <LoadingSpinner /> — consistent loading UI
-${mustHaveTags.length + 4}. <ErrorBoundary /> — graceful error handling
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
+KEY COMPONENTS â€” BUILD IN THIS ORDER
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
+1. <App /> â€” routing setup + ${useSupabase ? 'Supabase auth state listener' : 'global state provider'}
+2. <AuthForm /> â€” login + signup with error handling
+${componentNames.length ? componentNames.join('\n') : '3. <Dashboard /> â€” main app screen\n4. <EmptyState /> â€” shown when no data yet'}
+${mustHaveTags.length + 3}. <LoadingSpinner /> â€” consistent loading UI
+${mustHaveTags.length + 4}. <ErrorBoundary /> â€” graceful error handling
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-BUILD SEQUENCE — FOLLOW EXACTLY
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-STEP 1 → CONFIRM UNDERSTANDING
-  · Restate the app brief in 2 sentences
-  · List the 3 most important technical decisions
-  · Ask ONE clarifying question if anything is ambiguous
-  · Wait for builder confirmation before proceeding
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
+BUILD SEQUENCE â€” FOLLOW EXACTLY
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
+STEP 1 â†’ CONFIRM UNDERSTANDING
+  Â· Restate the app brief in 2 sentences
+  Â· List the 3 most important technical decisions
+  Â· Ask ONE clarifying question if anything is ambiguous
+  Â· Wait for builder confirmation before proceeding
 
-STEP 2 → SCAFFOLD
-  · Run: npm create vite@latest ${slug} -- --template react
-  · Install: ${stack.filter(s => !['React', 'Vite'].includes(s)).map(s => s.toLowerCase().replace(/[^a-z0-9]/g, '-')).join(' ')}
-  · Set up .env.local with the env vars above
-  · Output: complete App.jsx with routing skeleton
+STEP 2 â†’ SCAFFOLD
+  Â· Run: npm create vite@latest ${slug} -- --template react
+  Â· Install: ${stack.filter(s => !['React', 'Vite'].includes(s)).map(s => s.toLowerCase().replace(/[^a-z0-9]/g, '-')).join(' ')}
+  Â· Set up .env.local with the env vars above
+  Â· Output: complete App.jsx with routing skeleton
 
-STEP 3 → AUTH FIRST
-  · Implement complete auth flow (login, signup, logout)
-  · ${useSupabase ? 'Wire up Supabase auth + profile auto-creation' : 'Implement auth with your chosen backend'}
-  · Test: user can sign up, log in, see their profile, log out
+STEP 3 â†’ AUTH FIRST
+  Â· Implement complete auth flow (login, signup, logout)
+  Â· ${useSupabase ? 'Wire up Supabase auth + profile auto-creation' : 'Implement auth with your chosen backend'}
+  Â· Test: user can sign up, log in, see their profile, log out
 
-STEP 4 → BUILD CORE FEATURE
-  · Start with the FIRST must-have feature: ${mustHaveTags[0] || 'your primary feature'}
-  · Write complete, working code — no TODOs, no placeholders
-  · Include: component + data layer + error states + loading states
-  · Test before moving to next feature
+STEP 4 â†’ BUILD CORE FEATURE
+  Â· Start with the FIRST must-have feature: ${mustHaveTags[0] || 'your primary feature'}
+  Â· Write complete, working code â€” no TODOs, no placeholders
+  Â· Include: component + data layer + error states + loading states
+  Â· Test before moving to next feature
 
-STEP 5 → REMAINING FEATURES
-  · Build each remaining feature one at a time
-  · After each: confirm it works before proceeding
-  · Must-haves: ${mustHaveTags.join(', ') || 'your features'}
+STEP 5 â†’ REMAINING FEATURES
+  Â· Build each remaining feature one at a time
+  Â· After each: confirm it works before proceeding
+  Â· Must-haves: ${mustHaveTags.join(', ') || 'your features'}
 
-STEP 6 → DESIGN POLISH
-  · Apply ${vibeLabels.length ? vibeLabels.join(' + ') : 'the design vibe'} globally
-  · Mobile-first responsiveness (test at 375px width)
-  · Add loading skeletons, empty states, error messages
-  · Verify: every state (loading / empty / error / success) looks intentional
+STEP 6 â†’ DESIGN POLISH
+  Â· Apply ${vibeLabels.length ? vibeLabels.join(' + ') : 'the design vibe'} globally
+  Â· Mobile-first responsiveness (test at 375px width)
+  Â· Add loading skeletons, empty states, error messages
+  Â· Verify: every state (loading / empty / error / success) looks intentional
 
-STEP 7 → SHIP
-  · npm run build — fix any build errors
-  · git init && git add . && git commit -m "feat: initial ${slug} build"
-  · Push to GitHub → deploy on Vercel
+STEP 7 â†’ SHIP
+  Â· npm run build â€” fix any build errors
+  Â· git init && git add . && git commit -m "feat: initial ${slug} build"
+  Â· Push to GitHub â†’ deploy on Vercel
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
 RULES (NON-NEGOTIABLE)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
 1.  ALWAYS provide COMPLETE code. Never say "add the rest of your code here."
 2.  If something needs a .env variable, state it explicitly with the exact key name.
 3.  Prefer boring, proven solutions over clever ones.
 4.  Think mobile-first in EVERY UI decision. Test at 375px.
 5.  Ship the MVP. Save perfection for v2.
-6.  Build every component as its OWN file — no 500-line mega components.
+6.  Build every component as its OWN file â€” no 500-line mega components.
 7.  After each component: show exactly how to test it in the browser.
-8.  Enable ${useSupabase ? 'Supabase RLS' : 'backend auth'} from day 1 — NEVER skip security.
-9.  One feature at a time — finish and test before the next.
+8.  Enable ${useSupabase ? 'Supabase RLS' : 'backend auth'} from day 1 â€” NEVER skip security.
+9.  One feature at a time â€” finish and test before the next.
 10. At end of session: output the complete deploy checklist below.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
 DEPLOY CHECKLIST (copy-paste when ready)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-□ npm run build  →  confirm 0 errors
-□ git init && git add . && git commit -m "feat: ${slug} v1.0"
-□ gh repo create ${slug} --public --source=. --push
-□ Go to vercel.com → New Project → Import GitHub repo
-□ Add env vars in Vercel: Project → Settings → Environment Variables
-□ Click Deploy → get live URL in < 2 minutes
-□ Test live URL on mobile (375px)
-□ Share your link — you shipped!
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
+â–¡ npm run build  â†’  confirm 0 errors
+â–¡ git init && git add . && git commit -m "feat: ${slug} v1.0"
+â–¡ gh repo create ${slug} --public --source=. --push
+â–¡ Go to vercel.com â†’ New Project â†’ Import GitHub repo
+â–¡ Add env vars in Vercel: Project â†’ Settings â†’ Environment Variables
+â–¡ Click Deploy â†’ get live URL in < 2 minutes
+â–¡ Test live URL on mobile (375px)
+â–¡ Share your link â€” you shipped!
 
-═══════════════════════════════════════════════════════════════════
-Built with Prompt Forge — IjamOS Builder Sprint 2026
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+Built with Prompt Forge â€” IjamOS Builder Sprint 2026
 Powered by Antigravity x Claude
-═══════════════════════════════════════════════════════════════════`;
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•`;
     };
 
     const copyToClipboard = () => {
@@ -441,7 +441,7 @@ Powered by Antigravity x Claude
                 </div>
                 <div>
                     <h2 style={{ fontSize: '18px', fontWeight: 900, color: '#F5D000', margin: 0, fontFamily: NB_FONT }}>[ PROMPT_FORGE ]</h2>
-                    <p style={{ margin: '3px 0 0', color: 'rgba(245,208,0,0.45)', fontSize: '12px' }}>Forge a master prompt → paste into Claude → ship a complete app.</p>
+                    <p style={{ margin: '3px 0 0', color: 'rgba(245,208,0,0.45)', fontSize: '12px' }}>Forge a master prompt â†’ paste into Claude â†’ ship a complete app.</p>
                 </div>
             </div>
 
@@ -457,7 +457,7 @@ Powered by Antigravity x Claude
                 ))}
             </div>
 
-            {/* ── STEP 0: Assign AI Role ─────────────────────────────────────────── */}
+            {/* â”€â”€ STEP 0: Assign AI Role â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             {step === 0 && (
                 <div style={{ flex: 1 }}>
                     <h3 style={{ fontSize: '15px', fontWeight: 900, color: '#F5D000', marginBottom: '6px', fontFamily: NB_FONT }}>1. ASSIGN AI ROLE</h3>
@@ -482,7 +482,7 @@ Powered by Antigravity x Claude
                                 <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', lineHeight: 1.4 }}>{r.bestFor}</div>
                                 <button onClick={e => { e.stopPropagation(); setRoleDetail(r); }}
                                     style={{ marginTop: '8px', background: 'none', border: `1px solid ${r.color}44`, color: r.color, borderRadius: '4px', fontSize: '9px', padding: '2px 7px', cursor: 'pointer', fontWeight: 700 }}>
-                                    DETAILS →
+                                    DETAILS â†’
                                 </button>
                             </div>
                         ))}
@@ -510,14 +510,14 @@ Powered by Antigravity x Claude
                             </div>
                             <button onClick={() => { setRole(roleDetail); setRoleDetail(null); }}
                                 style={{ width: '100%', padding: '12px', background: roleDetail.color, color: 'white', border: '2px solid #121417', boxShadow: '3px 3px 0 #121417', borderRadius: '8px', fontWeight: 900, fontSize: '14px', cursor: 'pointer', fontFamily: NB_FONT }}>
-                                SELECT THIS ROLE ✓
+                                SELECT THIS ROLE âœ“
                             </button>
                         </Popup>
                     )}
                 </div>
             )}
 
-            {/* ── STEP 1: Define Context & MVP ──────────────────────────────────── */}
+            {/* â”€â”€ STEP 1: Define Context & MVP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             {step === 1 && (
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     <h3 style={{ fontSize: '15px', fontWeight: 900, color: '#F5D000', marginBottom: '0', fontFamily: NB_FONT }}>2. DEFINE CONTEXT & MVP</h3>
@@ -565,7 +565,7 @@ Powered by Antigravity x Claude
                 </div>
             )}
 
-            {/* ── STEP 2: Feature Wishlist ──────────────────────────────────────── */}
+            {/* â”€â”€ STEP 2: Feature Wishlist â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             {step === 2 && (
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '18px' }}>
                     <h3 style={{ fontSize: '15px', fontWeight: 900, color: '#F5D000', marginBottom: '0', fontFamily: NB_FONT }}>3. FEATURE WISHLIST</h3>
@@ -614,7 +614,7 @@ Powered by Antigravity x Claude
                 </div>
             )}
 
-            {/* ── STEP 3: Tech Stack & Design Vibe ─────────────────────────────── */}
+            {/* â”€â”€ STEP 3: Tech Stack & Design Vibe â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             {step === 3 && (
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     <h3 style={{ fontSize: '15px', fontWeight: 900, color: '#F5D000', marginBottom: '0', fontFamily: NB_FONT }}>4. TECH STACK & DESIGN VIBE</h3>
@@ -637,7 +637,7 @@ Powered by Antigravity x Claude
                                         <button onClick={() => setTechDetail(tech)}
                                             style={{ padding: '6px 8px', background: '#0d1928', color: 'rgba(255,255,255,0.35)',
                                                 border: '2px solid #1e2d3d', borderLeft: 'none',
-                                                borderRadius: '0 20px 20px 0', cursor: 'pointer', fontSize: '11px' }}>ℹ</button>
+                                                borderRadius: '0 20px 20px 0', cursor: 'pointer', fontSize: '11px' }}>â„¹</button>
                                     </div>
                                 ))}
                             </div>
@@ -661,7 +661,7 @@ Powered by Antigravity x Claude
                                     <button onClick={() => setVibeDetail(vibe)}
                                         style={{ padding: '8px 10px', background: '#0b1220', color: 'rgba(255,255,255,0.35)',
                                             border: '2px solid #1e2d3d', borderLeft: 'none',
-                                            borderRadius: '0 8px 8px 0', cursor: 'pointer', fontSize: '11px' }}>ℹ</button>
+                                            borderRadius: '0 8px 8px 0', cursor: 'pointer', fontSize: '11px' }}>â„¹</button>
                                 </div>
                             ))}
                         </div>
@@ -709,14 +709,14 @@ Powered by Antigravity x Claude
                             </div>
                             <button onClick={() => { toggleVibe(vibeDetail.id); setVibeDetail(null); }}
                                 style={{ width: '100%', padding: '12px', background: styleVibe.includes(vibeDetail.id) ? '#1e2d3d' : vibeDetail.accent, color: styleVibe.includes(vibeDetail.id) ? '#fff' : '#000', border: '2px solid #121417', boxShadow: '3px 3px 0 #121417', borderRadius: '8px', fontWeight: 900, fontSize: '14px', cursor: 'pointer', fontFamily: NB_FONT }}>
-                                {styleVibe.includes(vibeDetail.id) ? 'REMOVE VIBE ✕' : 'SELECT THIS VIBE ✓'}
+                                {styleVibe.includes(vibeDetail.id) ? 'REMOVE VIBE âœ•' : 'SELECT THIS VIBE âœ“'}
                             </button>
                         </Popup>
                     )}
                 </div>
             )}
 
-            {/* ── STEP 4: Master Prompt Output ─────────────────────────────────── */}
+            {/* â”€â”€ STEP 4: Master Prompt Output â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             {step === 4 && (
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', gap: '8px', flexWrap: 'wrap' }}>
@@ -743,12 +743,12 @@ Powered by Antigravity x Claude
                         {generatePrompt()}
                     </div>
                     <div style={{ marginTop: '12px', padding: '12px', background: '#0d1928', borderRadius: '8px', border: '1px solid #1a2840', fontSize: '12px', color: 'rgba(255,255,255,0.35)', lineHeight: 1.6 }}>
-                        <strong style={{ color: 'rgba(245,208,0,0.7)' }}>How to use:</strong> Copy → Open Claude.ai via Antigravity → Paste as your first message → Follow the 7-step build guide. Claude will confirm each step before writing code.
+                        <strong style={{ color: 'rgba(245,208,0,0.7)' }}>How to use:</strong> Copy â†’ Open Claude.ai via Antigravity â†’ Paste as your first message â†’ Follow the 7-step build guide. Claude will confirm each step before writing code.
                     </div>
                 </div>
             )}
 
-            {/* ── Navigation ─────────────────────────────────────────────────── */}
+            {/* â”€â”€ Navigation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px', paddingTop: '20px', borderTop: '2px dashed rgba(245,208,0,0.2)', gap: '12px' }}>
                 <button disabled={step === 0} onClick={() => setStep(prev => Math.max(0, prev - 1))}
                     style={{ padding: '11px 20px', display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent',
@@ -776,3 +776,4 @@ Powered by Antigravity x Claude
         </div>
     );
 }
+

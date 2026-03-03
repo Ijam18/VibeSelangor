@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { X } from 'lucide-react';
 
 export default function AddClassModal({
@@ -148,3 +148,4 @@ export default function AddClassModal({
         </div>
     );
 }
+

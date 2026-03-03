@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { Check, Mail, ExternalLink, Gamepad2 } from 'lucide-react';
 import ThreadsIcon from '../ThreadsIcon';
-import { SPRINT_MODULE_STEPS } from '../../constants';
-import { formatWhatsAppLink, formatThreadsProfileUrl } from '../../utils';
+import { SPRINT_MODULE_STEPS } from '../../shared/constants';
+import { formatWhatsAppLink, formatThreadsProfileUrl } from '../../shared/utils';
 import WhatsAppIcon from '../WhatsAppIcon';
 
 
@@ -50,7 +50,7 @@ export default function BuilderDetailModal({
                     onMouseEnter={e => e.currentTarget.style.transform = 'translate(-2px, -2px)'}
                     onMouseLeave={e => e.currentTarget.style.transform = 'none'}
                 >
-                    ×
+                    Ã—
                 </button>
 
                 <div style={{ display: 'flex', gap: '16px', marginBottom: '28px', alignItems: 'center' }}>
@@ -234,3 +234,4 @@ export default function BuilderDetailModal({
         </div>
     );
 }
+

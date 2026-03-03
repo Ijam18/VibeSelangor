@@ -1,11 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { Settings, LogOut, Check, Calendar, Rocket, Camera, ChevronRight, Gamepad2 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import { awardGameRewards } from '../lib/gameService';
+import { supabase } from '../shared/lib/supabase';
+import { awardGameRewards } from '../shared/lib/gameService';
 import BuilderStudioPage from './BuilderStudioPage'; // Sibling import
-import { SPRINT_MODULE_STEPS, DEPLOY_COMMAND, TERMINAL_CONTEXT } from '../constants';
-import MobileFeatureShell from '../components/MobileFeatureShell';
-import { uploadWithFallback, handleStorageError, BUCKETS } from '../utils/storage';
+import { SPRINT_MODULE_STEPS, DEPLOY_COMMAND, TERMINAL_CONTEXT } from '../shared/constants';
+import MobileFeatureShell from '../features/mobile/components/MobileFeatureShell';
+import { uploadWithFallback, handleStorageError, BUCKETS } from '../shared/utils/storage';
 
 export default function BuilderDashboard({
     currentUser,
@@ -326,7 +326,7 @@ export default function BuilderDashboard({
             padding: '9px 10px'
         };
         const islandMessages = [
-            `${totalSubs} Logs • ${progressPct}% Sprint`,
+            `${totalSubs} Logs â€¢ ${progressPct}% Sprint`,
             checkedInToday ? 'Checked in today' : 'Check in and ship your log',
             activeClass ? `Live: ${activeClass.title}` : 'No live class now'
         ];
@@ -521,7 +521,7 @@ export default function BuilderDashboard({
                             <div className="neo-card" style={{ border: '3px solid black', background: 'black', color: 'white', marginBottom: '20px', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <div>
                                     <h3 style={{ color: 'white', fontSize: '20px', marginBottom: '2px' }}>Next: {classes[0]?.title || 'TBD'}</h3>
-                                    <p style={{ opacity: 0.6, fontSize: '12px', fontWeight: '700' }}>{classes[0]?.date ? new Date(classes[0].date).toLocaleDateString() : 'TBD'} • {classes[0]?.time || 'TBD'}</p>
+                                    <p style={{ opacity: 0.6, fontSize: '12px', fontWeight: '700' }}>{classes[0]?.date ? new Date(classes[0].date).toLocaleDateString() : 'TBD'} â€¢ {classes[0]?.time || 'TBD'}</p>
                                 </div>
                                 <Calendar size={24} style={{ opacity: 0.5 }} />
                             </div>
@@ -640,3 +640,5 @@ export default function BuilderDashboard({
         </div >
     );
 };
+
+

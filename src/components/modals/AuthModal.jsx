@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
-import { DISTRICT_OPTIONS } from '../../constants';
+import { DISTRICT_OPTIONS } from '../../shared/constants';
 
 export default function AuthModal({
     isOpen,
@@ -91,7 +91,7 @@ export default function AuthModal({
                                 style={{ padding: '14px', border: '2px solid black', borderRadius: '8px', resize: 'vertical' }}
                             />
                             <p style={{ fontSize: '10px', marginTop: '-10px', marginBottom: '4px', opacity: 0.7, fontWeight: '700', lineHeight: '1.4' }}>
-                                💡 Note: Project description should be your quick pitch like you want to sell this app (max 150 characters).
+                                ðŸ’¡ Note: Project description should be your quick pitch like you want to sell this app (max 150 characters).
                             </p>
                             <textarea
                                 placeholder="Tell us about yourself"
@@ -125,7 +125,7 @@ export default function AuthModal({
                                 style={{ padding: '14px', border: '2px solid black', borderRadius: '8px' }}
                             />
                             <p style={{ fontSize: '11px', marginTop: '-8px', opacity: 0.7, paddingLeft: '4px' }}>
-                                💡 <strong>Recommended:</strong> include your handle to connect with potential business & collaboration opportunities.
+                                ðŸ’¡ <strong>Recommended:</strong> include your handle to connect with potential business & collaboration opportunities.
                             </p>
                             <input
                                 type="text"
@@ -153,3 +153,4 @@ export default function AuthModal({
         </div>
     );
 }
+

@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Users, Folder, Sunrise, Sun, Moon, Coffee, Flag, PartyPopper, Gift, Hammer, Zap, Cpu, MessageSquare, Bot, Cloud, CloudRain, CloudLightning, Wind, Maximize2, Minimize2, X, Signal, Wifi } from 'lucide-react';
-import { localIntelligence, callNvidiaLLM, ZARULIJAM_SYSTEM_PROMPT } from '../lib/nvidia';
-import { callAssistantChat } from '../lib/assistantApi';
+import { localIntelligence, callNvidiaLLM, ZARULIJAM_SYSTEM_PROMPT } from '../shared/lib/nvidia';
+import { callAssistantChat } from '../shared/lib/assistantApi';
 import {
     DISTRICT_INFO,
     ANCHOR_PATH_TO_DISTRICT,
@@ -10,7 +10,7 @@ import {
     DEFAULT_MAP_FILL,
     TERMINAL_CONTEXT,
     DEPLOY_COMMAND
-} from '../constants';
+} from '../shared/constants';
 import {
     normalizeDistrict,
     extractFillFromStyle,
@@ -20,13 +20,13 @@ import {
     parseKrackedProjectDetail,
     extractKrackedDescription,
     downloadCSV
-} from '../utils';
-import { useLiveEvents } from '../utils/useLiveEvents';
-import MobileHomeScreen from '../components/MobileHomeScreen';
+} from '../shared/utils';
+import { useLiveEvents } from '../shared/utils/useLiveEvents';
+import MobileHomeScreen from '../features/mobile/components/MobileHomeScreen';
 import LiveIslandBlip from '../components/LiveIslandBlip';
-import MobileStatusBar from '../components/MobileStatusBar';
+import MobileStatusBar from '../features/mobile/components/MobileStatusBar';
 import GalleryShowcase from '../components/GalleryShowcase';
-import { getLiveProgramMeta } from '../utils/liveProgram';
+import { getLiveProgramMeta } from '../shared/utils/liveProgram';
 
 const LandingPage = ({
     profiles,
@@ -223,7 +223,7 @@ const LandingPage = ({
         setTimeout(() => setSelectedDistrictKey(null), 180);
     };
 
-    // Mascot Responses — Focused on site navigation with chill Malaysian vibe
+    // Mascot Responses â€” Focused on site navigation with chill Malaysian vibe
     const handleSendMessage = async (e, text = null) => {
         if (e) e.preventDefault();
         const input = text || chatInput;
@@ -237,7 +237,7 @@ const LandingPage = ({
         // Handle Special Commands
         if (lowerInput === 'boot ijamos' || lowerInput === 'ijamos') {
             setTimeout(() => {
-                setChatMessages(prev => [...prev, { role: 'bot', text: "[ SYSTEM ] BOOT_SEQUENCE: INITIALIZING_IJAM_OS... (b ᵔ▽ᵔ)b" }]);
+                setChatMessages(prev => [...prev, { role: 'bot', text: "[ SYSTEM ] BOOT_SEQUENCE: INITIALIZING_IJAM_OS... (b áµ”â–½áµ”)b" }]);
                 setTimeout(() => {
                     setPublicPage('ijamos');
                     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -252,7 +252,7 @@ const LandingPage = ({
             setTimeout(() => {
                 setChatMessages(prev => [...prev, {
                     role: 'bot',
-                    text: `[ VIBE_STATS ]\n⚡ ACTIVE_BUILDERS: ${builderCount}\n🚀 PROJECTS_SHIPPED: ${projectCount}\n🔥 STATUS: MAXIMUM_VIBE\n\nSelangor tengah membara ni bro! (☆▽☆)`
+                    text: `[ VIBE_STATS ]\nâš¡ ACTIVE_BUILDERS: ${builderCount}\nðŸš€ PROJECTS_SHIPPED: ${projectCount}\nðŸ”¥ STATUS: MAXIMUM_VIBE\n\nSelangor tengah membara ni bro! (â˜†â–½â˜†)`
                 }]);
             }, 600);
             return;
@@ -512,11 +512,11 @@ const LandingPage = ({
 
         // Kaomoji Collections
         const KAOMOJI = {
-            MORNING: ['(o^▽^o)', '(´• ω •`)', '(⌒_⌒;)', '(*/ω＼)', ':)'],
-            AFTERNOON: ['(⌐■_■)', '(¯h¯)', '(¬‿¬)', '(^_−)☆', '(˙꒳˙)'],
-            EVENING: ['( ☕_☕ )', '(￣▽￣)', '( ´ ▽ ` )', ':)', '(・・ ) ?'],
-            NIGHT: ['( ☾ )', '(－_－) zzZ', '(x_x)', ':) 💤', '(⇀‸↼‶)'],
-            VIBE: ['(ﾉ^ヮ^)ﾉ*:・ﾟ✧', '(✿◠‿◠)', '(☆▽☆)', '( ˙꒳​˙ )', '(b ᵔ▽ᵔ)b']
+            MORNING: ['(o^â–½^o)', '(Â´â€¢ Ï‰ â€¢`)', '(âŒ’_âŒ’;)', '(*/Ï‰ï¼¼)', ':)'],
+            AFTERNOON: ['(âŒâ– _â– )', '(Â¯hÂ¯)', '(Â¬â€¿Â¬)', '(^_âˆ’)â˜†', '(Ë™ê’³Ë™)'],
+            EVENING: ['( â˜•_â˜• )', '(ï¿£â–½ï¿£)', '( Â´ â–½ ` )', ':)', '(ãƒ»ãƒ» ) ?'],
+            NIGHT: ['( â˜¾ )', '(ï¼_ï¼) zzZ', '(x_x)', ':) ðŸ’¤', '(â‡€â€¸â†¼â€¶)'],
+            VIBE: ['(ï¾‰^ãƒ®^)ï¾‰*:ãƒ»ï¾Ÿâœ§', '(âœ¿â— â€¿â— )', '(â˜†â–½â˜†)', '( Ë™ê’³â€‹Ë™ )', '(b áµ”â–½áµ”)b']
         };
 
         const getRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -783,12 +783,12 @@ const LandingPage = ({
     }, [profiles, submissions, kualaLumpurShowcase]);
 
     const getHeatmapColor = (count) => {
-        if (count === 0) return '#e5e7eb'; // Gray — no submissions
+        if (count === 0) return '#e5e7eb'; // Gray â€” no submissions
         if (count === 1) return '#ef4444'; // Red
         if (count === 2) return '#f97316'; // Orange
         if (count === 3) return '#eab308'; // Yellow
         if (count === 4) return '#84cc16'; // Lime
-        return '#22c55e';                  // Green — 5+
+        return '#22c55e';                  // Green â€” 5+
     };
 
     const districtLabelNodes = useMemo(() => {
@@ -1052,7 +1052,7 @@ const LandingPage = ({
                                     <span className="weather-location" style={{ opacity: 0.6 }}>SELANGOR:</span>
                                     <div className="weather-temp" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                         <WeatherIcon condition={weatherData.condition} />
-                                        <span>{weatherData.temp}°C</span>
+                                        <span>{weatherData.temp}Â°C</span>
                                     </div>
                                 </div>
                             </div>
@@ -1866,5 +1866,8 @@ const LandingPage = ({
 };
 
 export default LandingPage;
+
+
+
 
 

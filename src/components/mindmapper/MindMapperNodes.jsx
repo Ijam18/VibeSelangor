@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { Lightbulb, Layers, Layout, ServerCog, Database } from 'lucide-react';
 
@@ -80,3 +80,4 @@ export const DatabaseNode = ({ data, isConnectable }) => (
         {omniHandles(isConnectable)}
     </BaseNode>
 );
+

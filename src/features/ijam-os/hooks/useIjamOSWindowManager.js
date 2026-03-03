@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+﻿import { useCallback, useMemo, useState } from 'react';
 
 export const useIjamOSWindowManager = ({ appRegistry, isTouchIjamMode }) => {
   const [windowStates, setWindowStates] = useState({});
@@ -159,3 +159,4 @@ export const useIjamOSWindowManager = ({ appRegistry, isTouchIjamMode }) => {
     setZCounter
   };
 };
+

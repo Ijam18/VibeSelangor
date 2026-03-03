@@ -12,9 +12,9 @@ import {
     Zap,
     Bot
 } from 'lucide-react';
-import MobileFeatureShell from '../components/MobileFeatureShell';
+import MobileFeatureShell from '../features/mobile/components/MobileFeatureShell';
 import LiveIslandBlip from '../components/LiveIslandBlip';
-import { getLiveProgramMeta } from '../utils/liveProgram';
+import { getLiveProgramMeta } from '../shared/utils/liveProgram';
 
 const STATS = [
     { value: '7', label: 'Days' },
@@ -603,3 +603,5 @@ export default function ProgramDetailsPage({ classes, handleJoinClick, setPublic
         </section>
     );
 }
+
+

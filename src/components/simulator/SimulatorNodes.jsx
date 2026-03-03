@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { Laptop, Brain, Github, Cloud, Database, BarChart3, Globe, Smartphone } from 'lucide-react';
 
@@ -98,3 +98,4 @@ export const PublicUserNode = ({ data, isConnectable }) => (
         {omniHandles(isConnectable)}
     </BaseNode>
 );
+

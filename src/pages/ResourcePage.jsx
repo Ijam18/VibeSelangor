@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import IjamOSWorkspace from '../features/ijam-os/IjamOSWorkspace';
 
 const ResourcePage = ({ session, currentUser, isMobileView, deviceMode = 'desktop', ijamOsMode = 'mac_desktop', setPublicPage }) => {
@@ -15,3 +15,4 @@ const ResourcePage = ({ session, currentUser, isMobileView, deviceMode = 'deskto
 };
 
 export default ResourcePage;
+

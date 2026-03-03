@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { emotionManager, emotionTriggers } from '../lib/emotionManager';
+﻿import React, { useState, useEffect, useRef } from 'react';
+import { emotionManager, emotionTriggers } from '../shared/lib/emotionManager';
 import IjamBotMascot from './IjamBotMascot';
 import PresetQuestions from './PresetQuestions';
-import { enhancedLocalIntelligence } from '../lib/enhancedLocalIntelligence';
-import { callNvidiaLLM, localIntelligence, ZARULIJAM_SYSTEM_PROMPT } from '../lib/nvidia';
-import { callAssistantChat } from '../lib/assistantApi';
+import { enhancedLocalIntelligence } from '../shared/lib/enhancedLocalIntelligence';
+import { callNvidiaLLM, localIntelligence, ZARULIJAM_SYSTEM_PROMPT } from '../shared/lib/nvidia';
+import { callAssistantChat } from '../shared/lib/assistantApi';
 import '../styles/emotionAnimations.css';
 
 /**
@@ -240,9 +240,9 @@ const EnhancedChatInterface = ({
                 fontSize: '0.875rem',
                 color: '#6b7280'
             }}>
-                <span>💬 Live Chat</span>
-                <span>🤖 IjamBot AI</span>
-                <span>📊 {getConversationStats().totalMessages} messages</span>
+                <span>ðŸ’¬ Live Chat</span>
+                <span>ðŸ¤– IjamBot AI</span>
+                <span>ðŸ“Š {getConversationStats().totalMessages} messages</span>
             </div>
 
 
@@ -313,7 +313,7 @@ const EnhancedChatInterface = ({
                                     fontSize: '0.75rem',
                                     fontWeight: 'bold'
                                 }}>
-                                    👤
+                                    ðŸ‘¤
                                 </div>
                             </div>
                         )}
@@ -496,3 +496,5 @@ const EnhancedChatInterface = ({
 };
 
 export default EnhancedChatInterface;
+
+

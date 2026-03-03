@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { Bug, X } from 'lucide-react';
 
 const GAME_DURATION = 30; // seconds
@@ -135,3 +135,4 @@ export default function BugSquash({ onSquash, onComplete, onClose }) {
         </div>
     );
 }
+

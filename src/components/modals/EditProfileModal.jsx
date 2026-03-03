@@ -1,5 +1,5 @@
-import React from 'react';
-import { DISTRICT_OPTIONS } from '../../constants';
+﻿import React from 'react';
+import { DISTRICT_OPTIONS } from '../../shared/constants';
 
 export default function EditProfileModal({
     isOpen,
@@ -159,3 +159,4 @@ export default function EditProfileModal({
         </div>
     );
 }
+
