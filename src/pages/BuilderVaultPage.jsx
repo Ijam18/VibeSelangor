@@ -96,7 +96,7 @@ export default function BuilderVaultPage({
             id: `p-${p.id}-${p.updated_at || p.created_at}`,
             type: 'project',
             title: p.project_name || 'Project update',
-            description: `${p.status || 'Draft'}${p.submission_url ? ' â€¢ URL set' : ''}`,
+            description: `${p.status || 'Draft'}${p.submission_url ? ' | URL set' : ''}`,
             at: p.updated_at || p.created_at
         }));
         return [...versionEntries, ...projectEntries]

@@ -87,10 +87,19 @@ export default defineConfig({
       '/api/kracked': {
         target: 'https://krackeddevs.com',
         changeOrigin: true,
+        secure: false,
+        timeout: 15000,
         rewrite: (path) => path.replace(/^\/api\/kracked/, ''),
+        configure: (proxy) => {
+          proxy.on('error', (err, _req, res) => {
+            console.error('[Proxy /api/kracked] Error:', err.message);
+            if (res && !res.headersSent) {
+              res.writeHead(502, { 'Content-Type': 'text/plain' });
+              res.end(`Kracked proxy error: ${err.message}`);
+            }
+          });
+        }
       }
     }
   }
 })
-
-

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useMemo, useRef, Suspense, lazy } from 'react';
 import {
     Zap, MessageSquare,
     User, MessageCircle, Menu, ShieldCheck
@@ -123,6 +123,7 @@ const App = () => {
     const [isMobileAuthDockOpen, setIsMobileAuthDockOpen] = useState(false);
     const [isTerminalEnlarged, setIsTerminalEnlarged] = useState(false);
     const [terminalMode, setTerminalMode] = useState('ijam');
+    const hasUserInteractedRef = useRef(false);
 
     // Real-time Data State
     const [classes, setClasses] = useState([]);
@@ -254,50 +255,87 @@ const App = () => {
         if (session) setIsMobileAuthDockOpen(false);
     }, [session]);
 
+    useEffect(() => {
+        const markInteraction = () => {
+            hasUserInteractedRef.current = true;
+        };
+        window.addEventListener('pointerdown', markInteraction, { passive: true });
+        window.addEventListener('keydown', markInteraction, { passive: true });
+        return () => {
+            window.removeEventListener('pointerdown', markInteraction);
+            window.removeEventListener('keydown', markInteraction);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (publicPage === 'ijamos' && !hasUserInteractedRef.current) {
+            setPublicPage('home');
+        }
+    }, [publicPage]);
+
     const fetchData = async () => {
-        const { data: classData } = await supabase.from('cohort_classes').select('*').order('date', { ascending: true });
-        const { data: submissionData } = await supabase.from('builder_progress').select('*').order('created_at', { ascending: false });
-
-        if (classData) setClasses(classData);
-        if (submissionData) setSubmissions(submissionData);
-
-        // Fetch all profiles for Admin
         setIsProfilesLoading(true);
         setProfilesError(null);
-        try {
-            const { data: profileData, error: profileError } = await supabase
-                .from('profiles')
-                .select('*')
-                .order('full_name', { ascending: true });
+        const settled = await Promise.allSettled([
+            supabase.from('cohort_classes').select('*').order('date', { ascending: true }),
+            supabase.from('builder_progress').select('*').order('created_at', { ascending: false }),
+            supabase.from('profiles').select('*').order('full_name', { ascending: true }),
+            supabase.from('cohort_attendance').select('*'),
+            supabase.from('builder_certificates').select('*').order('issued_at', { ascending: false })
+        ]);
 
-            if (profileError) {
-                console.error("Supabase Profile Fetch Error:", profileError);
-                setProfilesError(profileError.message);
+        const [classResult, submissionResult, profileResult, attendanceResult, certificateResult] = settled;
+
+        const resolveData = (result, label) => {
+            if (result.status === 'rejected') {
+                console.error(`[Supabase] ${label} request failed:`, result.reason);
+                return { data: null, error: result.reason };
             }
-            if (profileData) setProfiles(profileData);
+            const val = result.value || { data: null, error: null };
+            // Supabase returns { data, error } — check for relation/table errors
+            if (val.error) {
+                const msg = String(val.error?.message || val.error || '');
+                if (msg.includes('does not exist') || msg.includes('relation')) {
+                    console.warn(`[Supabase] Table ${label} may not exist yet:`, msg);
+                    return { data: [], error: null }; // Treat missing table as empty, not error
+                }
+            }
+            return val;
+        };
 
-            // Fetch attendance
-            const { data: attendanceData } = await supabase
-                .from('cohort_attendance')
-                .select('*');
-            if (attendanceData) setAttendance(attendanceData);
+        const classPayload = resolveData(classResult, 'cohort_classes');
+        const submissionPayload = resolveData(submissionResult, 'builder_progress');
+        const profilePayload = resolveData(profileResult, 'profiles');
+        const attendancePayload = resolveData(attendanceResult, 'cohort_attendance');
+        const certificatePayload = resolveData(certificateResult, 'builder_certificates');
 
-            const { data: certificateData } = await supabase
-                .from('builder_certificates')
-                .select('*')
-                .order('issued_at', { ascending: false });
-            if (certificateData) setCertificates(certificateData);
+        if (classPayload.error) console.error("Supabase Classes Fetch Error:", classPayload.error);
+        if (submissionPayload.error) console.error("Supabase Submissions Fetch Error:", submissionPayload.error);
+        if (profilePayload.error) console.error("Supabase Profile Fetch Error:", profilePayload.error);
+        if (attendancePayload.error) console.error("Supabase Attendance Fetch Error:", attendancePayload.error);
+        if (certificatePayload.error) console.warn("Supabase Certificate Fetch Error (non-blocking):", certificatePayload.error);
 
-        } catch (err) {
-            console.error("Unexpected error fetching profiles/attendance:", err);
-            if (err.message === 'Failed to fetch') {
-                setProfilesError("Could not connect to Supabase. Please check if your VITE_SUPABASE_URL is correct and that you have a .env file.");
+        if (classPayload.data) setClasses(classPayload.data);
+        if (submissionPayload.data) setSubmissions(submissionPayload.data);
+        if (profilePayload.data) setProfiles(profilePayload.data);
+        if (attendancePayload.data) setAttendance(attendancePayload.data);
+        if (certificatePayload.data) setCertificates(certificatePayload.data);
+
+        // Only consider core tables (profiles, classes, submissions) for error display
+        const coreError =
+            profilePayload.error ||
+            submissionPayload.error ||
+            classPayload.error;
+        if (coreError) {
+            const message = String(coreError?.message || coreError || '');
+            if (message.includes('Failed to fetch') || message.includes('not configured') || message.includes('CORS') || message.includes('NetworkError')) {
+                setProfilesError("Could not connect to Supabase. Please check your internet connection and verify VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env, then restart the dev server.");
             } else {
-                setProfilesError(err.message);
+                setProfilesError(message);
             }
-        } finally {
-            setIsProfilesLoading(false);
         }
+
+        setIsProfilesLoading(false);
     };
 
     const upsertProfile = async (userId, payload, forcedRole = null) => {
@@ -914,432 +952,523 @@ const App = () => {
                     onInstallClick={handleInstallClick}
                 />
                 <Suspense fallback={lazyFallback}>
-                <AuthModal
-                    isOpen={isAuthModalOpen}
-                    onClose={() => setIsAuthModalOpen(false)}
-                    authMode={authMode}
-                    setAuthMode={setAuthMode}
-                    handleAuth={handleAuth}
-                    authEmail={authEmail}
-                    setAuthEmail={setAuthEmail}
-                    authPassword={authPassword}
-                    setAuthPassword={setAuthPassword}
-                    showAuthPassword={showAuthPassword}
-                    setShowAuthPassword={setShowAuthPassword}
-                    onboardingForm={onboardingForm}
-                    setOnboardingForm={setOnboardingForm}
-                    authError={authError}
-                    isAuthLoading={isAuthLoading}
-                />
-                <EditProfileModal
-                    isOpen={isEditProfileModalOpen}
-                    onClose={() => setIsEditProfileModalOpen(false)}
-                    editProfileForm={editProfileForm}
-                    setEditProfileForm={setEditProfileForm}
-                    handleUpdateProfile={handleUpdateProfile}
-                    isUpdatingProfile={isUpdatingProfile}
-                    activeClass={currentUser?.type === 'builder' ? activeClass : null}
-                    isPresentAtActive={activeClassAttendanceChecked}
-                    onCheckIn={currentUser?.type === 'builder' ? handleSettingsCheckIn : null}
-                />
-                <AddClassModal
-                    isOpen={isAddClassModalOpen}
-                    onClose={() => setIsAddClassModalOpen(false)}
-                    newClass={newClass}
-                    setNewClass={setNewClass}
-                    handleAdminAddClass={handleAdminAddClass}
-                    isMobileView={isMobileView}
-                />
-                <BuilderDetailModal
-                    isOpen={!!selectedDetailProfile}
-                    onClose={() => setSelectedDetailProfile(null)}
-                    builder={selectedDetailProfile}
-                    submissions={submissions}
-                    currentUser={currentUser}
-                    isMobileView={isMobileView}
-                    certificates={certificates}
-                    classes={classes}
-                    adminActionLoading={builderActionLoading}
-                    adminActionNotice={builderActionNotice}
-                    onAssignCertificate={handleAssignBuilderCertificate}
-                    onRevokeCertificate={handleRevokeBuilderCertificate}
-                    onDeleteProjects={handleDeleteBuilderProjects}
-                    onDeleteBuilder={handleDeleteBuilder}
-                    onVisitStudio={(builder) => {
-                        setVisitingStudio({ id: builder.id, name: builder.full_name });
-                        setPublicPage('public-studio');
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                />
-                {/* Header: Hidden on mobile for all feature pages */}
-                {!isMobileView && publicPage !== 'ijamos' && (
-                    <header className="glass-header">
-                        <div className="header-container" style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            position: 'relative',
-                            paddingTop: isMobileView ? '16px' : '0',
-                            paddingBottom: isMobileView ? '16px' : '0',
-                            maxWidth: '100%',
-                            paddingLeft: isMobileView ? '16px' : '24px',
-                            paddingRight: isMobileView ? '16px' : '24px'
-                        }}>
-                            {/* Left portion: Menu button (desktop) and Logo */}
-                            <div style={{
+                    <AuthModal
+                        isOpen={isAuthModalOpen}
+                        onClose={() => setIsAuthModalOpen(false)}
+                        authMode={authMode}
+                        setAuthMode={setAuthMode}
+                        handleAuth={handleAuth}
+                        authEmail={authEmail}
+                        setAuthEmail={setAuthEmail}
+                        authPassword={authPassword}
+                        setAuthPassword={setAuthPassword}
+                        showAuthPassword={showAuthPassword}
+                        setShowAuthPassword={setShowAuthPassword}
+                        onboardingForm={onboardingForm}
+                        setOnboardingForm={setOnboardingForm}
+                        authError={authError}
+                        isAuthLoading={isAuthLoading}
+                    />
+                    <EditProfileModal
+                        isOpen={isEditProfileModalOpen}
+                        onClose={() => setIsEditProfileModalOpen(false)}
+                        editProfileForm={editProfileForm}
+                        setEditProfileForm={setEditProfileForm}
+                        handleUpdateProfile={handleUpdateProfile}
+                        isUpdatingProfile={isUpdatingProfile}
+                        activeClass={currentUser?.type === 'builder' ? activeClass : null}
+                        isPresentAtActive={activeClassAttendanceChecked}
+                        onCheckIn={currentUser?.type === 'builder' ? handleSettingsCheckIn : null}
+                    />
+                    <AddClassModal
+                        isOpen={isAddClassModalOpen}
+                        onClose={() => setIsAddClassModalOpen(false)}
+                        newClass={newClass}
+                        setNewClass={setNewClass}
+                        handleAdminAddClass={handleAdminAddClass}
+                        isMobileView={isMobileView}
+                    />
+                    <BuilderDetailModal
+                        isOpen={!!selectedDetailProfile}
+                        onClose={() => setSelectedDetailProfile(null)}
+                        builder={selectedDetailProfile}
+                        submissions={submissions}
+                        currentUser={currentUser}
+                        isMobileView={isMobileView}
+                        certificates={certificates}
+                        classes={classes}
+                        adminActionLoading={builderActionLoading}
+                        adminActionNotice={builderActionNotice}
+                        onAssignCertificate={handleAssignBuilderCertificate}
+                        onRevokeCertificate={handleRevokeBuilderCertificate}
+                        onDeleteProjects={handleDeleteBuilderProjects}
+                        onDeleteBuilder={handleDeleteBuilder}
+                        onVisitStudio={(builder) => {
+                            setVisitingStudio({ id: builder.id, name: builder.full_name });
+                            setPublicPage('public-studio');
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                    />
+                    {/* Header: Hidden on mobile for all feature pages */}
+                    {!isMobileView && publicPage !== 'ijamos' && (
+                        <header className="glass-header">
+                            <div className="header-container" style={{
                                 display: 'flex',
+                                justifyContent: 'space-between',
                                 alignItems: 'center',
-                                gap: '12px'
+                                position: 'relative',
+                                paddingTop: isMobileView ? '16px' : '0',
+                                paddingBottom: isMobileView ? '16px' : '0',
+                                maxWidth: '100%',
+                                paddingLeft: isMobileView ? '16px' : '24px',
+                                paddingRight: isMobileView ? '16px' : '24px'
                             }}>
-                                <button
-                                    onClick={() => setIsSidebarOpen(true)}
-                                    style={{
-                                        background: 'none',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        padding: '5px'
-                                    }}
-                                    title="Open Menu"
-                                >
-                                    <Menu size={24} />
-                                </button>
-
-                                {/* Logo */}
-                                <div className="header-brand-wrap" style={{
+                                {/* Left portion: Menu button (desktop) and Logo */}
+                                <div style={{
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '10px',
-                                    cursor: 'pointer',
-                                    zIndex: 10
-                                }} onClick={handleHeaderBrandClick}>
-                                    <div style={{
-                                        width: isMobileView ? '32px' : '36px',
-                                        height: isMobileView ? '32px' : '36px',
-                                        background: holidayConfig?.color || 'var(--selangor-red)',
-                                        borderRadius: '8px',
-                                        border: '2px solid black',
+                                    gap: '12px'
+                                }}>
+                                    <button
+                                        onClick={() => setIsSidebarOpen(true)}
+                                        style={{
+                                            background: 'none',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            padding: '5px'
+                                        }}
+                                        title="Open Menu"
+                                    >
+                                        <Menu size={24} />
+                                    </button>
+
+                                    {/* Logo */}
+                                    <div className="header-brand-wrap" style={{
                                         display: 'flex',
                                         alignItems: 'center',
-                                        justifyContent: 'center',
-                                        boxShadow: '2.5px 2.5px 0 black',
-                                        transition: 'all 0.2s ease',
-                                        flexShrink: 0
-                                    }}>
-                                        <Zap size={isMobileView ? 20 : 24} fill="yellow" color="black" strokeWidth={2.5} />
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                        <span className="header-brand-text" style={{
-                                            fontWeight: '950',
-                                            fontSize: isMobileView ? '20px' : '26px',
-                                            lineHeight: 1,
-                                            letterSpacing: '-0.03em',
-                                            marginTop: '2px'
+                                        gap: '10px',
+                                        cursor: 'pointer',
+                                        zIndex: 10
+                                    }} onClick={handleHeaderBrandClick}>
+                                        <div style={{
+                                            width: isMobileView ? '32px' : '36px',
+                                            height: isMobileView ? '32px' : '36px',
+                                            background: holidayConfig?.color || 'var(--selangor-red)',
+                                            borderRadius: '8px',
+                                            border: '2px solid black',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            boxShadow: '2.5px 2.5px 0 black',
+                                            transition: 'all 0.2s ease',
+                                            flexShrink: 0
                                         }}>
-                                            VibeSelangor
-                                        </span>
-                                        {holidayConfig && (
-                                            <div style={{
-                                                fontSize: '9px',
-                                                color: holidayConfig.color || 'var(--selangor-red)',
-                                                fontWeight: '900',
-                                                textTransform: 'uppercase',
-                                                letterSpacing: '0.05em',
-                                                marginTop: '1px',
-                                                opacity: 0.9,
-                                                whiteSpace: 'nowrap'
+                                            <Zap size={isMobileView ? 20 : 24} fill="yellow" color="black" strokeWidth={2.5} />
+                                        </div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                            <span className="header-brand-text" style={{
+                                                fontWeight: '950',
+                                                fontSize: isMobileView ? '20px' : '26px',
+                                                lineHeight: 1,
+                                                letterSpacing: '-0.03em',
+                                                marginTop: '2px'
                                             }}>
-                                                {holidayConfig.headerLabel}
-                                            </div>
-                                        )}
+                                                VibeSelangor
+                                            </span>
+                                            {holidayConfig && (
+                                                <div style={{
+                                                    fontSize: '9px',
+                                                    color: holidayConfig.color || 'var(--selangor-red)',
+                                                    fontWeight: '900',
+                                                    textTransform: 'uppercase',
+                                                    letterSpacing: '0.05em',
+                                                    marginTop: '1px',
+                                                    opacity: 0.9,
+                                                    whiteSpace: 'nowrap'
+                                                }}>
+                                                    {holidayConfig.headerLabel}
+                                                </div>
+                                            )}
+                                        </div>
+
                                     </div>
-
                                 </div>
-                            </div>
 
-                            {/* Right side: Auth actions for mobile, full nav for desktop */}
-                            <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'flex-end'
-                            }}>
-                                {!isMobileView ? (
-                                    <div className="header-actions-wrap" style={{ display: 'flex', alignItems: 'center', gap: '22px' }}>
-                                        <nav className="header-nav" style={{ display: 'flex', gap: '20px' }}>
-                                            {HEADER_LINKS.map(link => (
-                                                <a
-                                                    key={link.label}
-                                                    href={link.page ? `#${link.page}-page` : `#${link.sectionId}`}
-                                                    className="header-link"
-                                                    onClick={(e) => handleHeaderNavClick(e, link)}
-                                                    style={{
-                                                        color: (publicPage === link.page) ? 'var(--selangor-red)' : 'black',
-                                                        textDecoration: 'none',
-                                                        fontWeight: '800',
-                                                        fontSize: '14px'
-                                                    }}
-                                                >
-                                                    {link.label}
-                                                </a>
-                                            ))}
-                                        </nav>
+                                {/* Right side: Auth actions for mobile, full nav for desktop */}
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'flex-end'
+                                }}>
+                                    {!isMobileView ? (
+                                        <div className="header-actions-wrap" style={{ display: 'flex', alignItems: 'center', gap: '22px' }}>
+                                            <nav className="header-nav" style={{ display: 'flex', gap: '20px' }}>
+                                                {HEADER_LINKS.map(link => (
+                                                    <a
+                                                        key={link.label}
+                                                        href={link.page ? `#${link.page}-page` : `#${link.sectionId}`}
+                                                        className="header-link"
+                                                        onClick={(e) => handleHeaderNavClick(e, link)}
+                                                        style={{
+                                                            color: (publicPage === link.page) ? 'var(--selangor-red)' : 'black',
+                                                            textDecoration: 'none',
+                                                            fontWeight: '800',
+                                                            fontSize: '14px'
+                                                        }}
+                                                    >
+                                                        {link.label}
+                                                    </a>
+                                                ))}
+                                            </nav>
+                                            <div className="header-auth-actions" style={{ display: 'flex', gap: '10px' }}>
+                                                {!session ? (
+                                                    <button className="btn btn-red" onClick={handleJoinClick} style={{ padding: '8px 20px', fontSize: '12px' }}>
+                                                        JOIN COHORT
+                                                    </button>
+                                                ) : (
+                                                    <button className="btn btn-outline" onClick={() => setPublicPage('dashboard')} style={{ padding: '8px 20px', fontSize: '12px' }}>
+                                                        DASHBOARD
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        // Mobile auth actions
                                         <div className="header-auth-actions" style={{ display: 'flex', gap: '10px' }}>
                                             {!session ? (
-                                                <button className="btn btn-red" onClick={handleJoinClick} style={{ padding: '8px 20px', fontSize: '12px' }}>
-                                                    JOIN COHORT
+                                                <button className="btn btn-red" onClick={handleJoinClick} style={{ padding: '6px 12px', fontSize: '11px' }}>
+                                                    JOIN
                                                 </button>
                                             ) : (
-                                                <button className="btn btn-outline" onClick={() => setPublicPage('dashboard')} style={{ padding: '8px 20px', fontSize: '12px' }}>
-                                                    DASHBOARD
+                                                <button className="btn btn-outline" onClick={() => setPublicPage('dashboard')} style={{ padding: '6px 12px', fontSize: '11px' }}>
+                                                    DASH
                                                 </button>
                                             )}
                                         </div>
-                                    </div>
-                                ) : (
-                                    // Mobile auth actions
-                                    <div className="header-auth-actions" style={{ display: 'flex', gap: '10px' }}>
-                                        {!session ? (
-                                            <button className="btn btn-red" onClick={handleJoinClick} style={{ padding: '6px 12px', fontSize: '11px' }}>
-                                                JOIN
-                                            </button>
-                                        ) : (
-                                            <button className="btn btn-outline" onClick={() => setPublicPage('dashboard')} style={{ padding: '6px 12px', fontSize: '11px' }}>
-                                                DASH
-                                            </button>
-                                        )}
-                                    </div>
-                                )}
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    </header>
-                )}
+                        </header>
+                    )}
 
 
 
-                {
-                    publicPage === 'home' && (
-                        <LandingPage
-                            profiles={profiles}
-                            submissions={submissions}
-                            classes={classes}
-                            session={session}
-                            handleJoinClick={handleJoinClick}
-                            isMobileView={isMobileView}
-                            isPhoneView={isPhoneView}
-                            isTabletView={isTabletView}
-                            setPublicPage={setPublicPage}
-                            setSelectedDetailProfile={setSelectedDetailProfile}
-                            isTerminalEnlarged={isTerminalEnlarged}
-                            setIsTerminalEnlarged={setIsTerminalEnlarged}
-                            terminalMode={terminalMode}
-                            setTerminalMode={setTerminalMode}
-                            holidayConfig={holidayConfig}
-                            setNewProjectTrigger={setNewProjectTrigger}
-                        />
-                    )
-                }
-                {
-                    publicPage === 'map' && (
-                        <LandingPage
-                            profiles={profiles}
-                            submissions={submissions}
-                            classes={classes}
-                            session={session}
-                            handleJoinClick={handleJoinClick}
-                            isMobileView={isMobileView}
-                            isPhoneView={isPhoneView}
-                            isTabletView={isTabletView}
-                            setPublicPage={setPublicPage}
-                            setSelectedDetailProfile={setSelectedDetailProfile}
-                            isTerminalEnlarged={isTerminalEnlarged}
-                            setIsTerminalEnlarged={setIsTerminalEnlarged}
-                            terminalMode={terminalMode}
-                            setTerminalMode={setTerminalMode}
-                            holidayConfig={holidayConfig}
-                            viewMode="map"
-                            setNewProjectTrigger={setNewProjectTrigger}
-                        />
-                    )
-                }
-                {
-                    !currentUser && !['home', 'map', 'how-it-works', 'coming-soon', 'showcase', 'hall-of-fame', 'leaderboard', 'forum', 'studio', 'public-studio', 'ijamos'].includes(publicPage) && (
-                        <LandingPage
-                            profiles={profiles}
-                            submissions={submissions}
-                            classes={classes}
-                            session={session}
-                            handleJoinClick={handleJoinClick}
-                            isMobileView={isMobileView}
-                            isPhoneView={isPhoneView}
-                            isTabletView={isTabletView}
-                            setPublicPage={setPublicPage}
-                            setSelectedDetailProfile={setSelectedDetailProfile}
-                            isTerminalEnlarged={isTerminalEnlarged}
-                            setIsTerminalEnlarged={setIsTerminalEnlarged}
-                            terminalMode={terminalMode}
-                            setTerminalMode={setTerminalMode}
-                            holidayConfig={holidayConfig}
-                        />
-                    )
-                }
-                {publicPage === 'how-it-works' && <ProgramDetailsPage classes={classes} handleJoinClick={handleJoinClick} setPublicPage={setPublicPage} isMobileView={isMobileView} />}
-                {publicPage === 'coming-soon' && <ComingSoonPage setPublicPage={setPublicPage} />}
-                {publicPage === 'leaderboard' && <BuilderLeaderboard isMobileView={isMobileView} />}
-                {publicPage === 'forum' && <ForumPage session={session} currentUser={currentUser} isMobileView={isMobileView} setPublicPage={setPublicPage} classes={classes} />}
-                {publicPage === 'studio' && session && <BuilderStudioPage session={session} />}
-                {
-                    publicPage === 'studio' && !session && (
-                        <div style={{ padding: '60px 20px', textAlign: 'center' }}>
-                            <div style={{ fontSize: '48px', marginBottom: '16px' }}>ðŸŽ®</div>
-                            <h2 style={{ marginBottom: '8px' }}>Builder Arcade</h2>
-                            <p style={{ color: '#666', marginBottom: '24px' }}>Log in to access the arcade and squash some bugs!</p>
-                            <button className="btn btn-red" onClick={() => setIsAuthModalOpen(true)}>Login to Access Arcade</button>
-                        </div>
-                    )
-                }
-                {
-                    publicPage === 'public-studio' && visitingStudio && (
-                        <div style={{ paddingTop: '80px', background: '#fff', minHeight: '100vh' }}>
-                            <PublicStudioPage
-                                targetUserId={visitingStudio.id}
-                                targetUserName={visitingStudio.name}
+                    {
+                        publicPage === 'home' && (
+                            <LandingPage
+                                profiles={profiles}
+                                submissions={submissions}
+                                classes={classes}
                                 session={session}
-                                onBack={() => {
-                                    setVisitingStudio(null);
-                                    setPublicPage('showcase');
-                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                handleJoinClick={handleJoinClick}
+                                isMobileView={isMobileView}
+                                isPhoneView={isPhoneView}
+                                isTabletView={isTabletView}
+                                setPublicPage={setPublicPage}
+                                setSelectedDetailProfile={setSelectedDetailProfile}
+                                isTerminalEnlarged={isTerminalEnlarged}
+                                setIsTerminalEnlarged={setIsTerminalEnlarged}
+                                terminalMode={terminalMode}
+                                setTerminalMode={setTerminalMode}
+                                holidayConfig={holidayConfig}
+                                setNewProjectTrigger={setNewProjectTrigger}
+                            />
+                        )
+                    }
+                    {
+                        publicPage === 'map' && (
+                            <LandingPage
+                                profiles={profiles}
+                                submissions={submissions}
+                                classes={classes}
+                                session={session}
+                                handleJoinClick={handleJoinClick}
+                                isMobileView={isMobileView}
+                                isPhoneView={isPhoneView}
+                                isTabletView={isTabletView}
+                                setPublicPage={setPublicPage}
+                                setSelectedDetailProfile={setSelectedDetailProfile}
+                                isTerminalEnlarged={isTerminalEnlarged}
+                                setIsTerminalEnlarged={setIsTerminalEnlarged}
+                                terminalMode={terminalMode}
+                                setTerminalMode={setTerminalMode}
+                                holidayConfig={holidayConfig}
+                                viewMode="map"
+                                setNewProjectTrigger={setNewProjectTrigger}
+                            />
+                        )
+                    }
+                    {
+                        !currentUser && !['home', 'map', 'how-it-works', 'coming-soon', 'showcase', 'hall-of-fame', 'leaderboard', 'forum', 'studio', 'public-studio', 'ijamos'].includes(publicPage) && (
+                            <LandingPage
+                                profiles={profiles}
+                                submissions={submissions}
+                                classes={classes}
+                                session={session}
+                                handleJoinClick={handleJoinClick}
+                                isMobileView={isMobileView}
+                                isPhoneView={isPhoneView}
+                                isTabletView={isTabletView}
+                                setPublicPage={setPublicPage}
+                                setSelectedDetailProfile={setSelectedDetailProfile}
+                                isTerminalEnlarged={isTerminalEnlarged}
+                                setIsTerminalEnlarged={setIsTerminalEnlarged}
+                                terminalMode={terminalMode}
+                                setTerminalMode={setTerminalMode}
+                                holidayConfig={holidayConfig}
+                            />
+                        )
+                    }
+                    {publicPage === 'how-it-works' && <ProgramDetailsPage classes={classes} handleJoinClick={handleJoinClick} setPublicPage={setPublicPage} isMobileView={isMobileView} />}
+                    {publicPage === 'coming-soon' && <ComingSoonPage setPublicPage={setPublicPage} />}
+                    {publicPage === 'leaderboard' && <BuilderLeaderboard isMobileView={isMobileView} />}
+                    {publicPage === 'forum' && <ForumPage session={session} currentUser={currentUser} isMobileView={isMobileView} setPublicPage={setPublicPage} classes={classes} />}
+                    {publicPage === 'studio' && session && <BuilderStudioPage session={session} />}
+                    {
+                        publicPage === 'studio' && !session && (
+                            <div style={{ padding: '60px 20px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎮</div>
+                                <h2 style={{ marginBottom: '8px' }}>Builder Arcade</h2>
+                                <p style={{ color: '#666', marginBottom: '24px' }}>Log in to access the arcade and squash some bugs!</p>
+                                <button className="btn btn-red" onClick={() => setIsAuthModalOpen(true)}>Login to Access Arcade</button>
+                            </div>
+                        )
+                    }
+                    {
+                        publicPage === 'public-studio' && visitingStudio && (
+                            <div style={{ paddingTop: '80px', background: '#fff', minHeight: '100vh' }}>
+                                <PublicStudioPage
+                                    targetUserId={visitingStudio.id}
+                                    targetUserName={visitingStudio.name}
+                                    session={session}
+                                    onBack={() => {
+                                        setVisitingStudio(null);
+                                        setPublicPage('showcase');
+                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    }}
+                                />
+                            </div>
+                        )
+                    }
+                    {
+                        publicPage === 'showcase' && (
+                            <ShowcasePage
+                                setPublicPage={setPublicPage}
+                                submissions={submissions}
+                                profiles={profiles}
+                                session={session}
+                                setSelectedDetailProfile={setSelectedDetailProfile}
+                                isMobileView={isMobileView}
+                                handleJoinClick={handleJoinClick}
+                                classes={classes}
+                                certificates={certificates}
+                            />
+                        )
+                    }
+                    {
+                        publicPage === 'hall-of-fame' && (
+                            <HallOfFamePage
+                                isMobileView={isMobileView}
+                                setPublicPage={setPublicPage}
+                            />
+                        )
+                    }
+                    {
+                        publicPage === 'builder-vault' && (
+                            <BuilderVaultPage
+                                session={session}
+                                currentUser={currentUser}
+                                submissions={submissions}
+                                fetchData={fetchData}
+                                isMobileView={isMobileView}
+                                setPublicPage={setPublicPage}
+                            />
+                        )
+                    }
+                    {
+                        publicPage === 'ijamos' && (
+                            <ResourcePage
+                                session={session}
+                                currentUser={currentUser}
+                                isMobileView={isMobileView}
+                                deviceMode={deviceMode}
+                                ijamOsMode={ijamOsMode}
+                                setPublicPage={setPublicPage}
+                            />
+                        )
+                    }
+                    {
+                        publicPage === 'start-project' && (
+                            <StartProjectPage
+                                session={session}
+                                currentUser={currentUser}
+                                setPublicPage={setPublicPage}
+                                fetchData={fetchData}
+                                isMobileView={isMobileView}
+                            />
+                        )
+                    }
+                    {
+                        currentUser && (publicPage === 'dashboard' || !['home', 'map', 'how-it-works', 'coming-soon', 'showcase', 'hall-of-fame', 'forum', 'studio', 'leaderboard', 'ijamos', 'builder-vault', ...(isMobileView ? ['start-project'] : [])].includes(publicPage)) && (
+                            <>
+                                {(currentUser?.type === 'admin' || currentUser?.type === 'owner') && (
+                                    <AdminDashboard
+                                        profiles={profiles}
+                                        classes={classes}
+                                        attendance={attendance}
+                                        submissions={submissions}
+                                        handleToggleClassStatus={handleToggleClassStatus}
+                                        handleToggleAttendance={handleToggleAttendance}
+                                        setIsAddClassModalOpen={setIsAddClassModalOpen}
+                                        fetchData={fetchData}
+                                        handleSignOut={handleSignOut}
+                                        setSelectedDetailProfile={setSelectedDetailProfile}
+                                        isProfilesLoading={isProfilesLoading}
+                                        profilesError={profilesError}
+                                        isMobileView={isMobileView}
+                                        setPublicPage={setPublicPage}
+                                    />
+                                )}
+                                {currentUser?.type === 'builder' && (
+                                    <BuilderDashboard
+                                        currentUser={currentUser}
+                                        classes={classes}
+                                        attendance={attendance}
+                                        submissions={submissions}
+                                        handleToggleAttendance={handleToggleAttendance}
+                                        handleSignOut={handleSignOut}
+                                        openEditProfileModal={openEditProfileModal}
+                                        isUpdatingProfile={isUpdatingProfile}
+                                        session={session}
+                                        fetchData={fetchData}
+                                        isMobileView={isMobileView}
+                                        setPublicPage={setPublicPage}
+                                    />
+                                )}
+                            </>
+                        )
+                    }
+
+                    {/* Zarulijam AI Chatbot removed in favor of IJAM_BOT terminal console */}
+
+                    {/* Mobile Navigation Sidebar */}
+                    <MobileNavSidebar
+                        isOpen={isSidebarOpen}
+                        onClose={() => setIsSidebarOpen(false)}
+                        session={session}
+                        currentUser={currentUser}
+                        publicPage={publicPage}
+                        handleHeaderNavClick={handleHeaderNavClick}
+                        handleJoinClick={handleJoinClick}
+                        handleSignOut={handleSignOut}
+                        setPublicPage={setPublicPage}
+                        showChatbot={isTerminalEnlarged}
+                        onOpenChatbot={() => {
+                            if (publicPage !== 'home') setPublicPage('home');
+                            setIsTerminalEnlarged(true);
+                        }}
+                        isMobileView={isMobileView}
+                    />
+
+                    {/* Mobile Bottom Navigation */}
+                    {
+                        isMobileView && publicPage !== 'ijamos' && (
+                            <MobileBottomNav
+                                currentPage={publicPage}
+                                isLoggedIn={!!session}
+                                onNavigate={(id) => {
+                                    const authPages = ['dashboard', 'studio'];
+                                    if (id === 'map') {
+                                        setPublicPage('map');
+                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                        return;
+                                    }
+                                    if (id === 'how-it-works') {
+                                        setPublicPage('how-it-works');
+                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                        return;
+                                    }
+                                    if (id === 'chat') {
+                                        setPublicPage('home');
+                                        setTerminalMode('live');
+                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                        return;
+                                    }
+                                    if (id === 'login') {
+                                        setIsMobileAuthDockOpen((prev) => !prev);
+                                        return;
+                                    }
+                                    if (authPages.includes(id)) {
+                                        if (session) { setPublicPage(id); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+                                        else setIsAuthModalOpen(true);
+                                    } else if (['leaderboard', 'forum', 'showcase', 'hall-of-fame', 'ijamos', 'promptforge', 'coming-soon'].includes(id)) {
+                                        setPublicPage(id);
+                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    } else {
+                                        setPublicPage('home');
+                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    }
                                 }}
                             />
+                        )
+                    }
+                    {!session && isMobileView && isMobileAuthDockOpen && (
+                        <div
+                            style={{
+                                position: 'fixed',
+                                left: 0,
+                                right: 0,
+                                bottom: 86,
+                                zIndex: 10030,
+                                display: 'flex',
+                                justifyContent: 'center',
+                                pointerEvents: 'none'
+                            }}
+                        >
+                            <div
+                                style={{
+                                    pointerEvents: 'auto',
+                                    display: 'flex',
+                                    gap: 8,
+                                    padding: 8,
+                                    borderRadius: 999,
+                                    border: '1px solid rgba(148,163,184,0.35)',
+                                    background: 'rgba(255,255,255,0.86)',
+                                    backdropFilter: 'blur(14px) saturate(1.08)',
+                                    boxShadow: '0 8px 22px rgba(15,23,42,0.18)'
+                                }}
+                            >
+                                <button
+                                    className="btn btn-outline"
+                                    style={{ padding: '8px 14px', fontSize: 11, borderRadius: 999 }}
+                                    onClick={() => {
+                                        setAuthMode('signin');
+                                        setIsAuthModalOpen(true);
+                                        setIsMobileAuthDockOpen(false);
+                                    }}
+                                >
+                                    Sign In
+                                </button>
+                                <button
+                                    className="btn btn-red"
+                                    style={{ padding: '8px 14px', fontSize: 11, borderRadius: 999 }}
+                                    onClick={() => {
+                                        setAuthMode('signup');
+                                        setIsAuthModalOpen(true);
+                                        setIsMobileAuthDockOpen(false);
+                                    }}
+                                >
+                                    Sign Up
+                                </button>
+                            </div>
                         </div>
-                    )
-                }
-                {
-                    publicPage === 'showcase' && (
-                        <ShowcasePage
-                            setPublicPage={setPublicPage}
-                            submissions={submissions}
-                            profiles={profiles}
-                            session={session}
-                            setSelectedDetailProfile={setSelectedDetailProfile}
-                            isMobileView={isMobileView}
-                            handleJoinClick={handleJoinClick}
-                            classes={classes}
-                            certificates={certificates}
-                        />
-                    )
-                }
-                {
-                    publicPage === 'hall-of-fame' && (
-                        <HallOfFamePage
-                            isMobileView={isMobileView}
-                            setPublicPage={setPublicPage}
-                        />
-                    )
-                }
-                {
-                    publicPage === 'builder-vault' && (
-                        <BuilderVaultPage
-                            session={session}
-                            currentUser={currentUser}
-                            submissions={submissions}
-                            fetchData={fetchData}
-                            isMobileView={isMobileView}
-                            setPublicPage={setPublicPage}
-                        />
-                    )
-                }
-                {
-                    publicPage === 'ijamos' && (
-                        <ResourcePage
-                            session={session}
-                            currentUser={currentUser}
-                            isMobileView={isMobileView}
-                            deviceMode={deviceMode}
-                            ijamOsMode={ijamOsMode}
-                            setPublicPage={setPublicPage}
-                        />
-                    )
-                }
-                {
-                    publicPage === 'start-project' && (
-                        <StartProjectPage
-                            session={session}
-                            currentUser={currentUser}
-                            setPublicPage={setPublicPage}
-                            fetchData={fetchData}
-                            isMobileView={isMobileView}
-                        />
-                    )
-                }
-                {
-                    currentUser && (publicPage === 'dashboard' || !['home', 'map', 'how-it-works', 'coming-soon', 'showcase', 'hall-of-fame', 'forum', 'studio', 'leaderboard', 'ijamos', 'builder-vault', ...(isMobileView ? ['start-project'] : [])].includes(publicPage)) && (
-                        <>
-                            {(currentUser?.type === 'admin' || currentUser?.type === 'owner') && (
-                                <AdminDashboard
-                                    profiles={profiles}
-                                    classes={classes}
-                                    attendance={attendance}
-                                    submissions={submissions}
-                                    handleToggleClassStatus={handleToggleClassStatus}
-                                    handleToggleAttendance={handleToggleAttendance}
-                                    setIsAddClassModalOpen={setIsAddClassModalOpen}
-                                    fetchData={fetchData}
-                                    handleSignOut={handleSignOut}
-                                    setSelectedDetailProfile={setSelectedDetailProfile}
-                                    isProfilesLoading={isProfilesLoading}
-                                    profilesError={profilesError}
-                                    isMobileView={isMobileView}
-                                    setPublicPage={setPublicPage}
-                                />
-                            )}
-                            {currentUser?.type === 'builder' && (
-                                <BuilderDashboard
-                                    currentUser={currentUser}
-                                    classes={classes}
-                                    attendance={attendance}
-                                    submissions={submissions}
-                                    handleToggleAttendance={handleToggleAttendance}
-                                    handleSignOut={handleSignOut}
-                                    openEditProfileModal={openEditProfileModal}
-                                    isUpdatingProfile={isUpdatingProfile}
-                                    session={session}
-                                    fetchData={fetchData}
-                                    isMobileView={isMobileView}
-                                    setPublicPage={setPublicPage}
-                                />
-                            )}
-                        </>
-                    )
-                }
+                    )}
 
-                {/* Zarulijam AI Chatbot removed in favor of IJAM_BOT terminal console */}
-
-                {/* Mobile Navigation Sidebar */}
-                <MobileNavSidebar
-                    isOpen={isSidebarOpen}
-                    onClose={() => setIsSidebarOpen(false)}
-                    session={session}
-                    currentUser={currentUser}
-                    publicPage={publicPage}
-                    handleHeaderNavClick={handleHeaderNavClick}
-                    handleJoinClick={handleJoinClick}
-                    handleSignOut={handleSignOut}
-                    setPublicPage={setPublicPage}
-                    showChatbot={isTerminalEnlarged}
-                    onOpenChatbot={() => {
-                        if (publicPage !== 'home') setPublicPage('home');
-                        setIsTerminalEnlarged(true);
-                    }}
-                    isMobileView={isMobileView}
-                />
-
-                {/* Mobile Bottom Navigation */}
-                {
-                    isMobileView && publicPage !== 'ijamos' && (
-                        <MobileBottomNav
-                            currentPage={publicPage}
-                            isLoggedIn={!!session}
+                    {/* Global Mobile Assistive Touch */}
+                    {isMobileView && publicPage !== 'ijamos' && (
+                        <MobileAssistiveTouch
                             onNavigate={(id) => {
                                 const authPages = ['dashboard', 'studio'];
                                 if (id === 'map') {
@@ -1374,98 +1503,7 @@ const App = () => {
                                 }
                             }}
                         />
-                    )
-                }
-                {!session && isMobileView && isMobileAuthDockOpen && (
-                    <div
-                        style={{
-                            position: 'fixed',
-                            left: 0,
-                            right: 0,
-                            bottom: 86,
-                            zIndex: 10030,
-                            display: 'flex',
-                            justifyContent: 'center',
-                            pointerEvents: 'none'
-                        }}
-                    >
-                        <div
-                            style={{
-                                pointerEvents: 'auto',
-                                display: 'flex',
-                                gap: 8,
-                                padding: 8,
-                                borderRadius: 999,
-                                border: '1px solid rgba(148,163,184,0.35)',
-                                background: 'rgba(255,255,255,0.86)',
-                                backdropFilter: 'blur(14px) saturate(1.08)',
-                                boxShadow: '0 8px 22px rgba(15,23,42,0.18)'
-                            }}
-                        >
-                            <button
-                                className="btn btn-outline"
-                                style={{ padding: '8px 14px', fontSize: 11, borderRadius: 999 }}
-                                onClick={() => {
-                                    setAuthMode('signin');
-                                    setIsAuthModalOpen(true);
-                                    setIsMobileAuthDockOpen(false);
-                                }}
-                            >
-                                Sign In
-                            </button>
-                            <button
-                                className="btn btn-red"
-                                style={{ padding: '8px 14px', fontSize: 11, borderRadius: 999 }}
-                                onClick={() => {
-                                    setAuthMode('signup');
-                                    setIsAuthModalOpen(true);
-                                    setIsMobileAuthDockOpen(false);
-                                }}
-                            >
-                                Sign Up
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                {/* Global Mobile Assistive Touch */}
-                {isMobileView && publicPage !== 'ijamos' && (
-                    <MobileAssistiveTouch
-                        onNavigate={(id) => {
-                            const authPages = ['dashboard', 'studio'];
-                            if (id === 'map') {
-                                setPublicPage('map');
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
-                                return;
-                            }
-                            if (id === 'how-it-works') {
-                                setPublicPage('how-it-works');
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
-                                return;
-                            }
-                            if (id === 'chat') {
-                                setPublicPage('home');
-                                setTerminalMode('live');
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
-                                return;
-                            }
-                            if (id === 'login') {
-                                setIsMobileAuthDockOpen((prev) => !prev);
-                                return;
-                            }
-                            if (authPages.includes(id)) {
-                                if (session) { setPublicPage(id); window.scrollTo({ top: 0, behavior: 'smooth' }); }
-                                else setIsAuthModalOpen(true);
-                            } else if (['leaderboard', 'forum', 'showcase', 'hall-of-fame', 'ijamos', 'promptforge', 'coming-soon'].includes(id)) {
-                                setPublicPage(id);
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
-                            } else {
-                                setPublicPage('home');
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
-                            }
-                        }}
-                    />
-                )}
+                    )}
                 </Suspense>
             </div >
         </ToastProvider >
@@ -1473,6 +1511,7 @@ const App = () => {
 };
 
 export default App;
+
 
 
 

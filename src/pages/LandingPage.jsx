@@ -161,6 +161,18 @@ const LandingPage = ({
         const fuzzyMatch = districtNameEntries.find(([, normalizedName]) => normalizedInput.includes(normalizedName));
         return fuzzyMatch ? fuzzyMatch[0] : null;
     };
+    const resolveSubmissionLink = (submission) => {
+        const link = submission?.submission_url || submission?.project_url || submission?.demo_url || submission?.github_url || '';
+        return String(link).trim();
+    };
+    const isArchivedSubmission = (submission) => String(submission?.status || '').toLowerCase() === 'archived';
+    const resolveProjectKey = (submission) => {
+        const link = resolveSubmissionLink(submission).toLowerCase();
+        if (link) return `${submission?.user_id || 'unknown'}|url|${link}`;
+        const name = String(submission?.project_name || '').trim().toLowerCase();
+        if (name) return `${submission?.user_id || 'unknown'}|name|${name}`;
+        return null;
+    };
 
     // Mascot & Weather State
     const [showMascotModal, setShowMascotModal] = useState(false);
@@ -237,7 +249,7 @@ const LandingPage = ({
         // Handle Special Commands
         if (lowerInput === 'boot ijamos' || lowerInput === 'ijamos') {
             setTimeout(() => {
-                setChatMessages(prev => [...prev, { role: 'bot', text: "[ SYSTEM ] BOOT_SEQUENCE: INITIALIZING_IJAM_OS... (b áµ”â–½áµ”)b" }]);
+                setChatMessages(prev => [...prev, { role: 'bot', text: "[ SYSTEM ] BOOT_SEQUENCE: INITIALIZING_IJAM_OS..." }]);
                 setTimeout(() => {
                     setPublicPage('ijamos');
                     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -252,7 +264,7 @@ const LandingPage = ({
             setTimeout(() => {
                 setChatMessages(prev => [...prev, {
                     role: 'bot',
-                    text: `[ VIBE_STATS ]\nâš¡ ACTIVE_BUILDERS: ${builderCount}\nðŸš€ PROJECTS_SHIPPED: ${projectCount}\nðŸ”¥ STATUS: MAXIMUM_VIBE\n\nSelangor tengah membara ni bro! (â˜†â–½â˜†)`
+                    text: `[ VIBE_STATS ]\n⚡ ACTIVE_BUILDERS: ${builderCount}\n🚀 PROJECTS_SHIPPED: ${projectCount}\n🔥 STATUS: MAXIMUM_VIBE\n\nSelangor tengah membara ni bro!`
                 }]);
             }, 600);
             return;
@@ -371,84 +383,6 @@ const LandingPage = ({
         return <Sun size={size} color="#f59e0b" fill="#f59e0b" />;
     };
 
-    const LiveMarquee = ({ profiles, submissions }) => {
-        const safeProfiles = profiles || [];
-        const safeSubmissions = submissions || [];
-
-        const builderCount = safeProfiles.filter(p => !['owner', 'admin'].includes(p.role)).length;
-        const projectCount = safeSubmissions.length;
-        const latestProject = safeSubmissions[0];
-
-        const items = [
-            { label: "SITE_STATUS", value: "ONLINE", color: "marquee-green" },
-            { label: "ACTIVE_BUILDERS", value: builderCount, color: "marquee-red" },
-            { label: "PROJECTS_COMMITTED", value: projectCount, color: "marquee-yellow" },
-            { label: "LATEST_DROP", value: latestProject ? `${latestProject.project_name}` : "WAITING", color: "marquee-red" },
-            { label: "VIBE_LEVEL", value: "MAXIMUM", color: "marquee-green" },
-            { label: "LOCATION", value: "SELANGOR, MY", color: "marquee-yellow" },
-        ];
-
-        const marqueeRef = useRef(null);
-
-        // Start in the middle
-        useEffect(() => {
-            if (marqueeRef.current) {
-                const container = marqueeRef.current;
-                const singleSectionWidth = container.scrollWidth / 3;
-                container.scrollLeft = singleSectionWidth;
-            }
-        }, []);
-
-        const handleScroll = () => {
-            if (!marqueeRef.current) return;
-            const container = marqueeRef.current;
-            const singleSectionWidth = container.scrollWidth / 3;
-
-            // Same precise logic as GalleryShowcase
-            if (container.scrollLeft <= 10) {
-                container.scrollLeft = singleSectionWidth + container.scrollLeft;
-            } else if (container.scrollLeft >= singleSectionWidth * 2 - 10) {
-                container.scrollLeft = container.scrollLeft - singleSectionWidth;
-            }
-        };
-
-        // Auto-scrolling animation removed per user request
-
-        const renderSet = (setIdx) => (
-            <div key={setIdx} className="marquee-set" style={{ display: 'flex', gap: '60px', paddingRight: '60px', flexShrink: 0 }}>
-                {items.map((item, i) => (
-                    <div key={i} className="marquee-item" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div className="marquee-status" />
-                        <span>{item.label}:</span>
-                        <span className={item.color} style={{ whiteSpace: 'nowrap' }}>{item.value}</span>
-                    </div>
-                ))}
-            </div>
-        );
-
-        return (
-            <div className="live-marquee-section" style={{ overflow: 'hidden', whiteSpace: 'nowrap', borderBottom: '3px solid black' }}>
-                <div
-                    ref={marqueeRef}
-                    onScroll={handleScroll}
-                    className="marquee-content hidden-scrollbar"
-                    style={{
-                        display: 'flex',
-                        width: '100%',
-                        overflowX: 'auto', // Must be scrollable for JS modifying scrollLeft
-                        overflowY: 'hidden',
-                        animation: 'none', // Override CSS rules
-                        scrollbarWidth: 'none', // Firefox
-                        msOverflowStyle: 'none', // IE/Edge
-                    }}
-                >
-                    {renderSet(1)}
-                    {renderSet(2)}
-                    {renderSet(3)}
-                </div>
-            </div>
-        );
-    };
 
     const IjamBotMascot = ({ size = 24, mousePos }) => {
         // Calculate eye position based on mousePos
@@ -510,27 +444,15 @@ const LandingPage = ({
         const month = now.getMonth() + 1;
         const year = now.getFullYear();
 
-        // Kaomoji Collections
-        const KAOMOJI = {
-            MORNING: ['(o^â–½^o)', '(Â´â€¢ Ï‰ â€¢`)', '(âŒ’_âŒ’;)', '(*/Ï‰ï¼¼)', ':)'],
-            AFTERNOON: ['(âŒâ– _â– )', '(Â¯hÂ¯)', '(Â¬â€¿Â¬)', '(^_âˆ’)â˜†', '(Ë™ê’³Ë™)'],
-            EVENING: ['( â˜•_â˜• )', '(ï¿£â–½ï¿£)', '( Â´ â–½ ` )', ':)', '(ãƒ»ãƒ» ) ?'],
-            NIGHT: ['( â˜¾ )', '(ï¼_ï¼) zzZ', '(x_x)', ':) ðŸ’¤', '(â‡€â€¸â†¼â€¶)'],
-            VIBE: ['(ï¾‰^ãƒ®^)ï¾‰*:ãƒ»ï¾Ÿâœ§', '(âœ¿â— â€¿â— )', '(â˜†â–½â˜†)', '( Ë™ê’³â€‹Ë™ )', '(b áµ”â–½áµ”)b']
-        };
-
-        const getRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
-
         let timeLabel = "SELAMAT DATANG!";
-        let timeIcon = getRandom(KAOMOJI.VIBE);
 
-        if (hour >= 5 && hour < 12) { timeLabel = "SELAMAT PAGI!"; timeIcon = getRandom(KAOMOJI.MORNING); }
-        else if (hour >= 12 && hour < 15) { timeLabel = "SELAMAT TENGAHARI!"; timeIcon = getRandom(KAOMOJI.AFTERNOON); }
-        else if (hour >= 15 && hour < 19) { timeLabel = "SELAMAT PETANG!"; timeIcon = getRandom(KAOMOJI.EVENING); }
-        else if (hour >= 19 || hour < 5) { timeLabel = "SELAMAT MALAM!"; timeIcon = getRandom(KAOMOJI.NIGHT); }
+        if (hour >= 5 && hour < 12) { timeLabel = "SELAMAT PAGI!"; }
+        else if (hour >= 12 && hour < 15) { timeLabel = "SELAMAT TENGAHARI!"; }
+        else if (hour >= 15 && hour < 19) { timeLabel = "SELAMAT PETANG!"; }
+        else if (hour >= 19 || hour < 5) { timeLabel = "SELAMAT MALAM!"; }
 
         let finalGreetingLines = [];
-        finalGreetingLines.push(`${timeIcon} ${timeLabel}`);
+        finalGreetingLines.push(`${timeLabel}`);
         if (holidayConfig) {
             finalGreetingLines.push(`Selamat menyambut ${holidayConfig.botLabel}!`);
         } else {
@@ -705,18 +627,21 @@ const LandingPage = ({
             return districtBuilders;
         }
 
-        // Project Showcase Logic: latest submission per builder (no duplicate daily rows)
-        const latestSubmissionByUser = new Map();
+        // Project Showcase Logic: latest submission per unique project key (de-dupe daily edits).
+        const latestSubmissionByProject = new Map();
         submissions.forEach((s) => {
             const profile = profiles.find((p) => p.id === s.user_id);
             if (profile && ['owner', 'admin'].includes(profile.role)) return;
-            const existing = latestSubmissionByUser.get(s.user_id);
+            if (isArchivedSubmission(s)) return;
+            const projectKey = resolveProjectKey(s);
+            if (!projectKey) return;
+            const existing = latestSubmissionByProject.get(projectKey);
             if (!existing || new Date(s.created_at) > new Date(existing.created_at)) {
-                latestSubmissionByUser.set(s.user_id, s);
+                latestSubmissionByProject.set(projectKey, s);
             }
         });
 
-        const districtSubmissions = Array.from(latestSubmissionByUser.values())
+        const districtSubmissions = Array.from(latestSubmissionByProject.values())
             .filter((s) => {
                 const profile = profiles.find((p) => p.id === s.user_id);
                 return isDistrictMatch(s.district || profile?.district);
@@ -724,7 +649,7 @@ const LandingPage = ({
             .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
             .map((item) => ({
                 id: `project-${item.id}`,
-                submission_url: item.submission_url,
+                submission_url: resolveSubmissionLink(item),
                 project_name: item.project_name || 'Untitled Project',
                 one_liner: item.one_liner || 'Builder update from VibeSelangor community.',
                 builder_profile: profiles.find(p => p.id === item.user_id)
@@ -758,17 +683,20 @@ const LandingPage = ({
 
     const submissionCountsByDistrict = useMemo(() => {
         const counts = {};
-        const latestSubmissionByUser = new Map();
+        const latestSubmissionByProject = new Map();
         submissions.forEach((s) => {
             const profile = profiles.find((p) => p.id === s.user_id);
             if (profile && ['owner', 'admin'].includes(profile.role)) return;
-            const existing = latestSubmissionByUser.get(s.user_id);
+            if (isArchivedSubmission(s)) return;
+            const projectKey = resolveProjectKey(s);
+            if (!projectKey) return;
+            const existing = latestSubmissionByProject.get(projectKey);
             if (!existing || new Date(s.created_at) > new Date(existing.created_at)) {
-                latestSubmissionByUser.set(s.user_id, s);
+                latestSubmissionByProject.set(projectKey, s);
             }
         });
 
-        latestSubmissionByUser.forEach((s) => {
+        latestSubmissionByProject.forEach((s) => {
             const profile = profiles.find((p) => p.id === s.user_id);
             const districtText = (s.district || profile?.district || '').trim();
             const districtKey = resolveDistrictKey(districtText);
@@ -844,9 +772,18 @@ const LandingPage = ({
 
             try {
                 setIsKualaLumpurLoading(true);
-                const listingResponse = await fetch('/api/kracked/showcase');
+                const listingController = new AbortController();
+                const listingTimeout = setTimeout(() => listingController.abort(), 12000);
+                const listingResponse = await fetch('/api/kracked/showcase', { signal: listingController.signal });
+                clearTimeout(listingTimeout);
+                if (!listingResponse.ok) throw new Error(`Showcase listing returned ${listingResponse.status}`);
                 const listingHtml = await listingResponse.text();
                 if (isCancelled) return;
+
+                // Guard against receiving the app's own HTML instead of the proxied page
+                if (listingHtml.includes('<div id="root">') || !listingHtml.includes('showcase')) {
+                    throw new Error('Received app HTML instead of proxied showcase page');
+                }
 
                 const projectUrls = extractShowcaseProjectUrls(listingHtml);
                 const latestSignature = projectUrls.join('|');
@@ -858,11 +795,14 @@ const LandingPage = ({
                     return;
                 }
 
+                const detailController = new AbortController();
+                const detailTimeout = setTimeout(() => detailController.abort(), 10000);
                 const [homeResponse, records] = await Promise.all([
-                    fetch('/api/kracked/'),
+                    fetch('/api/kracked/', { signal: detailController.signal }),
                     Promise.all(projectUrls.map(async (path, index) => {
                         try {
-                            const detailResponse = await fetch(`/api/kracked${path}`);
+                            const detailResponse = await fetch(`/api/kracked${path}`, { signal: detailController.signal });
+                            if (!detailResponse.ok) return null;
                             const detailHtml = await detailResponse.text();
                             return parseKrackedProjectDetail(detailHtml, path, index);
                         } catch (error) {
@@ -870,6 +810,7 @@ const LandingPage = ({
                         }
                     }))
                 ]);
+                clearTimeout(detailTimeout);
 
                 if (isCancelled) return;
                 const homeHtml = await homeResponse.text();
@@ -887,7 +828,7 @@ const LandingPage = ({
                 });
             } catch (error) {
                 if (!isCancelled) {
-                    console.error('Failed to scrape Kuala Lumpur showcase', error);
+                    console.warn('[KL Showcase] Could not load KrackedDevs showcase:', error.message || error);
                     if (!cached?.records?.length) setKualaLumpurShowcase([]);
                 }
             } finally {
@@ -958,7 +899,6 @@ const LandingPage = ({
 
     return (
         <div style={mapMobileBackdropStyle}>
-            {/* Live marquee removed per mobile/homepage requirements */}
             {!isMapOnlyView && isMobileView && (
                 <MobileHomeScreen
                     weatherData={weatherData}

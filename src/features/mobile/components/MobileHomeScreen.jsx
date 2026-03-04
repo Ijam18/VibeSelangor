@@ -1,7 +1,5 @@
 ﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-    MessageSquare,
-    Star,
     Map,
     CircleHelp,
     Zap,
@@ -17,8 +15,6 @@ import { supabase } from '../../../shared/lib/supabase';
 import MobileStatusBar from './MobileStatusBar';
 
 const ICON_LIBRARY = {
-    forum: { id: 'forum', label: 'Forum', icon: MessageSquare, bg: 'linear-gradient(160deg, #dc2626, #991b1b)' },
-    showcase: { id: 'showcase', label: 'Showcase', icon: Star, bg: 'linear-gradient(160deg, #f59e0b, #d97706)' },
     'hall-of-fame': { id: 'hall-of-fame', label: 'Hall of Fame', icon: Trophy, bg: 'linear-gradient(160deg, #fbbf24, #d97706)' },
     map: { id: 'map', label: 'Map', icon: Map, bg: 'linear-gradient(160deg, #ef4444, #b91c1c)' },
     'how-it-works': { id: 'how-it-works', label: 'How?', icon: CircleHelp, bg: 'linear-gradient(160deg, #f97316, #ea580c)' },
@@ -29,8 +25,8 @@ const ICON_LIBRARY = {
     kd: { id: 'kd', label: 'KD', icon: null, imageSrc: 'https://www.google.com/s2/favicons?sz=64&domain=krackeddevs.com', bg: '#000000' }
 };
 
-const STORAGE_KEY = 'mobile_home_icon_layout_v5';
-const DEFAULT_LAYOUT = ['ijamos', 'hall-of-fame', 'showcase', 'forum', 'myapp', 'new-project', 'settings', 'kd'];
+const STORAGE_KEY = 'mobile_home_icon_layout_v6';
+const DEFAULT_LAYOUT = ['ijamos', 'hall-of-fame', 'myapp', 'new-project', 'settings', 'kd'];
 
 function loadLayout() {
     try {
@@ -39,7 +35,7 @@ function loadLayout() {
         const parsed = JSON.parse(raw);
         if (!Array.isArray(parsed)) return DEFAULT_LAYOUT;
         const valid = parsed.filter((id) => ICON_LIBRARY[id]);
-        for (const pinned of ['ijamos', 'hall-of-fame', 'showcase', 'forum', 'myapp', 'new-project', 'settings', 'kd']) {
+        for (const pinned of ['ijamos', 'hall-of-fame', 'myapp', 'new-project', 'settings', 'kd']) {
             if (!valid.includes(pinned)) valid.push(pinned);
         }
         return Array.from(new Set(valid));
@@ -93,7 +89,7 @@ export default function MobileHomeScreen({
     const [liveMessages, setLiveMessages] = useState([]);
     const [liveInput, setLiveInput] = useState('');
     const [liveLoading, setLiveLoading] = useState(false);
-    const allowIconRemoval = false;
+    const allowIconRemoval = true;
 
     const triggerHaptic = (ms = 10) => {
         if (
@@ -220,17 +216,18 @@ export default function MobileHomeScreen({
 
     const visibleIcons = useMemo(() => iconOrder.map((id) => ICON_LIBRARY[id]).filter(Boolean), [iconOrder]);
     const hiddenIcons = useMemo(() => Object.values(ICON_LIBRARY).filter((item) => !iconOrder.includes(item.id)), [iconOrder]);
+    const isNarrowPhone = viewportWidth <= 340;
     const isPhonePortrait = viewportWidth <= 430;
     const isPhoneLandscape = viewportWidth > 430 && viewportWidth <= 699;
-    const iconBoxSize = isTabletView ? 72 : (viewportWidth <= 360 ? 44 : viewportWidth <= 430 ? 50 : viewportWidth <= 699 ? 54 : viewportWidth <= 860 ? 64 : 68);
+    const iconBoxSize = isTabletView ? 72 : (isNarrowPhone ? 42 : viewportWidth <= 390 ? 48 : viewportWidth <= 430 ? 52 : viewportWidth <= 699 ? 56 : viewportWidth <= 860 ? 64 : 68);
     const usePagedMobileGrid = !isTabletView;
-    const pageSize = usePagedMobileGrid ? 8 : Number.MAX_SAFE_INTEGER;
-    const iconGridCols = usePagedMobileGrid ? 4 : (isTabletView ? 6 : (isPhonePortrait ? 4 : isPhoneLandscape ? 5 : 6));
+    const iconGridCols = isTabletView ? 6 : (isNarrowPhone ? 3 : isPhonePortrait ? 4 : isPhoneLandscape ? 5 : 6);
+    const pageSize = usePagedMobileGrid ? iconGridCols * 2 : Number.MAX_SAFE_INTEGER;
     const shellPadding = isPhonePortrait
-        ? '10px 12px 108px'
+        ? `calc(10px + env(safe-area-inset-top, 0px)) 12px calc(108px + env(safe-area-inset-bottom, 0px))`
         : isPhoneLandscape
-            ? '10px 14px 112px'
-            : (isTabletView ? '14px 28px 124px' : '12px 20px 118px');
+            ? `calc(10px + env(safe-area-inset-top, 0px)) 14px calc(112px + env(safe-area-inset-bottom, 0px))`
+            : (isTabletView ? `calc(14px + env(safe-area-inset-top, 0px)) 28px calc(124px + env(safe-area-inset-bottom, 0px))` : `calc(12px + env(safe-area-inset-top, 0px)) 20px calc(118px + env(safe-area-inset-bottom, 0px))`);
     const shellMaxWidth = isTabletView ? 1024 : (isPhonePortrait ? 480 : isPhoneLandscape ? 700 : 980);
     const featureHeight = Math.max(560, viewportHeight - 84);
     const terminalHeight = isPhonePortrait
@@ -329,7 +326,7 @@ export default function MobileHomeScreen({
 
     const removeIcon = (id) => {
         if (!allowIconRemoval) return;
-        if (['ijamos', 'hall-of-fame', 'myapp', 'settings', 'kd'].includes(id)) return;
+        if (iconOrder.length <= 1) return;
         triggerHaptic(12);
         setIconOrder((prev) => prev.filter((iconId) => iconId !== id));
     };
@@ -635,6 +632,31 @@ export default function MobileHomeScreen({
 
                 {terminalPanel}
 
+                {editMode && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                        <button
+                            type="button"
+                            className="btn btn-outline"
+                            onClick={() => setShowAddSheet((prev) => !prev)}
+                            style={{ padding: '6px 10px', fontSize: 10 }}
+                        >
+                            {showAddSheet ? 'Hide Apps' : 'Add App'}
+                        </button>
+                        <button
+                            type="button"
+                            className="btn btn-outline"
+                            onClick={() => {
+                                setEditMode(false);
+                                setDraggingId(null);
+                                setShowAddSheet(false);
+                            }}
+                            style={{ padding: '6px 10px', fontSize: 10 }}
+                        >
+                            Done
+                        </button>
+                    </div>
+                )}
+
                 {showAddSheet && (
                     <div style={{ background: 'rgba(255,244,244,0.42)', backdropFilter: 'blur(14px) saturate(1.06)', borderRadius: 16, padding: 10, marginBottom: 12, border: '1px solid rgba(255,255,255,0.55)' }}>
                         <div style={{ fontSize: 10, fontWeight: 900, marginBottom: 8, opacity: 0.7 }}>Add App Icon</div>
@@ -650,7 +672,7 @@ export default function MobileHomeScreen({
                 )}
 
                 <div
-                    style={{ display: 'grid', gridTemplateColumns: `repeat(${iconGridCols}, minmax(0, 1fr))`, gap: viewportWidth >= 700 ? 14 : 12, marginTop: 20, marginBottom: 14, touchAction: editMode ? 'none' : 'pan-x' }}
+                    style={{ display: 'grid', gridTemplateColumns: `repeat(${iconGridCols}, minmax(0, 1fr))`, gap: isNarrowPhone ? 10 : viewportWidth >= 700 ? 14 : 12, marginTop: 20, marginBottom: 14, touchAction: editMode ? 'none' : 'pan-x' }}
                     onPointerDown={handleGridPointerDown}
                     onPointerMove={handleIconPointerMove}
                     onPointerUp={handleGridPointerUp}
@@ -671,7 +693,7 @@ export default function MobileHomeScreen({
                                     transition: 'transform 120ms ease, opacity 120ms ease'
                                 }}
                             >
-                                {allowIconRemoval && editMode && !['ijamos', 'hall-of-fame', 'myapp', 'settings', 'kd'].includes(item.id) && (
+                                {allowIconRemoval && editMode && (
                                     <button
                                         onClick={() => removeIcon(item.id)}
                                         style={{

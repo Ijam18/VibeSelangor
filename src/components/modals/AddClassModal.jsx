@@ -11,7 +11,7 @@ export default function AddClassModal({
 }) {
     if (!isOpen) return null;
 
-    const computeProgramWindow = (monthValue, weekValue) => {
+    const computeProgramWindow = (monthValue, weekValue, startDay = 'sunday') => {
         if (!monthValue) return null;
         const [yearRaw, monthRaw] = monthValue.split('-');
         const year = Number(yearRaw);
@@ -20,12 +20,14 @@ export default function AddClassModal({
         if (!year || monthIndex < 0 || monthIndex > 11) return null;
 
         const firstDay = new Date(year, monthIndex, 1);
-        const firstSundayOffset = (7 - firstDay.getDay()) % 7;
-        let startDate = new Date(year, monthIndex, 1 + firstSundayOffset + (week - 1) * 7);
+        const dayOfWeek = startDay === 'saturday' ? 6 : 0;
+        const dayOffset = (dayOfWeek - firstDay.getDay() + 7) % 7;
+        let startDate = new Date(year, monthIndex, 1 + dayOffset + (week - 1) * 7);
 
         if (startDate.getMonth() !== monthIndex) {
             const lastDay = new Date(year, monthIndex + 1, 0);
-            startDate = new Date(year, monthIndex, lastDay.getDate() - lastDay.getDay());
+            const lastDiff = (lastDay.getDay() - dayOfWeek + 7) % 7;
+            startDate = new Date(year, monthIndex, lastDay.getDate() - lastDiff);
         }
 
         const endDate = new Date(startDate);
@@ -34,7 +36,7 @@ export default function AddClassModal({
         return { startDate, endDate };
     };
 
-    const programWindow = computeProgramWindow(newClass.month, newClass.weekOfMonth);
+    const programWindow = computeProgramWindow(newClass.month, newClass.weekOfMonth, newClass.startDay);
 
     const shellStyle = isMobileView
         ? {
@@ -112,7 +114,7 @@ export default function AddClassModal({
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <label style={labelStyle}>START WEEK (SUNDAY)</label>
+                        <label style={labelStyle}>START WEEK ({newClass.startDay === 'saturday' ? 'SATURDAY' : 'SUNDAY'})</label>
                         <select
                             value={newClass.weekOfMonth || '1'}
                             onChange={(e) => setNewClass({ ...newClass, weekOfMonth: e.target.value })}
@@ -126,9 +128,21 @@ export default function AddClassModal({
                         </select>
                     </div>
 
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <label style={labelStyle}>START DAY</label>
+                        <select
+                            value={newClass.startDay || 'sunday'}
+                            onChange={(e) => setNewClass({ ...newClass, startDay: e.target.value })}
+                            style={inputStyle}
+                        >
+                            <option value="sunday">Sunday to Sunday</option>
+                            <option value="saturday">Saturday to Saturday</option>
+                        </select>
+                    </div>
+
                     <div style={{ borderRadius: 12, border: '1px solid rgba(148,163,184,0.45)', background: 'rgba(248,250,252,0.88)', padding: '10px 12px', fontSize: 12, color: '#334155', lineHeight: 1.4 }}>
                         <div style={{ fontWeight: 600, marginBottom: 4 }}>Program Rule</div>
-                        <div>Each program runs 1 week: starts on Sunday and ends on the next Sunday.</div>
+                        <div>Each program runs 1 week: starts on {newClass.startDay || 'Sunday'} and ends on the next {newClass.startDay || 'Sunday'}.</div>
                         {programWindow && (
                             <div style={{ marginTop: 6, fontWeight: 600, color: '#0f172a' }}>
                                 Scheduled window: {programWindow.startDate.toLocaleDateString()} - {programWindow.endDate.toLocaleDateString()}

@@ -191,10 +191,33 @@ function MobileShowcaseFeed({ submissions, profiles, session, setSelectedDetailP
             if (role === 'owner' || role === 'admin') return false;
             return Boolean((p?.idea_title || '').trim());
         }).length;
-        const projectsSubmitted = (submissions || []).filter((s) => {
-            const link = s?.submission_url || s?.project_url || s?.demo_url || s?.github_url;
-            return Boolean((link || '').trim());
-        }).length;
+        const internalProfileIds = new Set(
+            (profiles || [])
+                .filter((p) => {
+                    const role = (p?.role || '').toLowerCase();
+                    return role === 'owner' || role === 'admin';
+                })
+                .map((p) => p.id)
+        );
+        const projectKeys = new Set(
+            (submissions || [])
+                .filter((s) => {
+                    if (!s?.user_id || internalProfileIds.has(s.user_id)) return false;
+                    if (String(s?.status || '').toLowerCase() === 'archived') return false;
+                    const link = s?.submission_url || s?.project_url || s?.demo_url || s?.github_url;
+                    const normalizedLink = String(link || '').trim().toLowerCase();
+                    const normalizedName = String(s?.project_name || '').trim().toLowerCase();
+                    return Boolean(normalizedLink || normalizedName);
+                })
+                .map((s) => {
+                    const link = s?.submission_url || s?.project_url || s?.demo_url || s?.github_url;
+                    const normalizedLink = String(link || '').trim().toLowerCase();
+                    const normalizedName = String(s?.project_name || '').trim().toLowerCase();
+                    const token = normalizedLink ? `url|${normalizedLink}` : `name|${normalizedName}`;
+                    return `${s.user_id}|${token}`;
+                })
+        );
+        const projectsSubmitted = projectKeys.size;
         const liveLinks = feedItems.filter((item) => Boolean(item.link)).length;
         const kickoffOnly = progressItems.filter((item) => item.isDay0).length;
         const avgProgressPct = activeBuilders > 0

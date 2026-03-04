@@ -198,7 +198,7 @@ const IjamBotMascot = ({ size = 48, mousePos, emotion = 'neutral' }) => {
             case 'thinking':
                 return '(Â¬â€¿Â¬)';
             case 'confused':
-                return '(o^â–½^o)';
+                return '';
             case 'sad':
                 return '(à¸‡ â€¢Ì€_â€¢Ì)à¸‡';
             // New emotions

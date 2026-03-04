@@ -2856,7 +2856,7 @@ const IjamOSWorkspace = ({ session, currentUser, isMobileView, deviceMode = 'des
 
     // KDAcademy state
     const [kdacademyUrl] = useState('https://kdacademy.up.railway.app/');
-    const [kdacademyFavicon, setKdacademyFavicon] = useState('');
+    const [kdacademyFavicon, setKdacademyFavicon] = useState('/icons/kd-logo.svg');
     const [kdacademyTitle, setKdacademyTitle] = useState('KDAcademy');
     const [kdacademyDescription, setKdacademyDescription] = useState('');
     const [kdacademyLoading, setKdacademyLoading] = useState(false);
@@ -2867,24 +2867,15 @@ const IjamOSWorkspace = ({ session, currentUser, isMobileView, deviceMode = 'des
         const fetchKdacademyMetadata = async () => {
             setKdacademyLoading(true);
             try {
-                // Try favicon from standard locations
+                // Avoid fetch() CORS noise by assigning URL candidates directly to <img src>.
+                // Browser image loading handles cross-origin without requiring fetch CORS.
                 const faviconUrls = [
+                    '/icons/kd-logo.svg',
                     'https://kdacademy.up.railway.app/favicon.ico',
                     'https://kdacademy.up.railway.app/favicon.png',
                     'https://www.google.com/s2/favicons?domain=kdacademy.up.railway.app'
                 ];
-
-                for (const url of faviconUrls) {
-                    try {
-                        const response = await fetch(url, { mode: 'cors', cache: 'force-cache' });
-                        if (response.ok) {
-                            setKdacademyFavicon(url);
-                            break;
-                        }
-                    } catch (e) {
-                        // Try next URL
-                    }
-                }
+                setKdacademyFavicon(faviconUrls[0]);
 
                 // Try to fetch page info (may be blocked by CORS)
                 try {

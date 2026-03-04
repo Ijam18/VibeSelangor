@@ -326,7 +326,7 @@ export default function BuilderDashboard({
             padding: '9px 10px'
         };
         const islandMessages = [
-            `${totalSubs} Logs â€¢ ${progressPct}% Sprint`,
+            `${totalSubs} Logs | ${progressPct}% Sprint`,
             checkedInToday ? 'Checked in today' : 'Check in and ship your log',
             activeClass ? `Live: ${activeClass.title}` : 'No live class now'
         ];
@@ -352,6 +352,42 @@ export default function BuilderDashboard({
                         </div>
                         <div style={{ marginTop: 8 }}>
                             <button className="btn btn-outline" style={{ ...iosSecondaryBtn, width: '100%' }} onClick={handleSignOut}>Logout</button>
+                        </div>
+                    </section>
+                    <section style={{ borderRadius: 14, border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(255,255,255,0.78)', padding: '10px 11px' }}>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: '#0f172a', marginBottom: 6 }}>Cohort Programs</div>
+                        <div style={{ display: 'grid', gap: 7 }}>
+                            {classes.filter(c => c.type === 'Program').sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 3).map((program) => {
+                                const isPresent = attendance.some(a => a.profile_id === currentUser.id && a.class_id === program.id && a.status === 'Present');
+                                const isLive = program.status === 'Active';
+                                return (
+                                    <div key={program.id} style={{ borderRadius: 10, border: '1px solid #e2e8f0', background: isLive ? 'rgba(59,130,246,0.05)' : '#f8fafc', padding: '7px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div>
+                                            <div style={{ fontSize: 12, fontWeight: 600, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                {program.title}
+                                                {isLive && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ef4444', display: 'inline-block' }} />}
+                                            </div>
+                                            <div style={{ fontSize: 9, color: '#64748b' }}>{program.date}</div>
+                                        </div>
+                                        <button
+                                            onClick={() => handleToggleAttendance(currentUser.id, program.id)}
+                                            disabled={!isLive && !isPresent}
+                                            style={{
+                                                border: 'none',
+                                                background: isPresent ? '#22c55e' : (isLive ? '#ef4444' : '#e2e8f0'),
+                                                color: isPresent || isLive ? 'white' : '#64748b',
+                                                fontSize: 9,
+                                                fontWeight: 700,
+                                                padding: '4px 8px',
+                                                borderRadius: 6
+                                            }}
+                                        >
+                                            {isPresent ? 'ATTENDED' : (isLive ? 'ATTEND' : 'CLOSED')}
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                            {classes.filter(c => c.type === 'Program').length === 0 && <div style={{ fontSize: 11, color: '#64748b' }}>No programs scheduled.</div>}
                         </div>
                     </section>
                     <section style={{ borderRadius: 14, border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(255,255,255,0.78)', padding: '10px 11px' }}>
@@ -413,6 +449,12 @@ export default function BuilderDashboard({
                     SPRINT DASHBOARD
                 </button>
                 <button
+                    onClick={() => setActiveTab('programs')}
+                    style={{ padding: '12px 12px', border: 'none', background: 'none', borderBottom: activeTab === 'programs' ? '4px solid #3b82f6' : '4px solid transparent', fontWeight: '900', fontSize: '13px', cursor: 'pointer', color: activeTab === 'programs' ? 'black' : '#888', transition: 'all 0.2s' }}
+                >
+                    COHORT PROGRAMS
+                </button>
+                <button
                     onClick={() => setActiveTab('studio')}
                     style={{ padding: '12px 12px', border: 'none', background: 'none', borderBottom: activeTab === 'studio' ? '4px solid #FFD700' : '4px solid transparent', fontWeight: '900', fontSize: '13px', cursor: 'pointer', color: activeTab === 'studio' ? 'black' : '#888', transition: 'all 0.2s' }}
                 >
@@ -428,6 +470,63 @@ export default function BuilderDashboard({
 
             {activeTab === 'studio' ? (
                 <BuilderStudioPage session={session} />
+            ) : activeTab === 'programs' ? (
+                <div style={{ padding: '20px 0' }}>
+                    <div className="neo-card" style={{ border: '3px solid black', boxShadow: '8px 8px 0px black', padding: '32px', background: 'white' }}>
+                        <div style={{ marginBottom: '24px' }}>
+                            <h2 style={{ fontSize: '28px', marginBottom: '8px' }}>Cohort Programs</h2>
+                            <p style={{ opacity: 0.7 }}>Select a program to join and mark your attendance during sessions.</p>
+                        </div>
+
+                        <div style={{ display: 'grid', gap: '20px' }}>
+                            {classes.filter(c => c.type === 'Program').sort((a, b) => new Date(b.date) - new Date(a.date)).map(program => {
+                                const isPresent = attendance.some(a => a.profile_id === currentUser.id && a.class_id === program.id && a.status === 'Present');
+                                const isLive = program.status === 'Active';
+
+                                return (
+                                    <div key={program.id} style={{ border: '3px solid black', borderRadius: '16px', padding: '24px', background: isLive ? 'rgba(59,130,246,0.05)' : '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
+                                        <div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                                                <h3 style={{ fontSize: '20px', margin: 0 }}>{program.title}</h3>
+                                                {isLive && <span className="pill pill-red" style={{ fontSize: '9px', fontWeight: '950', animation: 'pulse 2s infinite' }}>LIVE NOW</span>}
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '16px', fontSize: '13px', fontWeight: '700', opacity: 0.7 }}>
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Calendar size={14} /> {program.date}</span>
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>Mode: Sunday-Sunday Sprint</span>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            onClick={() => handleToggleAttendance(currentUser.id, program.id)}
+                                            className={`btn ${isPresent ? 'btn-outline' : isLive ? 'btn-red' : 'btn-outline'}`}
+                                            disabled={!isLive && !isPresent}
+                                            style={{
+                                                minWidth: '160px',
+                                                borderRadius: '12px',
+                                                opacity: (!isLive && !isPresent) ? 0.5 : 1,
+                                                cursor: (!isLive && !isPresent) ? 'not-allowed' : 'pointer'
+                                            }}
+                                        >
+                                            {isPresent ? (
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}><Check size={18} /> ATTENDED</span>
+                                            ) : isLive ? (
+                                                "ATTEND NOW"
+                                            ) : (
+                                                "NOT STARTED"
+                                            )}
+                                        </button>
+                                    </div>
+                                );
+                            })}
+
+                            {classes.filter(c => c.type === 'Program').length === 0 && (
+                                <div style={{ textAlign: 'center', padding: '40px', background: '#f8fafc', borderRadius: '16px', border: '2px dashed #ccc' }}>
+                                    <p style={{ opacity: 0.5 }}>No programs scheduled yet.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
             ) : (
                 <>
                     {activeClass && (
@@ -521,7 +620,7 @@ export default function BuilderDashboard({
                             <div className="neo-card" style={{ border: '3px solid black', background: 'black', color: 'white', marginBottom: '20px', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <div>
                                     <h3 style={{ color: 'white', fontSize: '20px', marginBottom: '2px' }}>Next: {classes[0]?.title || 'TBD'}</h3>
-                                    <p style={{ opacity: 0.6, fontSize: '12px', fontWeight: '700' }}>{classes[0]?.date ? new Date(classes[0].date).toLocaleDateString() : 'TBD'} â€¢ {classes[0]?.time || 'TBD'}</p>
+                                    <p style={{ opacity: 0.6, fontSize: '12px', fontWeight: '700' }}>{classes[0]?.date ? new Date(classes[0].date).toLocaleDateString() : 'TBD'} | {classes[0]?.time || 'TBD'}</p>
                                 </div>
                                 <Calendar size={24} style={{ opacity: 0.5 }} />
                             </div>
@@ -631,13 +730,10 @@ export default function BuilderDashboard({
                             </div>
                         </div>
                     </div>
-
-
                 </>
             )}
-
             {newProjectModal}
-        </div >
+        </div>
     );
 };
 

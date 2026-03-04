@@ -200,44 +200,44 @@ class ResponseGenerator {
         this.responseTemplates = {
             // Greeting responses
             greeting: [
-                "SELAMAT MALAM & GREETINGS! Hai bro! (o^â–½^o) Ada apa yang boleh aku bantu hari ni?",
-                "SELAMAT MALAM & GREETINGS! Apa khabar? (b áµ”â–½áµ”)b Ada soalan atau nak sembang pasal project?",
-                "SELAMAT MALAM & GREETINGS! Helo! (â˜†â–½â˜†) Nak tanya pasal vibeselangor ke atau ada idea project baru?"
+                "SELAMAT MALAM & GREETINGS! Hai bro! Ada apa yang boleh aku bantu hari ni?",
+                "SELAMAT MALAM & GREETINGS! Apa khabar? Ada soalan atau nak sembang pasal project?",
+                "SELAMAT MALAM & GREETINGS! Helo! Nak tanya pasal vibeselangor ke atau ada idea project baru?"
             ],
 
             // Help responses
             help: [
-                "Sure thing bro! (Â¬â€¿Â¬) Cerita sikit apa yang kau nak bantu, nanti aku cari solution terbaik.",
-                "Tolong apa ni? (à¸‡ â€¢Ì€_â€¢Ì)à¸‡ Bagi detail sikit, nanti aku guide step by step.",
-                "No problem! (âœ¿â— â€¿â— ) Apa yang kau stuck? Kita solve sama-sama."
+                "Sure thing bro! Cerita sikit apa yang kau nak bantu, nanti aku cari solution terbaik.",
+                "Tolong apa ni? Bagi detail sikit, nanti aku guide step by step.",
+                "No problem! Apa yang kau stuck? Kita solve sama-sama."
             ],
 
             // Informational responses
             informational: [
-                "Ni dia info yang kau cari bro ( Ë™ê’³â€‹Ë™ ).",
-                "Aku explain sikit pasal ni (ï¾‰^ãƒ®^)ï¾‰*:ãƒ»ï¾Ÿâœ§",
-                "Ni detailsnya (o^â–½^o), kalau tak faham tanya lagi eh."
+                "Ni dia info yang kau cari bro.",
+                "Aku explain sikit pasal ni.",
+                "Ni detailsnya, kalau tak faham tanya lagi eh."
             ],
 
             // Encouragement responses
             encouragement: [
-                "Power gila idea kau ni! (b áµ”â–½áµ”)b Keep it up!",
-                "Wah best gila! (â˜†â–½â˜†) Kau dah dekat sangat nak siap ni.",
-                "Awekss! (à¸‡ â€¢Ì€_â€¢Ì)à¸‡ Kau memang builder sejati ni!"
+                "Power gila idea kau ni! Keep it up!",
+                "Wah best gila! Kau dah dekat sangat nak siap ni.",
+                "Awekss! Kau memang builder sejati ni!"
             ],
 
             // Confusion responses
             confusion: [
-                "Eh sikit confuse ni (ãƒ»_ãƒ»;) Kau boleh explain lagi detail tak?",
-                "Aku tak pasti sangat maksud kau (Â¬â€¿Â¬) Boleh kau ulang sikit?",
-                "Sikit blur la (o^â–½^o) Kau maksudkan macam mana tu?"
+                "Eh sikit confuse ni. Kau boleh explain lagi detail tak?",
+                "Aku tak pasti sangat maksud kau. Boleh kau ulang sikit?",
+                "Sikit blur la. Kau maksudkan macam mana tu?"
             ],
 
             // Follow-up responses
             followup: [
-                "Oh gitu ke? (âœ¿â— â€¿â— ) Nak tahu lagi tak pasal ni?",
-                "Best! (b áµ”â–½áµ”)b Nak explore lagi aspek lain tak?",
-                "Gitulah lebih kurang ( Ë™ê’³â€‹Ë™ ). Ada apa lagi yang kau nak tanya?"
+                "Oh gitu ke? Nak tahu lagi tak pasal ni?",
+                "Best! Nak explore lagi aspek lain tak?",
+                "Gitulah lebih kurang. Ada apa lagi yang kau nak tanya?"
             ]
         };
 
@@ -260,11 +260,11 @@ class ResponseGenerator {
 
         // Adjust tone based on sentiment
         if (sentiment === 'positive') {
-            response += ` ${this.getRandomEmoticon(['(b áµ”â–½áµ”)b', '(â˜†â–½â˜†)', '(à¸‡ â€¢Ì€_â€¢Ì)à¸‡'])}`;
+            response += "";
         } else if (sentiment === 'negative') {
-            response += ` Jangan stress bro, kita solve sama-sama (âœ¿â— â€¿â— )`;
+            response += ` Jangan stress bro, kita solve sama-sama.`;
         } else {
-            response += ` ${this.getRandomEmoticon(['(o^â–½^o)', '(Â¬â€¿Â¬)', '( Ë™ê’³â€‹Ë™ )'])}`;
+            response += "";
         }
 
         // Add follow-up question based on intent
@@ -280,9 +280,7 @@ class ResponseGenerator {
     }
 
     getRandomEmoticon(exclude = []) {
-        const emoticons = ['(o^â–½^o)', '(Â¬â€¿Â¬)', '(b áµ”â–½áµ”)b', '( Ë™ê’³â€‹Ë™ )', '(â˜†â–½â˜†)', '(à¸‡ â€¢Ì€_â€¢Ì)à¸‡', '(âœ¿â— â€¿â— )', '(ï¾‰^ãƒ®^)ï¾‰*:ãƒ»ï¾Ÿâœ§'];
-        const available = emoticons.filter(k => !exclude.includes(k));
-        return this.getRandomElement(available);
+        return "";
     }
 }
 
@@ -300,20 +298,20 @@ export class EnhancedLocalIntelligence {
         this.LOCAL_KB = [
             {
                 keywords: ['join', 'daftar', 'sign up', 'register', 'how to join', 'cara join', 'masuk', 'nak join', 'macam mana nak'],
-                answer: `rileks bro, nak join vibeselangor ni senang je. kau just klik butang "become a builder" kat header atau sidebar tu, pastu isi sikit details (o^â–½^o).\n\nnanti verify email jap then dah boleh start sprint 7 hari. benda ni free gila, necb - now everyone can build.`,
-                followUp: `lepas join nanti kau dapat access builder dashboard. boleh track progress, submit log, pastu join live session kat discord krackeddevs (b áµ”â–½áµ”)b.\n\nsesi live day 1 nanti kita start buat prototype terus.`,
+                answer: `rileks bro, nak join vibeselangor ni senang je. kau just klik butang "become a builder" kat header atau sidebar tu, pastu isi sikit details.\n\nnanti verify email jap then dah boleh start sprint 7 hari. benda ni free gila, necb - now everyone can build.`,
+                followUp: `lepas join nanti kau dapat access builder dashboard. boleh track progress, submit log, pastu join live session kat discord krackeddevs.\n\nsesi live day 1 nanti kita start buat prototype terus.`,
                 relatedTopics: ['apa itu 7-day sprint', 'tools apa yang perlu', 'betul ke percuma']
             },
             {
                 keywords: ['necb', 'now everyone can build', 'philosophy', 'vision', 'mission', 'falsafah', 'visi'],
-                answer: `necb tu faham dia "now everyone can build". dulu orang ingat kena power coding baru boleh buat app, tapi sekarang ai tools macam antigravity dah ada, so semua orang boleh jadi builder (âŒâ– _â– ).\n\nyang penting ada idea dengan semangat. tech tu biar ai handle.`,
-                followUp: `basically kau tak payah code from scratch. cari problem yang kau nak solve, pastu guna ai untuk execute. visi aku nak tengok builder kat setiap daerah selangor solve local problems guna tech (âœ¿â— â€¿â— ).`,
+                answer: `necb tu faham dia "now everyone can build". dulu orang ingat kena power coding baru boleh buat app, tapi sekarang ai tools macam antigravity dah ada, so semua orang boleh jadi builder.\n\nyang penting ada idea dengan semangat. tech tu biar ai handle.`,
+                followUp: `basically kau tak payah code from scratch. cari problem yang kau nak solve, pastu guna ai untuk execute. visi aku nak tengok builder kat setiap daerah selangor solve local problems guna tech.`,
                 relatedTopics: ['macam mana nak join', 'tools apa yang perlu', 'cerita pasal sprint']
             },
             {
                 keywords: ['sprint', 'day 1', 'day 2', 'day 3', 'day 4', 'day 5', 'day 6', 'day 7', '7 day', 'seven day', 'program', 'schedule', '7 hari', 'jadual'],
-                answer: `7-day sprint vibeselangor ni program seminggu aje ( Ë™ê’³â€‹Ë™ ).\n\nday 1 concept, day 2 user profile, day 3 value prop, day 4 feature blueprint, day 5 ui vibe, day 6 polish, day 7 showcase live.\n\nsetiap hari kau build sikit-sikit. by day 7 dah ada projek real.`,
-                followUp: `day 1 dengan day 7 tu kita buat sesi live kat discord. hari lain kau buat sendiri je ikut guide dalam dashboard. antigravity dengan chatgpt ada tolong (ï¾‰^ãƒ®^)ï¾‰*:ãƒ»ï¾Ÿâœ§.`,
+                answer: `7-day sprint vibeselangor ni program seminggu aje.\n\nday 1 concept, day 2 user profile, day 3 value prop, day 4 feature blueprint, day 5 ui vibe, day 6 polish, day 7 showcase live.\n\nsetiap hari kau build sikit-sikit. by day 7 dah ada projek real.`,
+                followUp: `day 1 dengan day 7 tu kita buat sesi live kat discord. hari lain kau buat sendiri je ikut guide dalam dashboard. antigravity dengan chatgpt ada tolong.`,
                 relatedTopics: ['tools apa yang perlu', 'macam mana nak join discord', 'apa itu showcase']
             },
             {
@@ -331,13 +329,13 @@ export class EnhancedLocalIntelligence {
             {
                 keywords: ['antigravity', 'ai tool', 'cursor', 'tool', 'tools', 'supabase', 'vercel'],
                 answer: `tools yang kita pakai semua standard free tier. antigravity, supabase, cursor, vercel.\n\nantigravity tu ai tool utama. kau describe je apa nak buat, dia codekan :). database pakai supabase, hosting vercel.`,
-                followUp: `nak guna antigravity download je kat antigravity.dev. tips dia bagi arahan spesifik. contoh "buat butang merah tulis hantar" lagi okay dari "buat butang" (b áµ”â–½áµ”)b.`,
+                followUp: `nak guna antigravity download je kat antigravity.dev. tips dia bagi arahan spesifik. contoh "buat butang merah tulis hantar" lagi okay dari "buat butang".`,
                 relatedTopics: ['apa itu vibe coding', 'macam mana nak deploy ke vercel', 'apa itu supabase']
             },
             {
                 keywords: ['studio', 'game', 'vibe', 'vibes', 'bug squash', 'room', 'shop', 'item', 'level', 'xp', 'bilik', 'kedai'],
-                answer: `builder studio tu virtual game room kau. kau earn vibes bila join class, submit log, atau active kat forum. vibes tu mata wang kau (â˜†â–½â˜†).\n\nguna vibes tu untuk upgrade bilik dari meja buruk sampai jadi server rack. boleh level up jadi legendary builder.`,
-                followUp: `level 1 newbie, level 7 legendary. kena rajin aktif la kalau nak naik rank.\n\nmain bug squash pun boleh dapat extra vibes sikit (Â¬â€¿Â¬).`,
+                answer: `builder studio tu virtual game room kau. kau earn vibes bila join class, submit log, atau active kat forum. vibes tu mata wang kau.\n\nguna vibes tu untuk upgrade bilik dari meja buruk sampai jadi server rack. boleh level up jadi legendary builder.`,
+                followUp: `level 1 newbie, level 7 legendary. kena rajin aktif la kalau nak naik rank.\n\nmain bug squash pun boleh dapat extra vibes sikit.`,
                 relatedTopics: ['macam mana nak earn lebih vibes', 'apa itu leaderboard', 'macam mana nak level up']
             },
             {
@@ -360,7 +358,7 @@ export class EnhancedLocalIntelligence {
             },
             {
                 keywords: ['leaderboard', 'ranking', 'top', 'best', 'winner', 'champion', 'kedudukan', 'tangga'],
-                answer: `leaderboard tu ranking builder. kita kira based on sprint logs, attendance, forum activity dengan game vibes.\n\nkalau nak naik top rank, kena istiqamah la sikit (à¸‡ â€¢Ì€_â€¢Ì)à¸‡.`,
+                answer: `leaderboard tu ranking builder. kita kira based on sprint logs, attendance, forum activity dengan game vibes.\n\nkalau nak naik top rank, kena istiqamah la sikit.`,
                 followUp: `cara paling laju naik rank ialah consistency. submit log hari-hari, datang class live, post kat forum. sikit-sikit lama-lama jadi bukit.`,
                 relatedTopics: ['macam mana nak earn vibes', 'apa itu studio', 'macam mana nak submit sprint log']
             },
@@ -391,14 +389,14 @@ export class EnhancedLocalIntelligence {
             // LESSONS: Setup & Environment
             {
                 keywords: ['node', 'nodejs', 'install', 'npm', 'setup', 'environment', 'first setup', 'install node'],
-                answer: `setup ni step pertama sebelum boleh code. kau kena install node.js untuk run javascript kat computer (o^â–½^o).\n\nnode.js ni macam enjin kereta. antigravity pula co-pilot ai kau. kalau enjin takde, kereta tak jalan.`,
-                followUp: `lepas install node.js lts dari website rasmi, buka terminal check \`node -v\` dan \`npm -v\`.\n\npastu run \`npm install\` dalam project folder, lepas tu \`npm run dev\`. kalau website boleh hidup, setup kau dah betul (b áµ”â–½áµ”)b.`,
+                answer: `setup ni step pertama sebelum boleh code. kau kena install node.js untuk run javascript kat computer.\n\nnode.js ni macam enjin kereta. antigravity pula co-pilot ai kau. kalau enjin takde, kereta tak jalan.`,
+                followUp: `lepas install node.js lts dari website rasmi, buka terminal check \`node -v\` dan \`npm -v\`.\n\npastu run \`npm install\` dalam project folder, lepas tu \`npm run dev\`. kalau website boleh hidup, setup kau dah betul.`,
                 relatedTopics: ['api key setup', 'antigravity tools', 'troubleshooting npm'],
                 linkUrl: 'https://nodejs.org/en/download'
             },
             {
                 keywords: ['api key', 'groq', 'nvidia', 'openrouter', 'token', 'model', 'llm', 'ai key'],
-                answer: `api key ni macam kad pengenalan untuk guna ai. korang boleh guna groq (laju & murah), nvidia llm, atau openrouter (jimat).\n\nelakkan guna opus/sonnet untuk benda simple sebab mahal token (Â¬â€¿Â¬).`,
+                answer: `api key ni macam kad pengenalan untuk guna ai. korang boleh guna groq (laju & murah), nvidia llm, atau openrouter (jimat).\n\nelakkan guna opus/sonnet untuk benda simple sebab mahal token.`,
                 followUp: `buka platform pilihan, register dan ambil 'api keys'. buka vscode/cursor settings antigravity, paste api key.\n\nguna gemini flash untuk ui design, sonnet untuk architecture. openrouter paling jimat kalau nak guna semua model.`,
                 relatedTopics: ['antigravity setup', 'model selection', 'cost optimization'],
                 linkUrl: 'https://console.groq.com/keys'
@@ -406,14 +404,14 @@ export class EnhancedLocalIntelligence {
             // LESSONS: Ideation
             {
                 keywords: ['chatgpt', 'personality', 'ideation', 'brainstorm', 'planning', 'idea', 'prompt engineer'],
-                answer: `chatgpt ni kau kena ajar jadi pakar dulu. macam kau lantik manager - bagi dia title 'senior ui engineer & pm' (âœ¿â— â€¿â— ).\n\nmula-mula bagi role, baru instruction dia mantap.`,
+                answer: `chatgpt ni kau kena ajar jadi pakar dulu. macam kau lantik manager - bagi dia title 'senior ui engineer & pm'.\n\nmula-mula bagi role, baru instruction dia mantap.`,
                 followUp: `tulis prompt: 'you are an expert react ui engineer and product manager...'. ceritakan idea app kau.\n\nminta dia suggest features dan ux flow. bincang sampai idea solid. chatgpt bagus untuk validate idea sebelum buat.`,
                 relatedTopics: ['master prompt', 'antigravity coding', 'product planning'],
                 linkUrl: 'https://chat.openai.com'
             },
             {
                 keywords: ['master prompt', 'blueprint', 'specification', 'claude', 'prompt', 'arahan lengkap'],
-                answer: `master prompt ni satu arahan lengkap untuk antigravity. suruh chatgpt rumuskan jadi blueprint (ï¾‰^ãƒ®^)ï¾‰*:ãƒ»ï¾Ÿâœ§.\n\nbila idea dah confirm, kau transform jadi one-shot instruction.`,
+                answer: `master prompt ni satu arahan lengkap untuk antigravity. suruh chatgpt rumuskan jadi blueprint.\n\nbila idea dah confirm, kau transform jadi one-shot instruction.`,
                 followUp: `minta chatgpt: 'summarize everything into ONE master prompt for claude 3 to build this app'.\n\npastikan ada details ui, warna, layout, data structure. copy dan paste dalam antigravity. sekali shot terus.`,
                 relatedTopics: ['chatgpt setup', 'vibe coding', 'antigravity'],
                 linkUrl: 'https://chat.openai.com'
@@ -421,15 +419,15 @@ export class EnhancedLocalIntelligence {
             // LESSONS: Vibe Coding
             {
                 keywords: ['vibe coding', 'antigravity sonnet', 'claude', 'gemini', 'model', 'ai coding', 'which model'],
-                answer: `claude 3.5 sonnet = senior engineer (steady). opus = krackeddev (power gila). gemini flash = ui designer. gemini 3.1 = all-rounder (â˜†â–½â˜†).\n\npilih ikut kerja. jangan guna nuke untuk bunuh nyamuk.`,
-                followUp: `pilih model sesuai: sonnet atau gemini 3.1 untuk architecture. paste master prompt.\n\nkalau nak tukar warna/padding UI, switch ke gemini flash sebab dia fokus visual (b áµ”â–½áµ”)b.`,
+                answer: `claude 3.5 sonnet = senior engineer (steady). opus = krackeddev (power gila). gemini flash = ui designer. gemini 3.1 = all-rounder.\n\npilih ikut kerja. jangan guna nuke untuk bunuh nyamuk.`,
+                followUp: `pilih model sesuai: sonnet atau gemini 3.1 untuk architecture. paste master prompt.\n\nkalau nak tukar warna/padding UI, switch ke gemini flash sebab dia fokus visual.`,
                 relatedTopics: ['master prompt', 'model comparison', 'api key'],
                 linkUrl: 'https://antigravity.id'
             },
             // LESSONS: Version Control
             {
                 keywords: ['github', 'git', 'push', 'commit', 'repository', 'version control', 'code', 'simpan code'],
-                answer: `github ni macam google drive tapi khas untuk code. kau 'push' code untuk simpan kekal (o^â–½^o).\n\nversion control penting kalau nak collaborate atau nak deploy.`,
+                answer: `github ni macam google drive tapi khas untuk code. kau 'push' code untuk simpan kekal.\n\nversion control penting kalau nak collaborate atau nak deploy.`,
                 followUp: `create github repo. run: \`git init\`, \`git add .\`, \`git commit -m 'initial commit'\`.\n\nbelajar beza \`git pull\` (tarik code turun) dan \`git fetch\`. run \`git push -u origin main\` untuk upload ke branch utama.`,
                 relatedTopics: ['vercel deployment', 'git commands', 'collaboration'],
                 linkUrl: 'https://github.com'
@@ -437,21 +435,21 @@ export class EnhancedLocalIntelligence {
             // LESSONS: Deployment
             {
                 keywords: ['vercel', 'deploy', 'deployment', 'hosting', 'launch', 'live', 'production', 'url'],
-                answer: `vercel ambil code dari github dan letak kat server awam (à¸‡ â€¢Ì€_â€¢Ì)à¸‡.\n\ndalam local, kau je nampak website tu. vercel buat semua orang boleh access.`,
+                answer: `vercel ambil code dari github dan letak kat server awam.\n\ndalam local, kau je nampak website tu. vercel buat semua orang boleh access.`,
                 followUp: `create akaun vercel guna github. import repo yang kau push tadi. settings default tekan deploy.\n\nbila siap, copy url \`.vercel.app\`. paste dalam terminal vibeselangor ni untuk dapat trophy!`,
                 relatedTopics: ['github setup', 'analytics', 'custom domain'],
                 linkUrl: 'https://vercel.com'
             },
             {
                 keywords: ['analytics', 'tracking', 'visitor', 'traffic', 'stats', 'vercel analytics', 'data'],
-                answer: `analytics ni macam cctv - nampak berapa orang masuk website dari mana ( Ë™ê’³â€‹Ë™ ).\n\nvercel analytics percuma dan mudah setup.`,
+                answer: `analytics ni macam cctv - nampak berapa orang masuk website dari mana.\n\nvercel analytics percuma dan mudah setup.`,
                 followUp: `vercel dashboard > analytics > enable. dalam terminal vscode run: \`npm i @vercel/analytics\`.\n\nimport \`<Analytics />\` dalam app.jsx atau main.jsx. commit push github, auto deploy. lepas tu boleh tengok graf traffic.`,
                 relatedTopics: ['vercel deployment', 'metrics', 'user behavior'],
                 linkUrl: 'https://vercel.com/docs/analytics/quickstart'
             },
             {
                 keywords: ['domain', 'custom domain', 'dns', '.com', 'url sendiri', 'nama domain'],
-                answer: `buang .vercel.app, nampak professional dengan domain .com (âœ¿â— â€¿â— ).\n\nbeli nama sendiri, lepastu sambung ke vercel.`,
+                answer: `buang .vercel.app, nampak professional dengan domain .com.\n\nbeli nama sendiri, lepastu sambung ke vercel.`,
                 followUp: `beli domain (namecheap, porkbun). vercel dashboard > domains > add domain.\n\ncopy a record dan cname ke dns settings tempat beli domain. tunggu propagate (kadang cepat, kadang beberapa jam).`,
                 relatedTopics: ['vercel deployment', 'branding', 'seo'],
                 linkUrl: 'https://vercel.com/docs/custom-domains'
@@ -459,14 +457,14 @@ export class EnhancedLocalIntelligence {
             // LESSONS: Database
             {
                 keywords: ['supabase', 'database', 'backend', 'data', 'storage', 'db', 'simpan data'],
-                answer: `supabase paling senang untuk database. faham beza anon key dan service role key! (âŒâ– _â– )\n\nbila buat login atau simpan form data, kau perlukan backend database.`,
+                answer: `supabase paling senang untuk database. faham beza anon key dan service role key!\n\nbila buat login atau simpan form data, kau perlukan backend database.`,
                 followUp: `buat project supabase, tunggu 2-3 minit server setup. settings > api > copy url dan anon key.\n\nAMARAN: jangan expose service_role key! berbahaya! buat \`.env.local\` untuk simpan credentials.`,
                 relatedTopics: ['sql queries', 'security', 'env variables'],
                 linkUrl: 'https://supabase.com'
             },
             {
                 keywords: ['sql', 'query', 'table', 'create table', 'schema', 'database structure'],
-                answer: `suruh ai generate sql script, paste supabase, siap sepenip mata (ï¾‰^ãƒ®^)ï¾‰*:ãƒ»ï¾Ÿâœ§.\n\ntakyah buat table manual satu-satu.`,
+                answer: `suruh ai generate sql script, paste supabase, siap sepenip mata.\n\ntakyah buat table manual satu-satu.`,
                 followUp: `minta antigravity: 'generate supabase sql query to create users table with name and email'.\n\nsupabase dashboard > sql editor (icon terminal kilat) > new query > paste > run. table editor confirm wujud. disable rls kalau prototype je.`,
                 relatedTopics: ['supabase setup', 'database design', 'rls security'],
                 linkUrl: 'https://supabase.com/docs/guides/database/sql-editor'
@@ -481,7 +479,7 @@ export class EnhancedLocalIntelligence {
             // LESSONS: Troubleshooting
             {
                 keywords: ['error', 'bug', 'tidak jalan', 'broken', 'fail', 'stuck', 'troubleshoot', 'debug'],
-                answer: `kalau stuck, follow ni: 1) check console error dulu. 2) google exact error message. 3) tanya ai explain error tu ( Ë™ê’³â€‹Ë™ ).\n\njangan panic. semua builder mesti jumpa error.`,
+                answer: `kalau stuck, follow ni: 1) check console error dulu. 2) google exact error message. 3) tanya ai explain error tu.\n\njangan panic. semua builder mesti jumpa error.`,
                 followUp: `kalau npm install error, cuba delete node_modules dan package-lock.json, pastu run lagi.\n\nkalau build error, check syntax. kalau deployment error, check env variables. satu persatu troubleshoot.`,
                 relatedTopics: ['supabase setup', 'vercel deployment', 'github push']
             }
@@ -643,7 +641,7 @@ export class EnhancedLocalIntelligence {
         if (category && FAQ_CATEGORIES[category]) {
             const suggestions = FAQ_CATEGORIES[category];
             return this.responseGenerator.generateResponse(
-                `aku detect kau nak tanya pasal ${category.toLowerCase()} (o^â–½^o)\n\nni beberapa soalan popular:\n\n${suggestions.map((q, i) => `${i + 1}. "${q}"`).join('\n')}\n\ncuba tanya salah satu! atau type keyword lagi spesifik.`,
+                `aku detect kau nak tanya pasal ${category.toLowerCase()}\n\nni beberapa soalan popular:\n\n${suggestions.map((q, i) => `${i + 1}. "${q}"`).join('\n')}\n\ncuba tanya salah satu! atau type keyword lagi spesifik.`,
                 context, 'neutral', 'informational'
             );
         }
@@ -651,7 +649,7 @@ export class EnhancedLocalIntelligence {
         // Handle very short or random inputs
         if (msgLength < 3 || this.isRandomInput(userMessage)) {
             return this.responseGenerator.generateResponse(
-                `eh sikit blur ni (ãƒ»_ãƒ»;) kau ni nak tanya pasal apa sebenarnya?\n\nni ada beberapa benda yang aku boleh bantu:\n\nðŸ’¡ **Pertanyaan Popular:**\nâ€¢ "macam mana nak join vibeselangor?"\nâ€¢ "apa itu 7-day sprint?"\nâ€¢ "nak buat app free macam mana?"\n\natau just type "help" kalau kau pening sangat (âœ¿â— â€¿â— )`,
+                `eh sikit blur ni. kau ni nak tanya pasal apa sebenarnya?\n\nni ada beberapa benda yang aku boleh bantu:\n\n💡 **Pertanyaan Popular:**\n- "macam mana nak join vibeselangor?"\n- "apa itu 7-day sprint?"\n- "nak buat app free macam mana?"\n\natau just type "help" kalau kau pening sangat`,
                 context, 'neutral', 'informational'
             );
         }
@@ -659,7 +657,7 @@ export class EnhancedLocalIntelligence {
         // Handle potential typos or unclear messages
         if (this.isUnclearMessage(userMessage)) {
             return this.responseGenerator.generateResponse(
-                `aku nampak macam kau nak tanya sesuatu tapi sikit confuse (Â¬â€¿Â¬)\n\nboleh kau clarify sikit:\n\nðŸ” **Mungkin kau maksudkan:**\nâ€¢ "macam mana nak install PWA?"\nâ€¢ "nak join sprint macam mana?"\nâ€¢ "tools apa yang perlu?"\n\natau kau boleh type keyword macam "join", "sprint", "PWA" untuk aku bantu lebih spesifik!`,
+                `aku nampak macam kau nak tanya sesuatu tapi sikit confuse\n\nboleh kau clarify sikit:\n\n🔎 **Mungkin kau maksudkan:**\n- "macam mana nak install PWA?"\n- "nak join sprint macam mana?"\n- "tools apa yang perlu?"\n\natau kau boleh type keyword macam "join", "sprint", "PWA" untuk aku bantu lebih spesifik!`,
                 context, 'neutral', 'informational'
             );
         }
@@ -667,7 +665,7 @@ export class EnhancedLocalIntelligence {
         // Handle topic switching or new topics
         if (context.currentTopic && this.isTopicSwitch(userMessage, context)) {
             return this.responseGenerator.generateResponse(
-                `oh gitu ke? (o^â–½^o) tadi kita tengah sembang pasal "${context.currentTopic}" tapi nampak macam kau nak tukar topik.\n\nnak tanya pasal:\n\nðŸŽ¯ **Topik Lain:**\nâ€¢ "macam mana nak earn vibes lebih?"\nâ€¢ "nak level up studio macam mana?"\nâ€¢ "discord krackeddevs link mana?"\n\natau just type "back" kalau kau nak sambung topik tadi.`,
+                `oh gitu ke? tadi kita tengah sembang pasal "${context.currentTopic}" tapi nampak macam kau nak tukar topik.\n\nnak tanya pasal:\n\n🎯 **Topik Lain:**\n- "macam mana nak earn vibes lebih?"\n- "nak level up studio macam mana?"\n- "discord krackeddevs link mana?"\n\natau just type "back" kalau kau nak sambung topik tadi.`,
                 context, 'neutral', 'informational'
             );
         }
@@ -675,14 +673,14 @@ export class EnhancedLocalIntelligence {
         // Handle complex or multi-topic messages
         if (this.isComplexMessage(userMessage)) {
             return this.responseGenerator.generateResponse(
-                `wah banyak benda kau tanya sekali (b áµ”â–½áµ”)b baik aku breakdown sikit:\n\nðŸ“ **Aku nampak kau tanya pasal:**\nâ€¢ ${this.extractKeyTopics(userMessage).join('\nâ€¢ ')}\n\nnak aku explain satu-satu ke? atau kau nak fokus kat satu benda dulu?\n\njust type "explain [topic]" kalau kau nak detail pasal satu benda je.`,
+                `wah banyak benda kau tanya sekali baik aku breakdown sikit:\n\n📑 **Aku nampak kau tanya pasal:**\n- ${this.extractKeyTopics(userMessage).join('\n- ')}\n\nnak aku explain satu-satu ke? atau kau nak fokus kat satu benda dulu?\n\njust type "explain [topic]" kalau kau nak detail pasal satu benda je.`,
                 context, 'positive', 'informational'
             );
         }
 
         // Default comprehensive fallback
         return this.responseGenerator.generateResponse(
-            `aku try paham apa yang kau tanya (ãƒ»_ãƒ»;)\n\nni ada beberapa option yang mungkin kau cari:\n\nðŸ’¡ **Pertanyaan Biasa:**\nâ€¢ "macam mana nak join?"\nâ€¢ "apa itu necb?"\nâ€¢ "7-day sprint schedule?"\nâ€¢ "tools apa yang perlu?"\nâ€¢ "nak install PWA macam mana?"\n\nðŸŽ¯ **Atau kau boleh:**\nâ€¢ Type keyword spesifik\nâ€¢ Type "help" untuk list semua option\nâ€¢ Type "menu" untuk quick access\n\nkalau masih tak jumpa, DM ijam kat threads @_zarulijam (âœ¿â— â€¿â— )`,
+            `aku try paham apa yang kau tanya\n\nni ada beberapa option yang mungkin kau cari:\n\n💡 **Pertanyaan Biasa:**\n- "macam mana nak join?"\n- "apa itu necb?"\n- "7-day sprint schedule?"\n- "tools apa yang perlu?"\n- "nak install PWA macam mana?"\n\n🎯 **Atau kau boleh:**\n- Type keyword spesifik\n- Type "help" untuk list semua option\n- Type "menu" untuk quick access\n\nkalau masih tak jumpa, DM ijam kat threads @_zarulijam`,
             context, 'neutral', 'informational'
         );
     }
