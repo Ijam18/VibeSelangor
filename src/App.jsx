@@ -40,7 +40,7 @@ const getCurrentMonthISO = () => {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 };
 
-const computeProgramWindow = (monthValue, weekValue) => {
+const computeProgramWindow = (monthValue, weekValue, startDay = 'sunday') => {
     if (!monthValue) return null;
     const [yearRaw, monthRaw] = monthValue.split('-');
     const year = Number(yearRaw);
@@ -49,12 +49,14 @@ const computeProgramWindow = (monthValue, weekValue) => {
     if (!year || monthIndex < 0 || monthIndex > 11) return null;
 
     const firstDay = new Date(year, monthIndex, 1);
-    const firstSundayOffset = (7 - firstDay.getDay()) % 7;
-    let startDate = new Date(year, monthIndex, 1 + firstSundayOffset + (week - 1) * 7);
+    const dayOfWeek = startDay === 'saturday' ? 6 : 0;
+    const dayOffset = (dayOfWeek - firstDay.getDay() + 7) % 7;
+    let startDate = new Date(year, monthIndex, 1 + dayOffset + (week - 1) * 7);
 
     if (startDate.getMonth() !== monthIndex) {
         const lastDay = new Date(year, monthIndex + 1, 0);
-        startDate = new Date(year, monthIndex, lastDay.getDate() - lastDay.getDay());
+        const lastDiff = (lastDay.getDay() - dayOfWeek + 7) % 7;
+        startDate = new Date(year, monthIndex, lastDay.getDate() - lastDiff);
     }
 
     const endDate = new Date(startDate);
@@ -136,7 +138,7 @@ const App = () => {
 
 
     // Form States
-    const [newClass, setNewClass] = useState({ title: '', month: getCurrentMonthISO(), weekOfMonth: '1' });
+    const [newClass, setNewClass] = useState({ title: '', month: getCurrentMonthISO(), weekOfMonth: '1', startDay: 'sunday' });
 
     const [isAddClassModalOpen, setIsAddClassModalOpen] = useState(false);
     const [selectedDetailProfile, setSelectedDetailProfile] = useState(null);
@@ -527,14 +529,15 @@ const App = () => {
             alert('Only owner/admin can create classes.');
             return;
         }
-        const programWindow = computeProgramWindow(newClass.month, newClass.weekOfMonth);
+        const programWindow = computeProgramWindow(newClass.month, newClass.weekOfMonth, newClass.startDay);
         if (!programWindow) {
             alert('Please choose a valid month and week to start the program.');
             return;
         }
         const week = Number(newClass.weekOfMonth) || 1;
         const title = (newClass.title || '').trim() || `VibeSelangor Program (Week ${week})`;
-        const timeString = `${programWindow.startDate.toLocaleDateString()} to ${programWindow.endDate.toLocaleDateString()} (Sunday-Sunday)`;
+        const dayLabel = newClass.startDay === 'saturday' ? 'Saturday' : 'Sunday';
+        const timeString = `${programWindow.startDate.toLocaleDateString()} to ${programWindow.endDate.toLocaleDateString()} (${dayLabel}-${dayLabel})`;
 
         try {
             const { error } = await supabase.from('cohort_classes').insert([{
@@ -549,7 +552,7 @@ const App = () => {
                 console.error("Supabase insert error:", error);
                 alert(`Failed to create class: ${error.message}\n\nTroubleshooting Tip:\nPlease check your Supabase Dashboard. Ensure the table 'cohort_classes' exists and has these columns:\n- id (uuid or int8, primary key, auto-generated)\n- title (text)\n- date (date)\n- time (text)\n- status (text)\n- type (text)`);
             } else {
-                setNewClass({ title: '', month: getCurrentMonthISO(), weekOfMonth: '1' });
+                setNewClass({ title: '', month: getCurrentMonthISO(), weekOfMonth: '1', startDay: 'sunday' });
                 setIsAddClassModalOpen(false);
                 fetchData();
             }
