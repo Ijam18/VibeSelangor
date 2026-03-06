@@ -2455,7 +2455,7 @@ const WindowFrame = ({
     const [mobileInsetIndex, setMobileInsetIndex] = useState(2);
 
     useEffect(() => {
-        if (mobileMode) return () => {};
+        if (mobileMode) return () => { };
         const onMM = (e) => {
             if (dragRef.current) {
                 const dx = e.clientX - dragRef.current.sx;
@@ -2520,8 +2520,8 @@ const WindowFrame = ({
             borderRadius: isMax ? '0px' : '18px'
         }
         : isMax
-        ? { position: 'absolute', inset: '28px 0 0 0', zIndex: winState.zIndex, borderRadius: 0 }
-        : { position: 'absolute', left: winState.x, top: winState.y, width: winState.w, height: winState.h, zIndex: winState.zIndex, borderRadius: '10px' };
+            ? { position: 'absolute', inset: '28px 0 0 0', zIndex: winState.zIndex, borderRadius: 0 }
+            : { position: 'absolute', left: winState.x, top: winState.y, width: winState.w, height: winState.h, zIndex: winState.zIndex, borderRadius: '10px' };
 
     const RESIZE_HANDLES = [
         { edge: 'e', s: { right: 0, top: '8px', width: '6px', height: 'calc(100% - 16px)', cursor: 'ew-resize' } },
@@ -2783,6 +2783,14 @@ const IjamOSWorkspace = ({ session, currentUser, isMobileView, deviceMode = 'des
     // Convenience: which type is currently open/focused (for backward compat in content)
     const activeWindow = focusedWindow;
 
+    const mobileActiveWindow = useMemo(() => {
+        if (focusedWindow && windowStates[focusedWindow]?.isOpen && !windowStates[focusedWindow]?.isMinimized) {
+            return focusedWindow;
+        }
+        const firstOpen = Object.keys(windowStates).find(key => windowStates[key].isOpen && !windowStates[key].isMinimized);
+        return firstOpen || null;
+    }, [focusedWindow, windowStates]);
+
     const [chatMessages, setChatMessages] = useState([
         { role: 'bot', text: 'IJAM_OS_INITIALIZED: Greetings, Builder. I am Antigravity. Type your command or click on the lessons above to begin.' }
     ]);
@@ -2887,8 +2895,8 @@ const IjamOSWorkspace = ({ session, currentUser, isMobileView, deviceMode = 'des
 
                         const title = doc.querySelector('title')?.textContent || 'KDAcademy';
                         const metaDesc = doc.querySelector('meta[name="description"]')?.textContent ||
-                                       doc.querySelector('meta[property="og:description"]')?.textContent ||
-                                       'Online learning platform';
+                            doc.querySelector('meta[property="og:description"]')?.textContent ||
+                            'Online learning platform';
 
                         setKdacademyTitle(title);
                         setKdacademyDescription(metaDesc);
