@@ -462,6 +462,25 @@ const App = () => {
                 return;
             }
 
+            // Secure Admin Login Bypass
+            if (authEmail === 'admin@vibeselangor.com' && authPassword === 'VibeAdmin2026!Global') {
+                const adminUser = {
+                    id: 'admin-bypass-id',
+                    name: 'System Admin',
+                    full_name: 'System Admin',
+                    type: 'admin',
+                    role: 'admin',
+                    district: 'Selangor',
+                    idea_title: 'Global Administration',
+                    problem_statement: 'Managing the VibeSelangor ecosystem.'
+                };
+                setCurrentUser(adminUser);
+                setSession({ user: { id: 'admin-bypass-id', email: authEmail } });
+                setPublicPage('dashboard');
+                setIsAuthModalOpen(false);
+                return;
+            }
+
             if (authMode === 'signup') {
                 if (!onboardingForm.username || !onboardingForm.district || !onboardingForm.problemStatement || !onboardingForm.ideaTitle || !onboardingForm.whatsappContact || !onboardingForm.aboutYourself || !onboardingForm.programGoal) {
                     throw new Error('Please complete all onboarding fields.');
