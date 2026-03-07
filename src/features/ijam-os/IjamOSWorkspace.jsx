@@ -2672,11 +2672,26 @@ const IjamOSWorkspace = ({ session, currentUser, isMobileView, deviceMode = 'des
     const [activeTab, setActiveTab] = useState('lessons'); // 'lessons', 'ai', 'cloud', 'social'
     const [searchQuery, setSearchQuery] = useState('');
     // â”€â”€ IjamOS v3 Window & Dock State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    const [windowStates, setWindowStates] = useState({});      // { [type]: { isOpen, isMinimized, isMaximized, x, y, w, h, zIndex } }
-    const [focusedWindow, setFocusedWindow] = useState(null);
-    const [zCounter, setZCounter] = useState(100);
-    const [isStartMenuOpen, setIsStartMenuOpen] = useState(false);
-    const [startMenuSearch, setStartMenuSearch] = useState('');
+    const {
+        windowStates,
+        focusedWindow,
+        mobileActiveWindow,
+        isStartMenuOpen,
+        startMenuSearch,
+        openApp,
+        closeApp,
+        closeAllApps,
+        minimizeApp,
+        maximizeApp,
+        focusApp,
+        moveApp,
+        resizeApp,
+        setIsStartMenuOpen,
+        setStartMenuSearch
+    } = useIjamOSWindowManager({
+        appRegistry: APP_REGISTRY,
+        isTouchIjamMode
+    });
     const [batteryPct, setBatteryPct] = useState('--%');
     const triggerHaptic = useCallback(() => {
         if (
@@ -2685,111 +2700,14 @@ const IjamOSWorkspace = ({ session, currentUser, isMobileView, deviceMode = 'des
             navigator.vibrate
         ) navigator.vibrate(10);
     }, []);
-
-    const openApp = useCallback((type) => {
-        const appCfg = APP_REGISTRY.find(a => a.type === type);
-        if (!appCfg) return;
-        setZCounter(z => {
-            const newZ = z + 1;
-            setWindowStates(prev => {
-                if (isTouchIjamMode) {
-                    const vw = typeof window !== 'undefined' ? window.innerWidth : 430;
-                    const vh = typeof window !== 'undefined' ? window.innerHeight : 900;
-                    const reset = {};
-                    APP_REGISTRY.forEach((app) => {
-                        reset[app.type] = { ...(prev[app.type] || {}), isOpen: false, isMinimized: false, isMaximized: false, zIndex: 0 };
-                    });
-                    return {
-                        ...reset,
-                        [type]: {
-                            ...(prev[type] || {}),
-                            isOpen: true,
-                            isMinimized: false,
-                            isMaximized: false,
-                            x: 10,
-                            y: 58,
-                            w: Math.max(320, vw - 20),
-                            h: Math.max(400, vh - 84),
-                            zIndex: newZ
-                        }
-                    };
-                }
-                if (prev[type]?.isOpen) {
-                    return { ...prev, [type]: { ...prev[type], isMinimized: false, zIndex: newZ } };
-                }
-                const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
-                const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
-                const openCount = Object.values(prev).filter(w => w.isOpen).length;
-                const w = Math.min(appCfg.defaultW, vw - 60);
-                const h = Math.min(appCfg.defaultH, vh - 140);
-                return { ...prev, [type]: { isOpen: true, isMinimized: false, isMaximized: false, x: Math.max(16, (vw - w) / 2 + openCount * 22 - 44), y: Math.max(10, 30 + openCount * 22), w, h, zIndex: newZ } };
-            });
-            setFocusedWindow(type);
-            return newZ;
-        });
-    }, [isTouchIjamMode]);
-
-    const closeApp = useCallback((type) => {
-        setWindowStates(prev => ({ ...prev, [type]: { ...(prev[type] || {}), isOpen: false } }));
-        setFocusedWindow(f => f === type ? null : f);
-    }, []);
-    const closeAllApps = useCallback(() => {
-        setWindowStates((prev) => {
-            const next = { ...prev };
-            APP_REGISTRY.forEach((app) => {
-                next[app.type] = { ...(next[app.type] || {}), isOpen: false, isMinimized: false };
-            });
-            return next;
-        });
-        setFocusedWindow(null);
-    }, []);
     const exitIjamOS = useCallback(() => {
         triggerHaptic();
         closeAllApps();
         if (setPublicPage) setPublicPage('home');
     }, [closeAllApps, setPublicPage, triggerHaptic]);
 
-    const minimizeApp = useCallback((type) => {
-        setWindowStates(prev => ({ ...prev, [type]: { ...prev[type], isMinimized: true } }));
-        setFocusedWindow(f => f === type ? null : f);
-    }, []);
-
-    const maximizeApp = useCallback((type) => {
-        setWindowStates(prev => ({ ...prev, [type]: { ...prev[type], isMaximized: !prev[type]?.isMaximized } }));
-    }, []);
-
-    const focusApp = useCallback((type) => {
-        setZCounter(z => {
-            const newZ = z + 1;
-            setWindowStates(prev => ({ ...prev, [type]: { ...prev[type], zIndex: newZ } }));
-            setFocusedWindow(type);
-            return newZ;
-        });
-    }, []);
-
-    const moveApp = useCallback((type, x, y) => {
-        const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
-        const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
-        setWindowStates(prev => ({ ...prev, [type]: { ...prev[type], x: Math.max(0, Math.min(x, vw - 100)), y: Math.max(0, Math.min(y, vh - 60)) } }));
-    }, []);
-
-    const resizeApp = useCallback((type, w, h) => {
-        setWindowStates(prev => ({
-            ...prev,
-            [type]: { ...prev[type], w: Math.max(320, w), h: Math.max(220, h) }
-        }));
-    }, []);
-
     // Convenience: which type is currently open/focused (for backward compat in content)
     const activeWindow = focusedWindow;
-
-    const mobileActiveWindow = useMemo(() => {
-        if (focusedWindow && windowStates[focusedWindow]?.isOpen && !windowStates[focusedWindow]?.isMinimized) {
-            return focusedWindow;
-        }
-        const firstOpen = Object.keys(windowStates).find(key => windowStates[key].isOpen && !windowStates[key].isMinimized);
-        return firstOpen || null;
-    }, [focusedWindow, windowStates]);
 
     const [chatMessages, setChatMessages] = useState([
         { role: 'bot', text: 'IJAM_OS_INITIALIZED: Greetings, Builder. I am Antigravity. Type your command or click on the lessons above to begin.' }
