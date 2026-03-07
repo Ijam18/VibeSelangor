@@ -228,6 +228,7 @@ const App = () => {
         const classSub = supabase.channel('classes').on('postgres_changes', { event: '*', schema: 'public', table: 'cohort_classes' }, fetchData).subscribe();
         const submissionSub = supabase.channel('submissions').on('postgres_changes', { event: '*', schema: 'public', table: 'builder_progress' }, fetchData).subscribe();
         const attendanceSub = supabase.channel('attendance').on('postgres_changes', { event: '*', schema: 'public', table: 'cohort_attendance' }, fetchData).subscribe();
+        const profileSub = supabase.channel('profiles').on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, fetchData).subscribe();
         const certificateSub = supabase.channel('certificates').on('postgres_changes', { event: '*', schema: 'public', table: 'builder_certificates' }, fetchData).subscribe();
 
         const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -240,6 +241,7 @@ const App = () => {
             supabase.removeChannel(classSub);
             supabase.removeChannel(submissionSub);
             supabase.removeChannel(attendanceSub);
+            supabase.removeChannel(profileSub);
             supabase.removeChannel(certificateSub);
             window.removeEventListener('scroll', handleScroll);
             window.removeEventListener('resize', handleResize);
@@ -1250,7 +1252,13 @@ const App = () => {
                     }
                     {publicPage === 'how-it-works' && <ProgramDetailsPage classes={classes} handleJoinClick={handleJoinClick} setPublicPage={setPublicPage} isMobileView={isMobileView} />}
                     {publicPage === 'coming-soon' && <ComingSoonPage setPublicPage={setPublicPage} />}
-                    {publicPage === 'leaderboard' && <BuilderLeaderboard isMobileView={isMobileView} />}
+                    {publicPage === 'leaderboard' && (
+                        <BuilderLeaderboard
+                            isMobileView={isMobileView}
+                            profiles={profiles}
+                            submissions={submissions}
+                        />
+                    )}
                     {publicPage === 'forum' && <ForumPage session={session} currentUser={currentUser} isMobileView={isMobileView} setPublicPage={setPublicPage} classes={classes} />}
                     {publicPage === 'studio' && session && <BuilderStudioPage session={session} />}
                     {

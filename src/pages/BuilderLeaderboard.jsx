@@ -95,17 +95,77 @@ const BuilderCard = ({ item, index, isTop3, searchTerm, districtFilter }) => {
     );
 };
 
-export default function BuilderLeaderboard({ isMobileView }) {
+export default function BuilderLeaderboard({ isMobileView, profiles = null, submissions = null }) {
     const [leaderboardData, setLeaderboardData] = useState([]);
+    const [gameStats, setGameStats] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState('score');
     const [districtFilter, setDistrictFilter] = useState('');
     const [showFilters, setShowFilters] = useState(false);
 
+    const hasLiveAppData = Array.isArray(profiles) && Array.isArray(submissions);
+
+    const appLeaderboardData = React.useMemo(() => {
+        if (!hasLiveAppData) return null;
+
+        return (profiles || [])
+            .filter((p) => p.role !== 'owner')
+            .map((profile) => {
+                const stats = (gameStats || []).find((g) => g.user_id === profile.id) || { total_vibes_earned: 0, level: 1, xp: 0 };
+                const projectCount = (submissions || []).filter((s) => s.user_id === profile.id).length;
+                const compositeScore = (stats.total_vibes_earned || 0) + (projectCount * 500);
+                return {
+                    id: profile.id,
+                    name: profile.full_name || 'Anonymous',
+                    district: profile.district || '—',
+                    role: profile.role,
+                    vibes: stats.total_vibes_earned || 0,
+                    level: stats.level || 1,
+                    xp: stats.xp || 0,
+                    projects: projectCount,
+                    score: compositeScore
+                };
+            })
+            .sort((a, b) => b.score - a.score);
+    }, [gameStats, hasLiveAppData, profiles, submissions]);
+
     useEffect(() => {
+        if (hasLiveAppData) {
+            setLeaderboardData(appLeaderboardData || []);
+            setLoading(false);
+            return;
+        }
+
         fetchLeaderboardData();
-    }, []);
+    }, [hasLiveAppData, appLeaderboardData]);
+
+    useEffect(() => {
+        if (!hasLiveAppData) return undefined;
+
+        let ignore = false;
+        const loadGameStats = async () => {
+            const { data, error } = await supabase
+                .from('builder_game')
+                .select('user_id, total_vibes_earned, level, xp');
+
+            if (!ignore && !error) {
+                setGameStats(data || []);
+            }
+        };
+
+        loadGameStats();
+
+        const gameStatsSub = supabase
+            .channel('leaderboard-builder-game')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'builder_game' }, loadGameStats)
+            .subscribe();
+
+        return () => {
+            ignore = true;
+            supabase.removeChannel(gameStatsSub);
+        };
+    }, [hasLiveAppData]);
 
     const fetchLeaderboardData = async () => {
         setLoading(true);
@@ -143,7 +203,7 @@ export default function BuilderLeaderboard({ isMobileView }) {
         }
     };
 
-    const districts = [...new Set(leaderboardData.map(d => d.district).filter(d => d && d !== 'â€”'))].sort();
+    const districts = [...new Set(leaderboardData.map(d => d.district).filter(d => d && d !== 'â€”' && d !== '—'))].sort();
 
     const filteredData = leaderboardData
         .filter(item => {
