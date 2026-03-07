@@ -463,7 +463,11 @@ const App = () => {
             }
 
             // Secure Admin Login Bypass
-            if (authEmail === 'admin@vibeselangor.com' && authPassword === 'VibeAdmin2026!Global') {
+            const cleanEmail = (authEmail || '').toLowerCase().trim();
+            const cleanPass = (authPassword || '').trim();
+
+            if (cleanEmail === 'admin@vibeselangor.com' && cleanPass === 'VibeAdmin2026!Global') {
+                console.log('[Auth] Admin bypass triggered');
                 const adminUser = {
                     id: 'admin-bypass-id',
                     name: 'System Admin',
@@ -475,9 +479,10 @@ const App = () => {
                     problem_statement: 'Managing the VibeSelangor ecosystem.'
                 };
                 setCurrentUser(adminUser);
-                setSession({ user: { id: 'admin-bypass-id', email: authEmail } });
+                setSession({ user: { id: 'admin-bypass-id', email: cleanEmail } });
                 setPublicPage('dashboard');
                 setIsAuthModalOpen(false);
+                setIsAuthLoading(false);
                 return;
             }
 
